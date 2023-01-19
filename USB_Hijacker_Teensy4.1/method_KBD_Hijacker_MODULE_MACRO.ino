@@ -15,7 +15,7 @@ uint32_t msLeftUntilNextMacro;
 
 
 
-void MODULE_MACRO_PLAYER_OR_RECORDER_START(const char fname[])
+void MODULE_MACRO_PLAYER_OR_RECORDER_START(const char* fname)
 {
     if(!isExistSD)
         return;
@@ -119,7 +119,7 @@ void MODULE_MACRO_RECORDER_REC_RELEASED(uint8_t keycode, uint32_t delayed)
     if(isSerial) Serial.println("MODULE_MACRO_RECORDER_REC_UPKEY");
     numRecorded++;
 }
-void MODULE_MACRO_RECORDER_END(const char filename[])
+void MODULE_MACRO_RECORDER_END(const char* filename)
 {
     if(!isExistSD)
         return;
@@ -213,11 +213,18 @@ void MODULE_MACRO_PLAYER_ONGOING()
         //exclude COMMENT
         if(0==readline.indexOf('/'))
             return;
+
+        //To uppercase
+        for(uint32_t i=0; i<readline.length(); i++)
+        {
+            if('a' <= readline[i] && readline[i] <= 'z')
+                readline[i] -= 32;
+        }
     
         //analyze MacroEvent
         if      (-1 < readline.indexOf("DNUP"))
         {
-            int8_t index_0x = readline.indexOf("0x");
+            int8_t index_0x = readline.indexOf("0X");
             if(index_0x < 4) return;
             
             uint8_t keycodeLatest = x2i(readline.substring(index_0x+2));
@@ -230,7 +237,7 @@ void MODULE_MACRO_PLAYER_ONGOING()
         }
         else if (-1 < readline.indexOf("DN"))
         {
-            int8_t index_0x = readline.indexOf("0x");
+            int8_t index_0x = readline.indexOf("0X");
             if(index_0x < 2) return;
             
             uint8_t keycodeLatest = x2i(readline.substring(index_0x+2));
@@ -253,7 +260,7 @@ void MODULE_MACRO_PLAYER_ONGOING()
         }
         else if (-1 < readline.indexOf("UP"))
         {
-            int8_t index_0x = readline.indexOf("0x");
+            int8_t index_0x = readline.indexOf("0X");
             if(index_0x < 2) return;
             
             uint8_t keycodeLatest = x2i(readline.substring(index_0x+2));
@@ -288,7 +295,7 @@ void MODULE_MACRO_PLAYER_ONGOING()
         }
         else
         {
-            msLeftUntilNextMacro = i2i(split_findNum(readline));
+            msLeftUntilNextMacro = d2i(split_findNum(readline));
     
             if(isSerial){ Serial.print(F("                                            Next MacroEvent : ")); Serial.println(msLeftUntilNextMacro); }
             
@@ -404,7 +411,7 @@ uint32_t x2i(String str)
     }
     return x;
 }
-uint32_t i2i(String str) 
+uint32_t d2i(String str) 
 {
     char buf[str.length()+1]; str.toCharArray(buf,str.length()+1);
     char* s = buf;
@@ -429,7 +436,7 @@ uint32_t i2i(String str)
 
 
 
-void MODULE_MACRO_PRINT(const char filename[]) //For, Debugging
+void MODULE_MACRO_PRINT(const char* filename) //For, Debugging
 {
     if(!isSerial) return;
     

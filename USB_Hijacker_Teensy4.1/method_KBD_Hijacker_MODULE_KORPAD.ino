@@ -7,68 +7,115 @@
 
 #if (KEYPAD_KOREAN_LAYOUT > 0)
 
-#define KORPAD_isExistVowel(KorSlotX)           strcmp(KorSlotX,"k")==0||strcmp(KorSlotX,"o")==0||strcmp(KorSlotX,"i")==0||strcmp(KorSlotX,"O")==0||strcmp(KorSlotX,"j")==0||strcmp(KorSlotX,"p")==0||strcmp(KorSlotX,"u")==0||strcmp(KorSlotX,"P")==0||strcmp(KorSlotX,"h")==0||strcmp(KorSlotX,"y")==0||strcmp(KorSlotX,"n")==0||strcmp(KorSlotX,"b")==0||strcmp(KorSlotX,"m")==0||strcmp(KorSlotX,"l")==0||strcmp(KorSlotX,"hk")==0||strcmp(KorSlotX,"ho")==0||strcmp(KorSlotX,"hl")==0||strcmp(KorSlotX,"nj")==0||strcmp(KorSlotX,"np")==0||strcmp(KorSlotX,"nl")==0||strcmp(KorSlotX,"ml")==0
-#define KORPAD_isExistConsonant(KorSlotX)       strcmp(KorSlotX,"r")==0||strcmp(KorSlotX,"z")==0||strcmp(KorSlotX,"R")==0||strcmp(KorSlotX,"s")==0||strcmp(KorSlotX,"f")==0||strcmp(KorSlotX,"e")==0||strcmp(KorSlotX,"x")==0||strcmp(KorSlotX,"E")==0||strcmp(KorSlotX,"q")==0||strcmp(KorSlotX,"b")==0||strcmp(KorSlotX,"Q")==0||strcmp(KorSlotX,"t")==0||strcmp(KorSlotX,"g")==0||strcmp(KorSlotX,"T")==0||strcmp(KorSlotX,"w" )==0||strcmp(KorSlotX,"c")==0||strcmp(KorSlotX,"W")==0||strcmp(KorSlotX,"d")==0||strcmp(KorSlotX,"a")==0
-#define KORPAD_updateConfirmedInputs()                  updateConfirmedInputs(KorSlot0,KorSlot1,KorSlot2,KorSlot3,KorSlot4);
-#define KORPAD_resetConfirmedInputs()                   resetConfirmedInputs (KorSlot0,KorSlot1,KorSlot2,KorSlot3,KorSlot4);
-#define KORPAD_undoConfirmedInputs()                    undoConfirmedInputs  (KorSlot0,KorSlot1,KorSlot2,KorSlot3,KorSlot4);
-#define KORPAD_correctBottomDualConsonantError()        correctBottomDualConsonantError  (KorSlot1,KorSlot2,KorSlot3);
-#define KORPAD_correctBottomSingleConsonantError()      correctBottomSingleConsonantError(KorSlot1,KorSlot2);
-void updateConfirmedInputs(char* KorSlot0,char* KorSlot1,char* KorSlot2,char* KorSlot3,char* KorSlot4)
-{
-    strcpy(KorSlot4,KorSlot3);
-    strcpy(KorSlot3,KorSlot2);
-    strcpy(KorSlot2,KorSlot1);
-    strcpy(KorSlot1,KorSlot0);
-}
-void resetConfirmedInputs(char* KorSlot0,char* KorSlot1,char* KorSlot2,char* KorSlot3,char* KorSlot4)
-{
-    strcpy(KorSlot4,"");
-    strcpy(KorSlot3,"");
-    strcpy(KorSlot2,"");
-    strcpy(KorSlot1,"");
-    strcpy(KorSlot0,"");
-}
-void undoConfirmedInputs(char* KorSlot0,char* KorSlot1,char* KorSlot2,char* KorSlot3,char* KorSlot4)
-{
-    strcpy(KorSlot0,KorSlot1);
-    strcpy(KorSlot1,KorSlot2);
-    strcpy(KorSlot2,KorSlot3);
-    strcpy(KorSlot3,KorSlot4);
-}
-void correctBottomDualConsonantError(char* KorSlot1,char* KorSlot2,char* KorSlot3)
-{
-    if(KORPAD_isExistVowel(KorSlot2))
-    {
-        if(KORPAD_isExistConsonant(KorSlot3))
+#define KORPAD_isExistVowel(KorSlotX)       strcmp(KorSlotX,"k")==0||strcmp(KorSlotX,"o")==0||strcmp(KorSlotX,"i")==0||strcmp(KorSlotX,"O")==0||strcmp(KorSlotX,"j")==0||strcmp(KorSlotX,"p")==0||strcmp(KorSlotX,"u")==0||strcmp(KorSlotX,"P")==0||strcmp(KorSlotX,"h")==0||strcmp(KorSlotX,"y")==0||strcmp(KorSlotX,"n")==0||strcmp(KorSlotX,"b")==0||strcmp(KorSlotX,"m")==0||strcmp(KorSlotX,"l")==0||strcmp(KorSlotX,"hk")==0||strcmp(KorSlotX,"ho")==0||strcmp(KorSlotX,"hl")==0||strcmp(KorSlotX,"nj")==0||strcmp(KorSlotX,"np")==0||strcmp(KorSlotX,"nl")==0||strcmp(KorSlotX,"ml")==0
+#define KORPAD_isExistConsonant(KorSlotX)   strcmp(KorSlotX,"r")==0||strcmp(KorSlotX,"z")==0||strcmp(KorSlotX,"R")==0||strcmp(KorSlotX,"s")==0||strcmp(KorSlotX,"f")==0||strcmp(KorSlotX,"e")==0||strcmp(KorSlotX,"x")==0||strcmp(KorSlotX,"E")==0||strcmp(KorSlotX,"q")==0||strcmp(KorSlotX,"b")==0||strcmp(KorSlotX,"Q")==0||strcmp(KorSlotX,"t")==0||strcmp(KorSlotX,"g")==0||strcmp(KorSlotX,"T")==0||strcmp(KorSlotX,"w" )==0||strcmp(KorSlotX,"c")==0||strcmp(KorSlotX,"W")==0||strcmp(KorSlotX,"d")==0||strcmp(KorSlotX,"a")==0
+
+#define KORPAD_updateConfirmedInputs()\
+        updateConfirmedInputs (&KorSlot0,&KorSlot1,&KorSlot2,&KorSlot3,&KorSlot4);
+        
+        void updateConfirmedInputs (char** ptrKorSlot0,char** ptrKorSlot1,char** ptrKorSlot2,char** ptrKorSlot3,char** ptrKorSlot4)
         {
-            delay(11); KBD_Hijacker.pressandreleaseKey(KEY_BACKSPACE);
-            delay(11); KBD_Hijacker.pressandreleaseKeys(KorSlot3);
-            delay(11); KBD_Hijacker.pressandreleaseKeys(KorSlot2);
-            delay(11); KBD_Hijacker.pressandreleaseKeys(KorSlot1);
-            delay(11);
-            return;
+            // THIS IS 'CALL BY REF' FUNCTION FOR SWAP 2 POINTERS!!
+            // https://stackoverflow.com/questions/13246615/swap-two-pointers-to-exchange-arrays
+            
+            strcpy(*ptrKorSlot4,"");
+            char* ptr = *ptrKorSlot4;
+
+            *ptrKorSlot4 = *ptrKorSlot3;
+            *ptrKorSlot3 = *ptrKorSlot2;
+            *ptrKorSlot2 = *ptrKorSlot1;
+            *ptrKorSlot1 = *ptrKorSlot0;
+
+            *ptrKorSlot0 = ptr;
         }
-    }
-}
-void correctBottomSingleConsonantError(char* KorSlot1,char* KorSlot2)
-{
-    if(KORPAD_isExistVowel(KorSlot1))
-    {
-        if(KORPAD_isExistConsonant(KorSlot2))
+
+#define KORPAD_undoConfirmedInputs()\
+        undoConfirmedInputs (&KorSlot0,&KorSlot1,&KorSlot2,&KorSlot3,&KorSlot4);
+        
+        void undoConfirmedInputs (char** ptrKorSlot0,char** ptrKorSlot1,char** ptrKorSlot2,char** ptrKorSlot3,char** ptrKorSlot4)
         {
-            delay(11); KBD_Hijacker.pressandreleaseKey(KEY_BACKSPACE);
-            delay(11); KBD_Hijacker.pressandreleaseKeys(KorSlot2);
-            delay(11); KBD_Hijacker.pressandreleaseKeys(KorSlot1);
-            delay(11); 
-            return;
+            strcpy(*ptrKorSlot0,"");
+            char* ptr = *ptrKorSlot0;
+            
+            *ptrKorSlot0 = *ptrKorSlot1;
+            *ptrKorSlot1 = *ptrKorSlot2;
+            *ptrKorSlot2 = *ptrKorSlot3;
+            *ptrKorSlot3 = *ptrKorSlot4;
+
+            *ptrKorSlot4 = ptr;
         }
-    }
+        
+#define KORPAD_resetConfirmedInputs()\
+        resetConfirmedInputs (KorSlot0,KorSlot1,KorSlot2,KorSlot3,KorSlot4);
+        
+        void resetConfirmedInputs (char* KorSlot0,char* KorSlot1,char* KorSlot2,char* KorSlot3,char* KorSlot4)
+        {
+            strcpy(KorSlot4,"");
+            strcpy(KorSlot3,"");
+            strcpy(KorSlot2,"");
+            strcpy(KorSlot1,"");
+            strcpy(KorSlot0,"");
+        }
+
+#define KORPAD_correctBottomDualConsonantError()\
+        correctBottomDualConsonantError (KorSlot1,KorSlot2,KorSlot3);
+        
+        void correctBottomDualConsonantError (char* KorSlot1,char* KorSlot2,char* KorSlot3)
+        {
+            if(KORPAD_isExistVowel(KorSlot2))
+            {
+                if(KORPAD_isExistConsonant(KorSlot3))
+                {
+                    delay(11); KBD_Hijacker.pressandreleaseKey(KEY_BACKSPACE);
+                    delay(11); KBD_Hijacker.pressandreleaseKeys(KorSlot3);
+                    delay(11); KBD_Hijacker.pressandreleaseKeys(KorSlot2);
+                    delay(11); KBD_Hijacker.pressandreleaseKeys(KorSlot1);
+                    delay(11);
+                    return;
+                }
+            }
+        }
+
+#define KORPAD_correctBottomSingleConsonantError()\
+        correctBottomSingleConsonantError (KorSlot1,KorSlot2);
+        
+        void correctBottomSingleConsonantError (char* KorSlot1,char* KorSlot2)
+        {
+            if(KORPAD_isExistVowel(KorSlot1))
+            {
+                if(KORPAD_isExistConsonant(KorSlot2))
+                {
+                    delay(11); KBD_Hijacker.pressandreleaseKey(KEY_BACKSPACE);
+                    delay(11); KBD_Hijacker.pressandreleaseKeys(KorSlot2);
+                    delay(11); KBD_Hijacker.pressandreleaseKeys(KorSlot1);
+                    delay(11); 
+                    return;
+                }
+            }
+        }
+
+#define KORPAD_isAlphabetPronounce(STR3,STR2,STR1,STR0)     ( (strcmp(KorSlot0,STR0)==0||strcmp("",STR0)==0) && (strcmp(KorSlot1,STR1)==0||strcmp("",STR1)==0) && (strcmp(KorSlot2,STR2)==0||strcmp("",STR2)==0) && (strcmp(KorSlot3,STR3)==0||strcmp("",STR3)==0) )
+
+void KORPAD_writeAlphabet(char ch)
+{
+    delay(11); KBD_Hijacker.pressandreleaseKey(KEY_KORENG);
+    delay(11); Keyboard.write(ch);
+    delay(11); KBD_Hijacker.pressandreleaseKey(KEY_KORENG);
+    delay(11);
 }
-#define KORPAD_writeAlphabet(CH)                delay(11); KBD_Hijacker.pressandreleaseKey(KEY_KORENG); delay(11); Keyboard.write(CH); delay(11); KBD_Hijacker.pressandreleaseKey(KEY_KORENG); delay(11);
-#define KORPAD_switchCapsLockToggleIfBattered3()        if(KeyLogger.peek_key(1)==KEYPAD_PERIOD){ if(KeyLogger.peek_key(2)==KEYPAD_PERIOD) KBD_Hijacker.pressandreleaseKey(KEY_CAPS_LOCK); }
-#define KORPAD_switchCapsLockToggleIfBattered4()        if(KeyLogger.peek_key(1)==KEYPAD_PERIOD){ if(KeyLogger.peek_key(2)==KEYPAD_PERIOD){ if(KeyLogger.peek_key(3)==KEYPAD_PERIOD) KBD_Hijacker.pressandreleaseKey(KEY_CAPS_LOCK); } }
-#define KORPAD_isAlphabetPronounce(STR3,STR2,STR1,STR0)         ((strcmp(KorSlot0,STR0)==0||strcmp("",STR0)==0)&&(strcmp(KorSlot1,STR1)==0||strcmp("",STR1)==0)&&(strcmp(KorSlot2,STR2)==0||strcmp("",STR2)==0)&&(strcmp(KorSlot3,STR3)==0||strcmp("",STR3)==0))
+void KORPAD_switchCapsLockToggleIfBattered3()
+{
+    if(KeyLogger.peek_key(1)==KEYPAD_PERIOD)
+        if(KeyLogger.peek_key(2)==KEYPAD_PERIOD)
+            KBD_Hijacker.pressandreleaseKey(KEY_CAPS_LOCK);
+}
+void KORPAD_switchCapsLockToggleIfBattered4()
+{
+    if(KeyLogger.peek_key(1)==KEYPAD_PERIOD)
+        if(KeyLogger.peek_key(2)==KEYPAD_PERIOD)
+            if(KeyLogger.peek_key(3)==KEYPAD_PERIOD)
+                KBD_Hijacker.pressandreleaseKey(KEY_CAPS_LOCK);
+}
 
 #endif
 
@@ -78,33 +125,18 @@ void correctBottomSingleConsonantError(char* KorSlot1,char* KorSlot2)
 
 #if (KEYPAD_KOREAN_LAYOUT == 1)     // LAYOUT1:CheonJiIn Only
 
-#define KORPAD_correctAraeAVowelError()             correctAraeAVowelError(KorSlot1,KorSlot2,KorSlot3,KorSlot4);
-void correctAraeAVowelError(char* KorSlot1,char* KorSlot2,char* KorSlot3,char* KorSlot4)
-{
-    if(KORPAD_isExistConsonant(KorSlot1))
-    {
-        if(KORPAD_isExistVowel(KorSlot2))
+#define KORPAD_correctAraeAVowelError()\
+        correctAraeAVowelError (KorSlot1,KorSlot2,KorSlot3,KorSlot4);
+        
+        void correctAraeAVowelError (char* KorSlot1,char* KorSlot2,char* KorSlot3,char* KorSlot4)
         {
-            if(KORPAD_isExistConsonant(KorSlot3))
+            if(KORPAD_isExistConsonant(KorSlot1))
             {
-                delay(11); KBD_Hijacker.pressandreleaseKey(KEY_BACKSPACE);
-                delay(11); KBD_Hijacker.pressandreleaseKeys(KorSlot3);
-                delay(11); KBD_Hijacker.pressandreleaseKeys(KorSlot2);
-                delay(11); KBD_Hijacker.pressandreleaseKeys(KorSlot1);
-                delay(11);
-                return;
-            }
-        }
-        else if(KORPAD_isExistConsonant(KorSlot2))
-        {
-            if((strcmp(KorSlot2,"r")==0&&strcmp(KorSlot1,"t")==0)||(strcmp(KorSlot2,"s")==0&&strcmp(KorSlot1,"w")==0)||(strcmp(KorSlot2,"s")==0&&strcmp(KorSlot1,"g")==0)||(strcmp(KorSlot2,"f")==0&&strcmp(KorSlot1,"r")==0)||(strcmp(KorSlot2,"f")==0&&strcmp(KorSlot1,"a")==0)||(strcmp(KorSlot2,"f")==0&&strcmp(KorSlot1,"q")==0)||(strcmp(KorSlot2,"f")==0&&strcmp(KorSlot1,"t")==0)||(strcmp(KorSlot2,"f")==0&&strcmp(KorSlot1,"x")==0)||(strcmp(KorSlot2,"f")==0&&strcmp(KorSlot1,"v")==0)||(strcmp(KorSlot2,"f")==0&&strcmp(KorSlot1,"g")==0)||(strcmp(KorSlot2,"q")==0&&strcmp(KorSlot1,"t")==0))
-            {
-                if(KORPAD_isExistVowel(KorSlot3))
+                if(KORPAD_isExistVowel(KorSlot2))
                 {
-                    if(KORPAD_isExistConsonant(KorSlot4))
+                    if(KORPAD_isExistConsonant(KorSlot3))
                     {
                         delay(11); KBD_Hijacker.pressandreleaseKey(KEY_BACKSPACE);
-                        delay(11); KBD_Hijacker.pressandreleaseKeys(KorSlot4);
                         delay(11); KBD_Hijacker.pressandreleaseKeys(KorSlot3);
                         delay(11); KBD_Hijacker.pressandreleaseKeys(KorSlot2);
                         delay(11); KBD_Hijacker.pressandreleaseKeys(KorSlot1);
@@ -112,13 +144,30 @@ void correctAraeAVowelError(char* KorSlot1,char* KorSlot2,char* KorSlot3,char* K
                         return;
                     }
                 }
+                else if(KORPAD_isExistConsonant(KorSlot2))
+                {
+                    if((strcmp(KorSlot2,"r")==0&&strcmp(KorSlot1,"t")==0)||(strcmp(KorSlot2,"s")==0&&strcmp(KorSlot1,"w")==0)||(strcmp(KorSlot2,"s")==0&&strcmp(KorSlot1,"g")==0)||(strcmp(KorSlot2,"f")==0&&strcmp(KorSlot1,"r")==0)||(strcmp(KorSlot2,"f")==0&&strcmp(KorSlot1,"a")==0)||(strcmp(KorSlot2,"f")==0&&strcmp(KorSlot1,"q")==0)||(strcmp(KorSlot2,"f")==0&&strcmp(KorSlot1,"t")==0)||(strcmp(KorSlot2,"f")==0&&strcmp(KorSlot1,"x")==0)||(strcmp(KorSlot2,"f")==0&&strcmp(KorSlot1,"v")==0)||(strcmp(KorSlot2,"f")==0&&strcmp(KorSlot1,"g")==0)||(strcmp(KorSlot2,"q")==0&&strcmp(KorSlot1,"t")==0))
+                    {
+                        if(KORPAD_isExistVowel(KorSlot3))
+                        {
+                            if(KORPAD_isExistConsonant(KorSlot4))
+                            {
+                                delay(11); KBD_Hijacker.pressandreleaseKey(KEY_BACKSPACE);
+                                delay(11); KBD_Hijacker.pressandreleaseKeys(KorSlot4);
+                                delay(11); KBD_Hijacker.pressandreleaseKeys(KorSlot3);
+                                delay(11); KBD_Hijacker.pressandreleaseKeys(KorSlot2);
+                                delay(11); KBD_Hijacker.pressandreleaseKeys(KorSlot1);
+                                delay(11);
+                                return;
+                            }
+                        }
+                    }
+                }
+                delay(11); KBD_Hijacker.pressandreleaseKey(KEY_BACKSPACE);
+                delay(11); KBD_Hijacker.pressandreleaseKeys(KorSlot1);
+                return;
             }
         }
-        delay(11); KBD_Hijacker.pressandreleaseKey(KEY_BACKSPACE);
-        delay(11); KBD_Hijacker.pressandreleaseKeys(KorSlot1);
-        return;
-    }
-}
 
 #endif
 
@@ -126,19 +175,25 @@ void correctAraeAVowelError(char* KorSlot1,char* KorSlot2,char* KorSlot3,char* K
 
 
 
-void MODULE_KOREAN_KEYPAD_EVOLUTION()
+inline void MODULE_KOREAN_KEYPAD_EVOLUTION()
 {
     /* ------------------------------------------------------ KEYPAD_KOREAN_LAYOUT COMMON ------------------------------------------------------ */
     #if (KEYPAD_KOREAN_LAYOUT > 0)
 
     static bool KoreanKeypadToggle = false;
-    static char KorSlot0[3], KorSlot1[3], KorSlot2[3], KorSlot3[3], KorSlot4[3];
+    static char* KorSlot0 = (char*)malloc(sizeof(char) * 3);
+    static char* KorSlot1 = (char*)malloc(sizeof(char) * 3);
+    static char* KorSlot2 = (char*)malloc(sizeof(char) * 3);
+    static char* KorSlot3 = (char*)malloc(sizeof(char) * 3);
+    static char* KorSlot4 = (char*)malloc(sizeof(char) * 3);
+    //static char KorSlot0[3], KorSlot1[3], KorSlot2[3], KorSlot3[3], KorSlot4[3];
     
     static bool ConvertMode_Alphabet = false;
 
     if (key == KEY_NUM_LOCK)
     {
         if(KoreanKeypadToggle){
+            
             //Turn Off KoreanKeypadToggle
             KoreanKeypadToggle = false;
             ConvertMode_Alphabet = false;
@@ -148,6 +203,7 @@ void MODULE_KOREAN_KEYPAD_EVOLUTION()
                                     1   );
         }
         else if(PRESSED_TIME_UNTIL_RELEASE > 400){
+            
             KBD_Hijacker.releaseAllBeingHoldDownKey();   // KEY_NUM_LOCK release needed
 
             //Turn On  KoreanKeypadToggle
@@ -204,7 +260,7 @@ void MODULE_KOREAN_KEYPAD_EVOLUTION()
                 KORPAD_resetConfirmedInputs();
     
                 KBD_Hijacker.pressandreleaseKey(KEY_F2);
-                delay(10);
+                delay(11);
                 KBD_Hijacker.pressandreleaseShortcutKey( 2 , new int32_t[2] {KEY_CTRL,KEY_C} );
             }
             else if(PRESSED_TIME_UNTIL_RELEASE > 400){
@@ -220,7 +276,7 @@ void MODULE_KOREAN_KEYPAD_EVOLUTION()
                 KORPAD_resetConfirmedInputs();
     
                 KBD_Hijacker.pressandreleaseKey(KEY_F2);
-                delay(10);
+                delay(11);
                 KBD_Hijacker.pressandreleaseShortcutKey( 2 , new int32_t[2] {KEY_CTRL,KEY_V} );
             }
             else if(PRESSED_TIME_UNTIL_RELEASE > 400){
@@ -228,6 +284,7 @@ void MODULE_KOREAN_KEYPAD_EVOLUTION()
             }
             isActivateKeyEvent=false; key=0;
         }
+        break;
 
         case KEY_BACKSPACE:
         {
@@ -246,7 +303,7 @@ void MODULE_KOREAN_KEYPAD_EVOLUTION()
         }
         break;
 
-        case KEYPAD_SUBTRACT:
+        case KEYPAD_MINUS:
         {
             if(event){
                 KORPAD_undoConfirmedInputs();
@@ -255,7 +312,7 @@ void MODULE_KOREAN_KEYPAD_EVOLUTION()
         }
         break;
 
-        case KEYPAD_ADD:
+        case KEYPAD_PLUS:
         {
             if(event){
                 KORPAD_resetConfirmedInputs(); strcpy(KorSlot0," ");

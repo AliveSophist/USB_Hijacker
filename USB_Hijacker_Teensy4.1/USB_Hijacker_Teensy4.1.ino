@@ -14,29 +14,65 @@
 
 
 
-// USB Serial number is editable
+// CUSTOMIZE YOUR USB DESCRIPTION
+#ifdef __cplusplus
 extern "C"
 {
+#endif
+
     struct usb_string_descriptor_struct
     {
         uint8_t bLength;
         uint8_t bDescriptorType;
-        uint16_t wString[10];
+        uint16_t wString[100];
+    };
+
+    usb_string_descriptor_struct usb_string_manufacturer_name = {
+    /*
+     *  2 + MANUFACTURER_NAME_LEN * 2,
+     *  3,
+     *  MANUFACTURER_NAME
+     */
+
+        2 + 7 * 2,
+        3,
+        {'$','0','?','H','!','$','+'}
     };
     
-    usb_string_descriptor_struct usb_string_serial_number =
-    {
-//       example)
-//       22,  // 2 + 2*length of the sn string
-//       3,
-//       {'E','D','I','T','I','O','N', '6','9',     0},
+    usb_string_descriptor_struct usb_string_product_name = {
+    /*
+     *  2 + PRODUCT_NAME_LEN * 2,
+     *  3,
+     *  PRODUCT_NAME
+     */
 
-         2,
-         3,
-         {0},
+    #if defined(USB_KEYBOARDONLY)
+        2 + 19 * 2,
+        3,
+        {'I','\'','m',' ','n','o','t',' ','H','i','j','a','c','k','e','r',' ','X','D'}
+    #elif defined(USB_SERIAL_HID)
+        2 + 28 * 2,
+        3,
+        {'I','\'','m',' ','n','o','t',' ','H','i','j','a','c','k','e','r',' ','S','E','R','I','A','L',' ','M','O','D','E'}
+    #endif
     };
+    
+    usb_string_descriptor_struct usb_string_serial_number = {
+    /*
+     *  2 + SERIAL_NUMBER_LEN * 2,
+     *  3,
+     *  SERIAL_NUMBER
+     */
+
+        2 + 0 * 2,
+        3,
+        {}
+    };
+    
+#ifdef __cplusplus
 }
-// And you can also edit VID, PID, MANUFACTURER_NAME, PRODUCT_NAME, etc. from YourArduinoFolder\hardware\teensy\avr\cores\teensy4\usb_desc.h
+#endif
+// And you can also edit VID, PID, etc. from YourArduinoFolder\hardware\teensy\avr\cores\teensy4\usb_desc.h
 
 
 
@@ -49,15 +85,6 @@ extern "C"
 
 #include "res_layouts.h"
 #include "res_pitches.h"
-
-#define MEASURE_FREE_MEMORY if(isSerial){ Serial.print("\nNow Measured FreeMemory : "); Serial.print(freeMemory()); Serial.print("\n\n"); }
-//extern char *__brkval;
-extern unsigned long _heap_end;
-uint32_t freeMemory(){ // for Teensy 4.1
-    char* p = (char*) malloc(10000); // size should be quite big, to avoid allocating fragment!
-    free(p);
-    return (char *)&_heap_end - p; // __brkval;
-}
 
 
 
@@ -114,14 +141,37 @@ uint32_t freeMemory(){ // for Teensy 4.1
 
 
 //// For, USER
-void REBOOT() { digitalWrite(PIN_PROGRAM,LOW); delay(100); return; }
+void REBOOT()   { digitalWrite(PIN_PROGRAM,LOW); delay(100); return; }
 
 bool isSerial = true;   //false : if you DO NOT WANT TO USE Serial any circumstances
 bool isExistSD = true;  //false : if you DO NOT WANT TO USE SD any circumstances
 
-//uint32_t msMeasuredForDebugging=0;
-//#define MEASURE_MILLIS_START_POINT   msMeasuredForDebugging=millis();
-//#define MEASURE_MILLIS_END_POINT     if(isSerial){ Serial.print(F("\nMeasured Time : ")); Serial.println(millis()-msMeasuredForDebugging); Serial.println(); }
+extern unsigned long _heap_end; //extern char *__brkval;
+void MEASURE_FREE_MEMORY() // for Teensy 4.1
+{
+    if(!isSerial) 
+        return;
+    
+    char* p=(char*)malloc(10000); free(p); // size should be quite big, to avoid allocating fragment!
+    uint32_t freeMemory=(char *)&_heap_end - p; //=__brkval;
+
+    Serial.print("\nNow Measured FreeMemory : ");
+    Serial.println(freeMemory);
+}
+
+//extern uint32_t msMeasuredForDebugging;
+//void MEASURE_MILLIS_START_POINT()
+//{
+//    msMeasuredForDebugging=millis();
+//}
+//void MEASURE_MILLIS_END_POINT()
+//{
+//    if(!isSerial) 
+//        return;
+//    
+//    Serial.print(F("\nMeasured Time : "));
+//    Serial.println(millis()-msMeasuredForDebugging);
+//}
 
 struct Buzzzzer
 {
@@ -151,9 +201,6 @@ struct Buzzzzer
  * 
  */
 
-
-    
-    void reserveBuzz(uint16_t l) { len=l; }
     void playBuzz()
     {
         if(len==0)
@@ -385,8 +432,6 @@ void PrintKey(uint8_t keycode)
     Serial.print((KBD_Hijacker.getLogicalState(KEY_RIGHT_SHIFT) == true) ? "S" : " ");
     Serial.print((KBD_Hijacker.getLogicalState(KEY_RIGHT_ALT)   == true) ? "A" : " ");
     Serial.print((KBD_Hijacker.getLogicalState(KEY_RIGHT_GUI)   == true) ? "G" : " ");
-
-    MEASURE_FREE_MEMORY
 }
 void OnRawPress(uint8_t keycode)
 {
@@ -408,7 +453,15 @@ void OnRawPress(uint8_t keycode)
     isExistWaitingEvent_Press = true;
     numDN+=1;
 
-    if(isSerial){ Serial.print(F("\n(Before Hijack) DN ")); PrintKey(keycode); Serial.println(); }
+
+
+    if(isSerial)
+    {
+        MEASURE_FREE_MEMORY();
+        
+        Serial.print(F("\n(Before Hijack) DN ")); PrintKey(keycode);
+        Serial.println();
+    }
 }
 void OnRawRelease(uint8_t keycode)
 {
@@ -430,8 +483,16 @@ void OnRawRelease(uint8_t keycode)
 
     //syncToggleKeyStates() in a few ms
     if(key == KEY_NUM_LOCK || key == KEY_CAPS_LOCK || key == KEY_SCROLL_LOCK) KBD_Hijacker.reserveSyncTKS=true;
+
+
     
-    if(isSerial){ Serial.print(F("\n(Before Hijack) UP ")); PrintKey(keycode); Serial.print(F("         Pressed Time : ")); Serial.println(millis()-msLatestEventPressed); }
+    if(isSerial)
+    {
+        MEASURE_FREE_MEMORY();
+        
+        Serial.print(F("\n(Before Hijack) UP ")); PrintKey(keycode);
+        Serial.print(F("         Pressed Time : ")); Serial.println(millis()-msLatestEventPressed);
+    }
 }
 
 

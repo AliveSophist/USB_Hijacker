@@ -101,6 +101,9 @@ void KeyboardHijacker::pressandreleaseKeys(int32_t len, int32_t* keys)
         Keyboard.press(keys[i]); delay(1);
         Keyboard.release(keys[i]); delay(1);
     }
+    
+    delay(11);
+    delete[] keys;
 
     return;
 }
@@ -131,10 +134,14 @@ void KeyboardHijacker::pressandreleaseShortcutKey(int32_t len, int32_t* keys)
     {
         Keyboard.press(keys[i]); delay(1);
     }
+    
     for(int32_t i=0; i<len; i++)
     {
         Keyboard.release(keys[i]); delay(1);
     }
+    
+    delay(11);
+    delete[] keys;
 
     return;
 }
@@ -153,6 +160,9 @@ void KeyboardHijacker::pressandreleaseKeys_LikeHuman(int32_t len, int32_t* keys)
         Keyboard.press(keys[i]); randomDelayGenerator();
         Keyboard.release(keys[i]); randomDelayGenerator_Manually(15,+10);
     }
+    
+    delay(11);
+    delete[] keys;
 
     return;
 }
@@ -179,6 +189,9 @@ void KeyboardHijacker::pressandreleaseShortcutKey_LikeHuman(int32_t len, int32_t
     {
         Keyboard.release(keys[i]); randomDelayGenerator_Manually(15,+10);
     }
+    
+    delay(11);
+    delete[] keys;
 
     return;
 }
