@@ -80,8 +80,10 @@ extern "C"
 
 #include <USBHost_t36.h>
 
+//#include <SPI.h>
+
 #include <SD.h>
-#include <SPI.h>
+File textfile;
 
 #include "res_layouts.h"
 #include "res_pitches.h"

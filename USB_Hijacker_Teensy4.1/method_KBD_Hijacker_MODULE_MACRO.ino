@@ -1,6 +1,4 @@
 
-File textfile;
-
 bool isMacroRecording   = false;
 bool isMacroPlaying     = false;
 
@@ -45,7 +43,7 @@ void MODULE_MACRO_PLAYER_OR_RECORDER_START(const char* fname)
     {
         if(!SD.exists(filename))
         {
-            //call off playing
+            //shutdown playing
             if(isSerial) Serial.println("MODULE_MACRO_PLAYER_START MISFIRE !!! FILE MISSING !!!");
             return;
         }
@@ -60,7 +58,7 @@ void MODULE_MACRO_PLAYER_OR_RECORDER_START(const char* fname)
     // START RECORDER
     else
     {
-        //reeset file
+        //reset file
         if(SD.exists(filename)) SD.remove(filename);
         textfile = SD.open(filename,FILE_WRITE);
         
@@ -227,7 +225,7 @@ void MODULE_MACRO_PLAYER_ONGOING()
             int8_t index_0x = readline.indexOf("0X");
             if(index_0x < 4) return;
             
-            uint8_t keycodeLatest = x2i(readline.substring(index_0x+2));
+            uint8_t keycodeLatest = x2i( readline.substring(index_0x+2) );
 
             KBD_Hijacker.pressandreleaseKey(keycode_To_TeensyLayout(keycodeLatest));
             
@@ -240,7 +238,7 @@ void MODULE_MACRO_PLAYER_ONGOING()
             int8_t index_0x = readline.indexOf("0X");
             if(index_0x < 2) return;
             
-            uint8_t keycodeLatest = x2i(readline.substring(index_0x+2));
+            uint8_t keycodeLatest = x2i( readline.substring(index_0x+2) );
     
             //simmilar to OnRawPress(uint8_t keycode)
             {
@@ -263,7 +261,7 @@ void MODULE_MACRO_PLAYER_ONGOING()
             int8_t index_0x = readline.indexOf("0X");
             if(index_0x < 2) return;
             
-            uint8_t keycodeLatest = x2i(readline.substring(index_0x+2));
+            uint8_t keycodeLatest = x2i( readline.substring(index_0x+2) );
     
             //simmilar to OnRawRelease(uint8_t keycode)
             {
@@ -361,9 +359,10 @@ String split_findNum(String str)
 {
     int8_t index_Num = -1;
 
-    char buf[str.length()+1]; str.toCharArray(buf,str.length()+1);
+    char buf[str.length()+1];
+    str.toCharArray(buf,str.length()+1);
+    
     char* s = buf;
-
     uint32_t x = 0;
     while(*s)
     {
@@ -375,21 +374,17 @@ String split_findNum(String str)
         s++; x++;
     }
 
-    if(-1 < index_Num)
-    {
-        return str.substring(index_Num);
-    }
-    else
-    {
-        return "0";
-    }
+    if(-1 < index_Num) return str.substring(index_Num);
+    
+    return "0"; // Invalid str !!
 }
 
 uint32_t x2i(String str) 
 {
-    char buf[str.length()+1]; str.toCharArray(buf,str.length()+1);
+    char buf[str.length()+1];
+    str.toCharArray(buf,str.length()+1);
+    
     char* s = buf;
-
     uint32_t x = 0;
     while(true)
     {
@@ -413,9 +408,10 @@ uint32_t x2i(String str)
 }
 uint32_t d2i(String str) 
 {
-    char buf[str.length()+1]; str.toCharArray(buf,str.length()+1);
+    char buf[str.length()+1];
+    str.toCharArray(buf,str.length()+1);
+    
     char* s = buf;
-
     uint32_t x = 0;
     while(true)
     {
