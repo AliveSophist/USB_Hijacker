@@ -217,17 +217,47 @@ void MODULE_MACRO_PLAYER_ONGOING()
         {
             if('a' <= readline[i] && readline[i] <= 'z')
                 readline[i] -= 32;
+
+            //ignore 'TY ("")' inner strings
+            if(readline[i] == '\"')
+                break;
         }
     
         //analyze MacroEvent
         if      (-1 < readline.indexOf("DNUP"))
         {
-            int8_t index_0x = readline.indexOf("0X");
-            if(index_0x < 4) return;
-            
-            uint8_t keycodeLatest = x2i( readline.substring(index_0x+2) );
+            uint8_t keycode;
 
-            KBD_Hijacker.pressandreleaseKey(keycode_To_TeensyLayout(keycodeLatest));
+            int8_t index_0x  = readline.indexOf("0X");
+            int8_t index_KEY = readline.indexOf("KEY");
+            if      (index_0x  >= 4)    keycode = x2i(readline.substring(index_0x+2));
+            else if (index_KEY >= 4)    keycode = keycodeStr_To_keycode( split_keycodeStr(readline.substring(index_KEY)) );
+            else    return;
+
+            {
+                //OnRawPress By Macro
+                KeyLogger.push(keycode);
+                key   = keycode_To_TeensyLayout(keycode);
+                event = true;
+                if(isSerial){ Serial.print(F("\n(*MACRO EVENT*) DN ")); PrintKey(keycode); Serial.println(); }
+
+                //txHijackedKeyEvent By Macro
+                msLatestEventCame = msLatestEventPressed = millis();
+                KBD_Hijacker.txHijackedKeyEvent();
+            }
+
+            delay(11);
+    
+            {
+                //OnRawRelease By Macro
+                key   = keycode_To_TeensyLayout(keycode);
+                event = false;
+                if(isSerial){ Serial.print(F("\n(*MACRO EVENT*) UP ")); PrintKey(keycode); Serial.print(F("         Pressed Time : ")); Serial.println(millis()-msLatestEventPressed); }
+            
+                //txHijackedKeyEvent By Macro
+                msLatestEventCame = millis();
+                KBD_Hijacker.txHijackedKeyEvent();
+            }
             
             byMacro=true;
             numPlayed++;
@@ -235,21 +265,24 @@ void MODULE_MACRO_PLAYER_ONGOING()
         }
         else if (-1 < readline.indexOf("DN"))
         {
-            int8_t index_0x = readline.indexOf("0X");
-            if(index_0x < 2) return;
-            
-            uint8_t keycodeLatest = x2i( readline.substring(index_0x+2) );
+            uint8_t keycode;
+
+            int8_t index_0x  = readline.indexOf("0X");
+            int8_t index_KEY = readline.indexOf("KEY");
+            if      (index_0x  >= 2)    keycode = x2i(readline.substring(index_0x+2));
+            else if (index_KEY >= 2)    keycode = keycodeStr_To_keycode( split_keycodeStr(readline.substring(index_KEY)) );
+            else    return;
     
-            //simmilar to OnRawPress(uint8_t keycode)
             {
-                KeyLogger.push(keycodeLatest);
-                
-                key   = keycode_To_TeensyLayout(keycodeLatest);
+                //OnRawPress By Macro
+                KeyLogger.push(keycode);
+                key   = keycode_To_TeensyLayout(keycode);
                 event = true;
-                
-                isExistWaitingEvent_Press = true;
-                
-                if(isSerial){ Serial.print(F("\n(*MACRO EVENT*) DN ")); PrintKey(keycodeLatest); Serial.println(); }
+                if(isSerial){ Serial.print(F("\n(*MACRO EVENT*) DN ")); PrintKey(keycode); Serial.println(); }
+
+                //txHijackedKeyEvent By Macro
+                msLatestEventCame = msLatestEventPressed = millis();
+                KBD_Hijacker.txHijackedKeyEvent();
             }
             
             byMacro=true;
@@ -258,19 +291,23 @@ void MODULE_MACRO_PLAYER_ONGOING()
         }
         else if (-1 < readline.indexOf("UP"))
         {
-            int8_t index_0x = readline.indexOf("0X");
-            if(index_0x < 2) return;
-            
-            uint8_t keycodeLatest = x2i( readline.substring(index_0x+2) );
+            uint8_t keycode;
+
+            int8_t index_0x  = readline.indexOf("0X");
+            int8_t index_KEY = readline.indexOf("KEY");
+            if      (index_0x  >= 2)    keycode = x2i(readline.substring(index_0x+2));
+            else if (index_KEY >= 2)    keycode = keycodeStr_To_keycode( split_keycodeStr(readline.substring(index_KEY)) );
+            else    return;
     
-            //simmilar to OnRawRelease(uint8_t keycode)
             {
-                key   = keycode_To_TeensyLayout(keycodeLatest);
+                //OnRawRelease By Macro
+                key   = keycode_To_TeensyLayout(keycode);
                 event = false;
-                
-                isExistWaitingEvent_Release = true;
-                
-                if(isSerial){ Serial.print(F("\n(*MACRO EVENT*) UP ")); PrintKey(keycodeLatest); Serial.print(F("         Pressed Time : ")); Serial.println(millis()-msLatestEventPressed); }
+                if(isSerial){ Serial.print(F("\n(*MACRO EVENT*) UP ")); PrintKey(keycode); Serial.print(F("         Pressed Time : ")); Serial.println(millis()-msLatestEventPressed); }
+
+                //txHijackedKeyEvent By Macro
+                msLatestEventCame = millis();
+                KBD_Hijacker.txHijackedKeyEvent();
             }
             
             byMacro=true;
