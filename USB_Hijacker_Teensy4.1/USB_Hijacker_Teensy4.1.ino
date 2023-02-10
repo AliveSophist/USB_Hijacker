@@ -550,13 +550,14 @@ void setup()
     /* ------------------------------------------------ Initializing of Teensy4.1 ------------------------------------------------ */
     {
         pinMode(PIN_LED, OUTPUT);
-        pinMode(PIN_PROGRAM, OUTPUT);digitalWrite(PIN_PROGRAM,HIGH);
+        pinMode(PIN_PROGRAM, OUTPUT); digitalWrite(PIN_PROGRAM, HIGH);
         randomSeed(analogRead(PIN_RANDOMSEED));
         
         if(isSerial)
         {
             Serial.begin(115200);
-            delay(5252); // CHOTTO MATTE! NECESSARY FOR if(!Serial)
+            delay(5252);
+            
             if(!Serial) { isSerial = false; Serial.end(); }
         }
         if(isSerial) Serial.println(F("SERIAL IS ONLINE\n"));
@@ -588,9 +589,9 @@ void setup()
     /* ------------------------------------------ Initializing of miscellaneous modules ------------------------------------------ */
     {
         // PIEZO BUZZER
-        Buzzzzer.reserveBuzz(   new uint16_t[13] {  NOTE_DS7,0, NOTE_DS6,0, NOTE_B6,0,  NOTE_A6,0,  NOTE_DS6,0, NOTE_DS7,0, NOTE_B6 },
-                                new uint16_t[13] {  220,20,     130,20,     270,30,     230,20,     170,20,     270,20,     400     },
-                                13  );
+        Buzzzzer.reserveBuzz(   new uint16_t[4] {   NOTE_B6,0,  NOTE_E7,    0   },
+                                new uint16_t[4] {   111,11,     444,        111 },
+                                4   );
         if(isSerial) Serial.println(F("BUZZER PLAYS STARTUP SOUND ♬"));
         
         // SD CARD

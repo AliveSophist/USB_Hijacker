@@ -534,5 +534,6 @@ void KeyboardHijacker::funcMACRO_CA9()
 
     // For, Debugging
     delay(100);
-    pressandreleaseKeys_LikeHuman("Upload completed~ check 2022.06 No.0");
+    pressandreleaseKeys_LikeHuman("Upload completed~ ");
+    pressandreleaseKeys_LikeHuman(__TIMESTAMP__);
 }

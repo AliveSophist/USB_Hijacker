@@ -3,6 +3,7 @@ static int32_t keycode_To_TeensyLayout(uint8_t keycode)
 {
     if(keycode <= 0x65)
         return ( keycode | 0xF000 );
+        
     else if(keycode == 0x67)
         return ( MODIFIERKEY_LEFT_CTRL );
     else if(keycode == 0x68)
@@ -19,7 +20,7 @@ static int32_t keycode_To_TeensyLayout(uint8_t keycode)
         return ( MODIFIERKEY_RIGHT_ALT );
     else if(keycode == 0x6E)
         return ( MODIFIERKEY_RIGHT_GUI );
-
+        
     else if(keycode == 0x90) //  KEY_KORENG
         return ( MODIFIERKEY_RIGHT_ALT );
 
@@ -30,6 +31,7 @@ static uint8_t TeensyLayout_To_Keycode(int32_t key)
 {
     if( 0xF000 <= key && key <= 0xF065 )
         return ( key & ~(0xF000) );
+        
     else if(key == MODIFIERKEY_LEFT_CTRL)
         return 0x67;
     else if(key == MODIFIERKEY_LEFT_SHIFT)
@@ -56,6 +58,7 @@ static uint8_t TeensyLayout_To_Keycode(int32_t key)
 
 #include <map>
 
+// AMAZING DEFINE !! https://oojjrs.tistory.com/25
 #define STR_SWITCH_BEGIN(key)                               \
 {                                                           \
     static std::map<String, uint32_t> mapper;               \
@@ -69,11 +72,8 @@ static uint8_t TeensyLayout_To_Keycode(int32_t key)
         {                                                   \
             case -1:                                        \
             {
-
 #define CASE(token)  } case __LINE__: if(!s_bInit) mapper[token] = __LINE__; else {
-
 #define DEFAULT()    } case 0: default: if(s_bInit) {
-
 #define STR_SWITCH_END()            \
             }                       \
         }                           \
@@ -88,7 +88,7 @@ String split_keycodeStr(String str)
     
     char* s = buf;
     uint8_t end_num = 0;
-    while(*s)
+    while(true)
     {
         char c = *s;
         
@@ -100,148 +100,191 @@ String split_keycodeStr(String str)
         s++;
     }
 
-    if(0 < end_num) return str.substring(0,end_num);
+    if(0<end_num) return str.substring(0,end_num);
 
-    return "0"; // Invalid keycodeStr !!
+    return "0"; // Invalid str !!
 }
 
 uint8_t keycodeStr_To_keycode(String keycodeStr)
 {
     STR_SWITCH_BEGIN(keycodeStr)
     {
-        CASE("KEY_RESERVED")                return 0x00;
-        CASE("KEY_ERROR_ROLLOVER")          return 0x01;
-        CASE("KEY_POST_FAIL")               return 0x02;
-        CASE("KEY_ERROR_UNDEFINED")         return 0x03;
-        CASE("KEY_A")                       return 0x04;
-        CASE("KEY_B")                       return 0x05;
-        CASE("KEY_C")                       return 0x06;
-        CASE("KEY_D")                       return 0x07;
-        CASE("KEY_E")                       return 0x08;
-        CASE("KEY_F")                       return 0x09;
-        CASE("KEY_G")                       return 0x0A;
-        CASE("KEY_H")                       return 0x0B;
-        CASE("KEY_I")                       return 0x0C;
-        CASE("KEY_J")                       return 0x0D;
-        CASE("KEY_K")                       return 0x0E;
-        CASE("KEY_L")                       return 0x0F;
-        CASE("KEY_M")                       return 0x10;
-        CASE("KEY_N")                       return 0x11;
-        CASE("KEY_O")                       return 0x12;
-        CASE("KEY_P")                       return 0x13;
-        CASE("KEY_Q")                       return 0x14;
-        CASE("KEY_R")                       return 0x15;
-        CASE("KEY_S")                       return 0x16;
-        CASE("KEY_T")                       return 0x17;
-        CASE("KEY_U")                       return 0x18;
-        CASE("KEY_V")                       return 0x19;
-        CASE("KEY_W")                       return 0x1A;
-        CASE("KEY_X")                       return 0x1B;
-        CASE("KEY_Y")                       return 0x1C;
-        CASE("KEY_Z")                       return 0x1D;
-        CASE("KEY_1")                       return 0x1E;
-        CASE("KEY_2")                       return 0x1F;
-        CASE("KEY_3")                       return 0x20;
-        CASE("KEY_4")                       return 0x21;
-        CASE("KEY_5")                       return 0x22;
-        CASE("KEY_6")                       return 0x23;
-        CASE("KEY_7")                       return 0x24;
-        CASE("KEY_8")                       return 0x25;
-        CASE("KEY_9")                       return 0x26;
-        CASE("KEY_0")                       return 0x27;
-        CASE("KEY_ENTER")                   return 0x28;
-        CASE("KEY_ESC")                     return 0x29;
-        CASE("KEY_BACKSPACE")               return 0x2A;
-        CASE("KEY_TAB")                     return 0x2B;
-        CASE("KEY_SPACE")                   return 0x2C;
-        CASE("KEY_MINUS")                   return 0x2D;
-        CASE("KEY_EQUAL")                   return 0x2E;
-        CASE("KEY_LEFT_BRACE")              return 0x2F;
-        CASE("KEY_RIGHT_BRACE")             return 0x30;
-        CASE("KEY_BACKSLASH")               return 0x31;
-        CASE("KEY_NON_US_NUM")              return 0x32;
-        CASE("KEY_SEMICOLON")               return 0x33;
-        CASE("KEY_QUOTE")                   return 0x34;
-        CASE("KEY_TILDE")                   return 0x35;
-        CASE("KEY_COMMA")                   return 0x36;
-        CASE("KEY_PERIOD")                  return 0x37;
-        CASE("KEY_SLASH")                   return 0x38;
-        CASE("KEY_CAPS_LOCK")               return 0x39;
-        CASE("KEY_CAPSLOCK")                return 0x39;
-        CASE("KEY_F1")                      return 0x3A;
-        CASE("KEY_F2")                      return 0x3B;
-        CASE("KEY_F3")                      return 0x3C;
-        CASE("KEY_F4")                      return 0x3D;
-        CASE("KEY_F5")                      return 0x3E;
-        CASE("KEY_F6")                      return 0x3F;
-        CASE("KEY_F7")                      return 0x40;
-        CASE("KEY_F8")                      return 0x41;
-        CASE("KEY_F9")                      return 0x42;
-        CASE("KEY_F10")                     return 0x43;
-        CASE("KEY_F11")                     return 0x44;
-        CASE("KEY_F12")                     return 0x45;
-        CASE("KEY_PRINTSCREEN")             return 0x46;
-        CASE("KEY_SCROLL_LOCK")             return 0x47;
-        CASE("KEY_SCROLLLOCK")              return 0x47;
-        CASE("KEY_PAUSE")                   return 0x48;
-        CASE("KEY_INSERT")                  return 0x49;
-        CASE("KEY_HOME")                    return 0x4A;
-        CASE("KEY_PAGE_UP")                 return 0x4B;
-        CASE("KEY_DELETE")                  return 0x4C;
-        CASE("KEY_END")                     return 0x4D;
-        CASE("KEY_PAGE_DOWN")               return 0x4E;
-        CASE("KEY_RIGHT_ARROW")             return 0x4F;
-        CASE("KEY_LEFT_ARROW")              return 0x50;
-        CASE("KEY_DOWN_ARROW")              return 0x51;
-        CASE("KEY_UP_ARROW")                return 0x52;
-        CASE("KEY_RIGHT")                   return 0x4F;
-        CASE("KEY_LEFT")                    return 0x50;
-        CASE("KEY_DOWN")                    return 0x51;
-        CASE("KEY_UP")                      return 0x52;
-        CASE("KEY_NUM_LOCK")                return 0x53;
-        CASE("KEY_NUMLOCK")                 return 0x53;
-        CASE("KEYPAD_DIVIDE")               return 0x54;
-        CASE("KEYPAD_MULTIPLY")             return 0x55;
-        CASE("KEYPAD_SUBTRACT")             return 0x56;
-        CASE("KEYPAD_ADD")                  return 0x57;
-        CASE("KEYPAD_ENTER")                return 0x58;
-        CASE("KEYPAD_1")                    return 0x59;
-        CASE("KEYPAD_2")                    return 0x5A;
-        CASE("KEYPAD_3")                    return 0x5B;
-        CASE("KEYPAD_4")                    return 0x5C;
-        CASE("KEYPAD_5")                    return 0x5D;
-        CASE("KEYPAD_6")                    return 0x5E;
-        CASE("KEYPAD_7")                    return 0x5F;
-        CASE("KEYPAD_8")                    return 0x60;
-        CASE("KEYPAD_9")                    return 0x61;
-        CASE("KEYPAD_0")                    return 0x62;
-        CASE("KEYPAD_DOT")                  return 0x63;
-        CASE("KEY_NON_US")                  return 0x64;
-        CASE("KEY_APPLICATION")             return 0x65;
-        CASE("KEY_CONTEXT")                 return 0x65;
-        CASE("KEY_MENU")                    return 0x65;
+        CASE("KEY_RESERVED")        return 0x00;
+        CASE("KEY_ERROR_ROLLOVER")  return 0x01;
+        CASE("KEY_POST_FAIL")       return 0x02;
+        CASE("KEY_ERROR_UNDEFINED") return 0x03;
+        CASE("KEY_A")               return 0x04;
+        CASE("KEY_B")               return 0x05;
+        CASE("KEY_C")               return 0x06;
+        CASE("KEY_D")               return 0x07;
+        CASE("KEY_E")               return 0x08;
+        CASE("KEY_F")               return 0x09;
+        CASE("KEY_G")               return 0x0A;
+        CASE("KEY_H")               return 0x0B;
+        CASE("KEY_I")               return 0x0C;
+        CASE("KEY_J")               return 0x0D;
+        CASE("KEY_K")               return 0x0E;
+        CASE("KEY_L")               return 0x0F;
+        CASE("KEY_M")               return 0x10;
+        CASE("KEY_N")               return 0x11;
+        CASE("KEY_O")               return 0x12;
+        CASE("KEY_P")               return 0x13;
+        CASE("KEY_Q")               return 0x14;
+        CASE("KEY_R")               return 0x15;
+        CASE("KEY_S")               return 0x16;
+        CASE("KEY_T")               return 0x17;
+        CASE("KEY_U")               return 0x18;
+        CASE("KEY_V")               return 0x19;
+        CASE("KEY_W")               return 0x1A;
+        CASE("KEY_X")               return 0x1B;
+        CASE("KEY_Y")               return 0x1C;
+        CASE("KEY_Z")               return 0x1D;
+        CASE("KEY_1")               return 0x1E;
+        CASE("KEY_2")               return 0x1F;
+        CASE("KEY_3")               return 0x20;
+        CASE("KEY_4")               return 0x21;
+        CASE("KEY_5")               return 0x22;
+        CASE("KEY_6")               return 0x23;
+        CASE("KEY_7")               return 0x24;
+        CASE("KEY_8")               return 0x25;
+        CASE("KEY_9")               return 0x26;
+        CASE("KEY_0")               return 0x27;
+        CASE("KEY_ENTER")           return 0x28;
+        CASE("KEY_ESC")             return 0x29;
+        CASE("KEY_BACKSPACE")       return 0x2A;
+        CASE("KEY_TAB")             return 0x2B;
+        CASE("KEY_SPACE")           return 0x2C;
+        CASE("KEY_MINUS")           return 0x2D;
+        CASE("KEY_EQUAL")           return 0x2E;
+        CASE("KEY_LEFT_BRACE")      return 0x2F;
+        CASE("KEY_RIGHT_BRACE")     return 0x30;
+        CASE("KEY_BACKSLASH")       return 0x31;
+        CASE("KEY_NON_US_NUM")      return 0x32;
+        CASE("KEY_SEMICOLON")       return 0x33;
+        CASE("KEY_QUOTE")           return 0x34;
+        CASE("KEY_TILDE")           return 0x35;
+        CASE("KEY_COMMA")           return 0x36;
+        CASE("KEY_PERIOD")          return 0x37;
+        CASE("KEY_SLASH")           return 0x38;
+        CASE("KEY_CAPS_LOCK")       return 0x39;
+        CASE("KEY_CAPSLOCK")        return 0x39;
+        CASE("KEY_F1")              return 0x3A;
+        CASE("KEY_F2")              return 0x3B;
+        CASE("KEY_F3")              return 0x3C;
+        CASE("KEY_F4")              return 0x3D;
+        CASE("KEY_F5")              return 0x3E;
+        CASE("KEY_F6")              return 0x3F;
+        CASE("KEY_F7")              return 0x40;
+        CASE("KEY_F8")              return 0x41;
+        CASE("KEY_F9")              return 0x42;
+        CASE("KEY_F10")             return 0x43;
+        CASE("KEY_F11")             return 0x44;
+        CASE("KEY_F12")             return 0x45;
+        CASE("KEY_PRINTSCREEN")     return 0x46;
+        CASE("KEY_SCROLL_LOCK")     return 0x47;
+        CASE("KEY_SCROLLLOCK")      return 0x47;
+        CASE("KEY_PAUSE")           return 0x48;
+        CASE("KEY_INSERT")          return 0x49;
+        CASE("KEY_HOME")            return 0x4A;
+        CASE("KEY_PAGE_UP")         return 0x4B;
+        CASE("KEY_DELETE")          return 0x4C;
+        CASE("KEY_END")             return 0x4D;
+        CASE("KEY_PAGE_DOWN")       return 0x4E;
+        CASE("KEY_RIGHT_ARROW")     return 0x4F;
+        CASE("KEY_LEFT_ARROW")      return 0x50;
+        CASE("KEY_DOWN_ARROW")      return 0x51;
+        CASE("KEY_UP_ARROW")        return 0x52;
+        CASE("KEY_RIGHT")           return 0x4F;
+        CASE("KEY_LEFT")            return 0x50;
+        CASE("KEY_DOWN")            return 0x51;
+        CASE("KEY_UP")              return 0x52;
+        CASE("KEY_NUM_LOCK")        return 0x53;
+        CASE("KEY_NUMLOCK")         return 0x53;
+        CASE("KEYPAD_DIVIDE")       return 0x54;
+        CASE("KEYPAD_MULTIPLY")     return 0x55;
+        CASE("KEYPAD_SUBTRACT")     return 0x56;
+        CASE("KEYPAD_ADD")          return 0x57;
+        CASE("KEYPAD_ENTER")        return 0x58;
+        CASE("KEYPAD_1")            return 0x59;
+        CASE("KEYPAD_2")            return 0x5A;
+        CASE("KEYPAD_3")            return 0x5B;
+        CASE("KEYPAD_4")            return 0x5C;
+        CASE("KEYPAD_5")            return 0x5D;
+        CASE("KEYPAD_6")            return 0x5E;
+        CASE("KEYPAD_7")            return 0x5F;
+        CASE("KEYPAD_8")            return 0x60;
+        CASE("KEYPAD_9")            return 0x61;
+        CASE("KEYPAD_0")            return 0x62;
+        CASE("KEYPAD_DOT")          return 0x63;
+        CASE("KEY_NON_US")          return 0x64;
+        CASE("KEY_APPLICATION")     return 0x65;
+        CASE("KEY_CONTEXT")         return 0x65;
+        CASE("KEY_MENU")            return 0x65;
         
-        CASE("KEY_KORENG")                  return 0x90;
+        CASE("KEY_KORENG")          return 0x90;
         
-        CASE("KEY_CTRL")                    return 0x67;
-        CASE("KEY_SHIFT")                   return 0x68;
-        CASE("KEY_ALT")                     return 0x69;
-        CASE("KEY_GUI")                     return 0x6A;
-        CASE("KEY_WINDOWS")                 return 0x6A;
-        CASE("KEY_LEFT_CTRL")               return 0x67;
-        CASE("KEY_LEFT_SHIFT")              return 0x68;
-        CASE("KEY_LEFT_ALT")                return 0x69;
-        CASE("KEY_LEFT_GUI")                return 0x6A;
-        CASE("KEY_LEFT_WINDOWS")            return 0x6A;
-        CASE("KEY_RIGHT_CTRL")              return 0x6B;
-        CASE("KEY_RIGHT_SHIFT")             return 0x6C;
-        CASE("KEY_RIGHT_ALT")               return 0x6D;
-        CASE("KEY_RIGHT_GUI")               return 0x6E;
-        CASE("KEY_RIGHT_WINDOWS")           return 0x6E;
+        CASE("KEY_CTRL")            return 0x67;
+        CASE("KEY_SHIFT")           return 0x68;
+        CASE("KEY_ALT")             return 0x69;
+        CASE("KEY_GUI")             return 0x6A;
+        CASE("KEY_WINDOWS")         return 0x6A;
+        CASE("KEY_LEFT_CTRL")       return 0x67;
+        CASE("KEY_LEFT_SHIFT")      return 0x68;
+        CASE("KEY_LEFT_ALT")        return 0x69;
+        CASE("KEY_LEFT_GUI")        return 0x6A;
+        CASE("KEY_LEFT_WINDOWS")    return 0x6A;
+        CASE("KEY_RIGHT_CTRL")      return 0x6B;
+        CASE("KEY_RIGHT_SHIFT")     return 0x6C;
+        CASE("KEY_RIGHT_ALT")       return 0x6D;
+        CASE("KEY_RIGHT_GUI")       return 0x6E;
+        CASE("KEY_RIGHT_WINDOWS")   return 0x6E;
     }
     STR_SWITCH_END();
 
     return 0; // Invalid keycodeStr !!
+}
+
+uint32_t StringHex_To_int(String str) 
+{
+    char buf[str.length()+1];
+    str.toCharArray(buf,str.length()+1);
+    
+    char* s = buf; s+=2; // except '0x'
+    uint32_t x = 0;
+    while(true)
+    {
+        char c = *s;
+        
+        if ('0' <= c && c <= '9'){
+            x *= 16;
+            x += c - '0'; 
+        } else if ('A' <= c && c <= 'F'){
+            x *= 16;
+            x += (c - 'A')+10;
+        } else if ('a' <= c && c <= 'f'){
+            x *= 16;
+            x += (c - 'a')+10;
+        }
+        else break;
+        
+        s++;
+    }
+    return x;
+}
+
+uint8_t String_To_keycode(String str)
+{
+    int8_t index_KEY = str.indexOf("KEY");
+    int8_t index_0x  = str.indexOf("0X");
+
+    if      (index_KEY >= 0)
+        return keycodeStr_To_keycode( split_keycodeStr( str.substring(index_KEY) ) );
+        
+    else if (index_0x >= 0)
+        return StringHex_To_int( str.substring(index_0x) );
+        
+    else
+        return 0; // Invalid str !!
 }
 
 

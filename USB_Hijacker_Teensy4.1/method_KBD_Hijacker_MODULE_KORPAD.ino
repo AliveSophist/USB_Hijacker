@@ -181,12 +181,11 @@ inline void MODULE_KOREAN_KEYPAD_EVOLUTION()
     #if (KEYPAD_KOREAN_LAYOUT > 0)
 
     static bool KoreanKeypadToggle = false;
-    static char* KorSlot0 = (char*)malloc(sizeof(char) * 3);
-    static char* KorSlot1 = (char*)malloc(sizeof(char) * 3);
-    static char* KorSlot2 = (char*)malloc(sizeof(char) * 3);
-    static char* KorSlot3 = (char*)malloc(sizeof(char) * 3);
-    static char* KorSlot4 = (char*)malloc(sizeof(char) * 3);
-    //static char KorSlot0[3], KorSlot1[3], KorSlot2[3], KorSlot3[3], KorSlot4[3];
+    static char* KorSlot0 = (char*) malloc( sizeof(char) * 3 );
+    static char* KorSlot1 = (char*) malloc( sizeof(char) * 3 );
+    static char* KorSlot2 = (char*) malloc( sizeof(char) * 3 );
+    static char* KorSlot3 = (char*) malloc( sizeof(char) * 3 );
+    static char* KorSlot4 = (char*) malloc( sizeof(char) * 3 );
     
     static bool ConvertMode_Alphabet = false;
 

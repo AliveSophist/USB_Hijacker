@@ -224,37 +224,30 @@ void MODULE_MACRO_PLAYER_ONGOING()
         }
     
         //analyze MacroEvent
-        if      (-1 < readline.indexOf("DNUP"))
+        if(-1 < readline.indexOf("DNUP"))
         {
-            uint8_t keycode;
-
-            int8_t index_0x  = readline.indexOf("0X");
-            int8_t index_KEY = readline.indexOf("KEY");
-            if      (index_0x  >= 4)    keycode = x2i(readline.substring(index_0x+2));
-            else if (index_KEY >= 4)    keycode = keycodeStr_To_keycode( split_keycodeStr(readline.substring(index_KEY)) );
-            else    return;
-
+            uint8_t keycode = String_To_keycode(readline);
+            
+            if(keycode!=0)
             {
-                //OnRawPress By Macro
+                // OnRawPress By Macro
                 KeyLogger.push(keycode);
                 key   = keycode_To_TeensyLayout(keycode);
                 event = true;
                 if(isSerial){ Serial.print(F("\n(*MACRO EVENT*) DN ")); PrintKey(keycode); Serial.println(); }
 
-                //txHijackedKeyEvent By Macro
+                // txHijackedKeyEvent By Macro
                 msLatestEventCame = msLatestEventPressed = millis();
                 KBD_Hijacker.txHijackedKeyEvent();
-            }
 
-            delay(11);
-    
-            {
-                //OnRawRelease By Macro
+                delay(11);
+                
+                // OnRawRelease By Macro
                 key   = keycode_To_TeensyLayout(keycode);
                 event = false;
                 if(isSerial){ Serial.print(F("\n(*MACRO EVENT*) UP ")); PrintKey(keycode); Serial.print(F("         Pressed Time : ")); Serial.println(millis()-msLatestEventPressed); }
             
-                //txHijackedKeyEvent By Macro
+                // txHijackedKeyEvent By Macro
                 msLatestEventCame = millis();
                 KBD_Hijacker.txHijackedKeyEvent();
             }
@@ -263,24 +256,19 @@ void MODULE_MACRO_PLAYER_ONGOING()
             numPlayed++;
             return;
         }
-        else if (-1 < readline.indexOf("DN"))
+        else if(-1 < readline.indexOf("DN"))
         {
-            uint8_t keycode;
-
-            int8_t index_0x  = readline.indexOf("0X");
-            int8_t index_KEY = readline.indexOf("KEY");
-            if      (index_0x  >= 2)    keycode = x2i(readline.substring(index_0x+2));
-            else if (index_KEY >= 2)    keycode = keycodeStr_To_keycode( split_keycodeStr(readline.substring(index_KEY)) );
-            else    return;
-    
+            uint8_t keycode = String_To_keycode(readline);
+            
+            if(keycode!=0)
             {
-                //OnRawPress By Macro
+                // OnRawPress By Macro
                 KeyLogger.push(keycode);
                 key   = keycode_To_TeensyLayout(keycode);
                 event = true;
                 if(isSerial){ Serial.print(F("\n(*MACRO EVENT*) DN ")); PrintKey(keycode); Serial.println(); }
 
-                //txHijackedKeyEvent By Macro
+                // txHijackedKeyEvent By Macro
                 msLatestEventCame = msLatestEventPressed = millis();
                 KBD_Hijacker.txHijackedKeyEvent();
             }
@@ -289,23 +277,18 @@ void MODULE_MACRO_PLAYER_ONGOING()
             numPlayed++;
             return;
         }
-        else if (-1 < readline.indexOf("UP"))
+        else if(-1 < readline.indexOf("UP"))
         {
-            uint8_t keycode;
-
-            int8_t index_0x  = readline.indexOf("0X");
-            int8_t index_KEY = readline.indexOf("KEY");
-            if      (index_0x  >= 2)    keycode = x2i(readline.substring(index_0x+2));
-            else if (index_KEY >= 2)    keycode = keycodeStr_To_keycode( split_keycodeStr(readline.substring(index_KEY)) );
-            else    return;
-    
+            uint8_t keycode = String_To_keycode(readline);
+            
+            if(keycode!=0)
             {
-                //OnRawRelease By Macro
+                // OnRawRelease By Macro
                 key   = keycode_To_TeensyLayout(keycode);
                 event = false;
                 if(isSerial){ Serial.print(F("\n(*MACRO EVENT*) UP ")); PrintKey(keycode); Serial.print(F("         Pressed Time : ")); Serial.println(millis()-msLatestEventPressed); }
 
-                //txHijackedKeyEvent By Macro
+                // txHijackedKeyEvent By Macro
                 msLatestEventCame = millis();
                 KBD_Hijacker.txHijackedKeyEvent();
             }
@@ -330,9 +313,9 @@ void MODULE_MACRO_PLAYER_ONGOING()
         }
         else
         {
-            msLeftUntilNextMacro = d2i(split_findNum(readline));
+            msLeftUntilNextMacro = StringDec_To_int(split_findNum(readline));
     
-            if(isSerial){ Serial.print(F("                                            Next MacroEvent : ")); Serial.println(msLeftUntilNextMacro); }
+            if(isSerial){ Serial.print(F("                                            Next MacroEvent lefts : ")); Serial.println(msLeftUntilNextMacro); }
             
             byMacro=true;
             numPlayed++;
@@ -401,7 +384,7 @@ String split_findNum(String str)
     
     char* s = buf;
     uint32_t x = 0;
-    while(*s)
+    while(true)
     {
         if ('0' <= *s && *s <= '9'){
             index_Num = x;
@@ -416,34 +399,7 @@ String split_findNum(String str)
     return "0"; // Invalid str !!
 }
 
-uint32_t x2i(String str) 
-{
-    char buf[str.length()+1];
-    str.toCharArray(buf,str.length()+1);
-    
-    char* s = buf;
-    uint32_t x = 0;
-    while(true)
-    {
-        char c = *s;
-        
-        if ('0' <= c && c <= '9'){
-            x *= 16;
-            x += c - '0'; 
-        } else if ('A' <= c && c <= 'F'){
-            x *= 16;
-            x += (c - 'A')+10;
-        } else if ('a' <= c && c <= 'f'){
-            x *= 16;
-            x += (c - 'a')+10;
-        }
-        else break;
-        
-        s++;
-    }
-    return x;
-}
-uint32_t d2i(String str) 
+uint32_t StringDec_To_int(String str) 
 {
     char buf[str.length()+1];
     str.toCharArray(buf,str.length()+1);
