@@ -349,45 +349,45 @@ void KeyboardHijacker::txHijackedKeyEvent()
                 }
 
                 // Multipurpose Shortcut KEYs (Shift+1, Shift+2, Shift+3, … Shift+9)
-                else if(getPhysicalState(KEYPAD_PLUS))
-                {
-                    if(event)
-                    {
-                        releaseAllBeingHoldDownKey(); delay(10);
-                        
-                        switch(key)
-                        {
-                            case KEYPAD_1:
-                                pressandreleaseShortcutKey( 2 , new int32_t[2] {KEY_SHIFT,KEY_1} );
-                            break;
-                            case KEYPAD_2:
-                                pressandreleaseShortcutKey( 2 , new int32_t[2] {KEY_SHIFT,KEY_2} );
-                            break;
-                            case KEYPAD_3:
-                                pressandreleaseShortcutKey( 2 , new int32_t[2] {KEY_SHIFT,KEY_3} );
-                            break;
-                            case KEYPAD_4:
-                                pressandreleaseShortcutKey( 2 , new int32_t[2] {KEY_SHIFT,KEY_4} );
-                            break;
-                            case KEYPAD_5:
-                                pressandreleaseShortcutKey( 2 , new int32_t[2] {KEY_SHIFT,KEY_5} );
-                            break;
-                            case KEYPAD_6:
-                                pressandreleaseShortcutKey( 2 , new int32_t[2] {KEY_SHIFT,KEY_6} );
-                            break;
-                            case KEYPAD_7:
-                                pressandreleaseShortcutKey( 2 , new int32_t[2] {KEY_SHIFT,KEY_7} );
-                            break;
-                            case KEYPAD_8:
-                                pressandreleaseShortcutKey( 2 , new int32_t[2] {KEY_SHIFT,KEY_8} );
-                            break;
-                            case KEYPAD_9:
-                                pressandreleaseShortcutKey( 2 , new int32_t[2] {KEY_SHIFT,KEY_9} );
-                            break;
-                        }
-                    }
-                    key=0;
-                }
+//                else if(getPhysicalState(KEYPAD_PLUS))
+//                {
+//                    if(event)
+//                    {
+//                        releaseAllBeingHoldDownKey(); delay(10);
+//                        
+//                        switch(key)
+//                        {
+//                            case KEYPAD_1:
+//                                pressandreleaseShortcutKey( 2 , new int32_t[2] {KEY_SHIFT,KEY_1} );
+//                            break;
+//                            case KEYPAD_2:
+//                                pressandreleaseShortcutKey( 2 , new int32_t[2] {KEY_SHIFT,KEY_2} );
+//                            break;
+//                            case KEYPAD_3:
+//                                pressandreleaseShortcutKey( 2 , new int32_t[2] {KEY_SHIFT,KEY_3} );
+//                            break;
+//                            case KEYPAD_4:
+//                                pressandreleaseShortcutKey( 2 , new int32_t[2] {KEY_SHIFT,KEY_4} );
+//                            break;
+//                            case KEYPAD_5:
+//                                pressandreleaseShortcutKey( 2 , new int32_t[2] {KEY_SHIFT,KEY_5} );
+//                            break;
+//                            case KEYPAD_6:
+//                                pressandreleaseShortcutKey( 2 , new int32_t[2] {KEY_SHIFT,KEY_6} );
+//                            break;
+//                            case KEYPAD_7:
+//                                pressandreleaseShortcutKey( 2 , new int32_t[2] {KEY_SHIFT,KEY_7} );
+//                            break;
+//                            case KEYPAD_8:
+//                                pressandreleaseShortcutKey( 2 , new int32_t[2] {KEY_SHIFT,KEY_8} );
+//                            break;
+//                            case KEYPAD_9:
+//                                pressandreleaseShortcutKey( 2 , new int32_t[2] {KEY_SHIFT,KEY_9} );
+//                            break;
+//                        }
+//                    }
+//                    key=0;
+//                }
                 
                 else if (key == KEYPAD_9)
                 { // Volume++
@@ -459,8 +459,8 @@ void KeyboardHijacker::txHijackedKeyEvent()
             if (numBeingHoldDownKey)numBeingHoldDownKey--;
             setLogicalState(key,false);
 
-            //Release all Pressed signals for contingenciesㅡ
-            if (key == KEYPAD_ASTERIX || key == KEY_ESC) { releaseAllBeingHoldDownKey(); }
+            //Release all Pressed signals for contingencies, When only ESC event
+            if (key == KEY_ESC && numBeingHoldDownKey == 0) { releaseAllBeingHoldDownKey(); }
         }
     }
 

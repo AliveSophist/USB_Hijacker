@@ -610,6 +610,8 @@ void setup()
 
 
     if(isSerial) Serial.println(F("OPERATION COMPLETE, SIR! XD"));
+
+    MODULE_INITIALIZE_KEYMAP();
 }
 
 void loop()

@@ -1,10 +1,10 @@
 
-static std::map<uint8_t, void*> keymap;
-
 struct MappedData {
-    uint8_t* mappedKeys;
-    uint8_t mappedNum;
+    uint8_t mappedLen;
+    uint8_t* mappedKeycodes;
 };
+
+static std::map<uint8_t, MappedData> keymap;
 
 void MODULE_INITIALIZE_KEYMAP()
 {
@@ -18,9 +18,9 @@ void MODULE_INITIALIZE_KEYMAP()
     }
 
 
-
-    textfile = SD.open("MAPPER.TXT");
+    Serial.println("\n\nMODULE_INITIALIZE_KEYMAP START"); 
     
+    textfile = SD.open("MAPPER.TXT");
     String readline;
 
     while(textfile.available())
@@ -32,43 +32,65 @@ void MODULE_INITIALIZE_KEYMAP()
         {
             if('a' <= readline[i] && readline[i] <= 'z')
                 readline[i] -= 32;
-
-            //ignore 'TY ("")' inner strings
-            if(readline[i] == '\"')
-                break;
         }
 
-        //uint8_t keycode = String_To_keycode( readline.substring(0, readline.lastIndexOf('[')) );
-        
-        String mapThings = readline.substring(readline.lastIndexOf('['),readline.lastIndexOf(']'));
-
-        //uint8_t mappedKeycodes[]
-        uint8_t mappedNum = 0;
+        uint8_t keycode = String_To_keycode( readline.substring(0, readline.lastIndexOf('[')) );
+        if(keycode != 0)
         {
-            char buf[mapThings.length()+1];
-            mapThings.toCharArray(buf,mapThings.length()+1);
+            String mapThings = readline.substring(readline.indexOf('[')+1,readline.indexOf(']'));
 
-            char* s = buf;
-            while(*s!='\0'){ if(*s=='+')mappedNum++; s++; }
-        }
-
-
-
-
+            if(mapThings.indexOf(".TXT")>0)
+            {
+                Serial.println();
+                Serial.print("MAPPED keycode : "); Serial.println(keycode);
+                Serial.print("mappedTXT : "); Serial.println(mapThings);
+            }
+            else
+            {
+                uint8_t mappedLen = 1;
+                {
+                    char buf[mapThings.length()+1];
+                    mapThings.toCharArray(buf,mapThings.length()+1);
         
-        //malloc 어쩌구 저쩌구
-        
-        //std::getline( iss, mapThings, '+' )
-        
-        Serial.print("mapThings : "); Serial.println(mapThings);
-        Serial.print("mappedNum : "); Serial.println(mappedNum);
-        Serial.println(""); 
-    }
-
-    textfile.close();
-
+                    char* s = buf;
+                    while(*s!='\0'){ if(*s=='+')mappedLen++; s++; }
+                }
+                
+                uint8_t* mappedKeycodes = (uint8_t*)malloc(mappedLen * sizeof(uint8_t));
+                for(uint8_t i=0; i<mappedLen; i++){
+                    mappedKeycodes[i] = String_To_keycode( mapThings );
     
-    Serial.println(""); 
-    Serial.println(""); 
-    Serial.println("INIT END"); 
+                    if(mappedKeycodes[i] == 0){
+                        free(mappedKeycodes);
+                        textfile.close();
+                        
+                        //shutdown initializing
+                        if(isSerial) Serial.println("\n!!! MODULE_INITIALIZE_KEYMAP BE STOPPED !!! SYNTAX ERROR !!!");
+                        return;
+                    }
+                    
+                    if(mapThings.indexOf('+')>0)
+                        mapThings = mapThings.substring(mapThings.indexOf('+'));
+                }
+        
+                // Create a MappedData object and assign values
+                MappedData data;
+                data.mappedLen = mappedLen;
+                data.mappedKeycodes = mappedKeycodes;
+                keymap[keycode] = data;
+    
+                if(isSerial) 
+                {
+                    Serial.println();
+                    Serial.print("MAPPED keycode : "); Serial.println(keycode);
+                    Serial.print("mappedLen : "); Serial.println(data.mappedLen);
+                    for(uint8_t i=0; i<mappedLen; i++){ Serial.print("mappedKey[");Serial.print(i);Serial.print("] : "); Serial.println(data.mappedKeycodes[i]); }
+                }
+            }
+        }
+    }
+    
+    textfile.close();
+    
+    Serial.println("\nMODULE_INITIALIZE_KEYMAP END\n"); 
 }

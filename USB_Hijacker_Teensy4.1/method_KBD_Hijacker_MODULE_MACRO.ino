@@ -44,7 +44,7 @@ void MODULE_MACRO_PLAYER_OR_RECORDER_START(const char* fname)
         if(!SD.exists(filename))
         {
             //shutdown playing
-            if(isSerial) Serial.println("MODULE_MACRO_PLAYER_START MISFIRE !!! FILE MISSING !!!");
+            if(isSerial) Serial.println("\n!!! MODULE_MACRO_PLAYER_START MISFIRE !!! FILE MISSING !!!");
             return;
         }
         
