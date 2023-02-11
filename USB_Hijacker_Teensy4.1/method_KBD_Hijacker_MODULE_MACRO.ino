@@ -299,11 +299,11 @@ void MODULE_MACRO_PLAYER_ONGOING()
         }
         else if (-1 < readline.indexOf("TY"))
         {
-            int32_t index_Start = readline.indexOf("(\"");
-            int32_t index_End = readline.lastIndexOf("\")");
-            if(index_Start >= index_End) return;
+            int32_t index_Start = readline.indexOf("\"");
+            int32_t index_End = readline.lastIndexOf("\"");
+            if(index_Start<0||index_Start>=index_End) return;
 
-            String strTyping = readline.substring(index_Start+2,index_End);
+            String strTyping = readline.substring(index_Start+1,index_End);
 
             KBD_Hijacker.pressandreleaseKeys(strTyping);
             

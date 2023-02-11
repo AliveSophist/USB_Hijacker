@@ -304,6 +304,7 @@ volatile uint32_t msLatestEventPressed     = millis();
 volatile uint8_t numDN = 0;
 
 #define KEYLOGGER_LEN_MAX 10
+#define null NULL
 struct nodeKeycode
 {
     uint8_t keycode;

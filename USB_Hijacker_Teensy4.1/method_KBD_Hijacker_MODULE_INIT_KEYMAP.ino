@@ -1,7 +1,7 @@
 
 struct MappedData {
     uint8_t mappedLen;
-    uint8_t* mappedKeycodes;
+    void* mappedThings;
 };
 
 static std::map<uint8_t, MappedData> keymap;
@@ -41,9 +41,29 @@ void MODULE_INITIALIZE_KEYMAP()
 
             if(mapThings.indexOf(".TXT")>0)
             {
+                //int8_t index_Start = readline.indexOf("\"");
+                //int8_t index_End = readline.lastIndexOf(".TXT\"");
+                int8_t index_Start = readline.indexOf(" ");
+                int8_t index_End = readline.lastIndexOf(".TXT ");
+
+                // When SYNTAX ERROR occured, Go to 'while'
+                if(index_Start<0||index_Start>=index_End)
+                { if(isSerial) Serial.println("\n!!! SYNTAX ERROR !!!"); continue; }
+
+                String strFilename = readline.substring(index_Start+1,index_End);
+                uint8_t strLength = strFilename.length();
+
+                char* mappedFilename = (char*)malloc((strLength+1) * sizeof(char));
+                strFilename.toCharArray(mappedFilename,strLength+1);
+                mappedFilename[strLength] = '\0';
+
+
+
+                
                 Serial.println();
                 Serial.print("MAPPED keycode : "); Serial.println(keycode);
-                Serial.print("mappedTXT : "); Serial.println(mapThings);
+                Serial.print("mappedTXT : "); Serial.println(mappedFilename);
+                Serial.print("strLength : "); Serial.println(strLength);
             }
             else
             {
@@ -57,34 +77,41 @@ void MODULE_INITIALIZE_KEYMAP()
                 }
                 
                 uint8_t* mappedKeycodes = (uint8_t*)malloc(mappedLen * sizeof(uint8_t));
-                for(uint8_t i=0; i<mappedLen; i++){
+                for(uint8_t i=0; i<mappedLen; i++)
+                {
                     mappedKeycodes[i] = String_To_keycode( mapThings );
     
-                    if(mappedKeycodes[i] == 0){
+                    if(mappedKeycodes[i] == 0)
+                    {
                         free(mappedKeycodes);
-                        textfile.close();
-                        
-                        //shutdown initializing
-                        if(isSerial) Serial.println("\n!!! MODULE_INITIALIZE_KEYMAP BE STOPPED !!! SYNTAX ERROR !!!");
-                        return;
+                        mappedKeycodes = NULL;
+                        break;
                     }
                     
                     if(mapThings.indexOf('+')>0)
                         mapThings = mapThings.substring(mapThings.indexOf('+'));
                 }
+                
+                // When SYNTAX ERROR occured, Go to 'while'
+                if(mappedKeycodes==NULL)
+                { if(isSerial) Serial.println("\n!!! SYNTAX ERROR !!!"); continue; }
         
                 // Create a MappedData object and assign values
                 MappedData data;
                 data.mappedLen = mappedLen;
-                data.mappedKeycodes = mappedKeycodes;
+                data.mappedThings = mappedKeycodes;
                 keymap[keycode] = data;
-    
+
                 if(isSerial) 
                 {
                     Serial.println();
                     Serial.print("MAPPED keycode : "); Serial.println(keycode);
                     Serial.print("mappedLen : "); Serial.println(data.mappedLen);
-                    for(uint8_t i=0; i<mappedLen; i++){ Serial.print("mappedKey[");Serial.print(i);Serial.print("] : "); Serial.println(data.mappedKeycodes[i]); }
+                    for(uint8_t i=0; i<mappedLen; i++)
+                    { 
+                        Serial.print("mappedT[");Serial.print(i);Serial.print("] : "); Serial.print(  ((uint8_t*)data.mappedThings)[i]  ); // it's same '(reinterpret_cast<uint8_t*>(data.mappedThings))[i]'
+                        Serial.print("  /  mappedK[");Serial.print(i);Serial.print("] : "); Serial.println(  mappedKeycodes[i]  ); 
+                    } //Serial.println(  *((uint8_t*)data.mappedThings+(i * sizeof(uint8_t)))  );
                 }
             }
         }
