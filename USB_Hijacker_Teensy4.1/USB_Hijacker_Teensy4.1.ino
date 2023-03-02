@@ -78,6 +78,10 @@ extern "C"
 
 
 
+
+#include <map>
+#include <list>
+
 #include <USBHost_t36.h>
 
 //#include <SPI.h>
@@ -293,8 +297,8 @@ volatile bool event;    //true:pressed false:released
 volatile bool isActivateKeyEvent;
 
 bool statePhysical[255] = {false};
-void setPhysicalState(int32_t key, bool state)  { statePhysical[TeensyLayout_To_Keycode(key)] = state; }
-bool getPhysicalState(int32_t key)              { return statePhysical[TeensyLayout_To_Keycode(key)]; }
+void setPhysicalState   (int32_t key, bool state)   { statePhysical[TeensyLayout_To_Keycode(key)] = state; }
+bool getPhysicalState   (int32_t key)               { return statePhysical[TeensyLayout_To_Keycode(key)]; }
 
 volatile bool isExistWaitingEvent_Press     = false;
 volatile bool isExistWaitingEvent_Release   = false;
@@ -424,13 +428,15 @@ struct linkedlistKeyLogger
     }
 } KeyLogger;
 
+void print8bitHex(uint8_t hexcode){ Serial.print("0x"); Serial.print((hexcode<16) ? "0" : ""); Serial.print(hexcode, HEX); }
+void print8bitBin(uint8_t bincode){ Serial.print("0b"); for(int i=7; i>=0;i--){ Serial.print( (bincode & (1<<i)) ? '1' : '0' ); } }
 void PrintKey(uint8_t keycode)
 {
     Serial.print((KBD_Hijacker.getLogicalState(KEY_LEFT_CTRL)   == true) ? "C" : " ");
     Serial.print((KBD_Hijacker.getLogicalState(KEY_LEFT_SHIFT)  == true) ? "S" : " ");
     Serial.print((KBD_Hijacker.getLogicalState(KEY_LEFT_ALT)    == true) ? "A" : " ");
     Serial.print((KBD_Hijacker.getLogicalState(KEY_LEFT_GUI)    == true) ? "G" : " ");
-    Serial.print(" >0x"); if(keycode<16)Serial.print('0'); Serial.print(keycode, HEX); Serial.print("< ");
+    Serial.print(" >"); print8bitHex(keycode); Serial.print("< ");
     Serial.print((KBD_Hijacker.getLogicalState(KEY_RIGHT_CTRL)  == true) ? "C" : " ");
     Serial.print((KBD_Hijacker.getLogicalState(KEY_RIGHT_SHIFT) == true) ? "S" : " ");
     Serial.print((KBD_Hijacker.getLogicalState(KEY_RIGHT_ALT)   == true) ? "A" : " ");
@@ -612,7 +618,7 @@ void setup()
 
     if(isSerial) Serial.println(F("OPERATION COMPLETE, SIR! XD"));
 
-    MODULE_INITIALIZE_KEYMAP();
+    MODULE_KEYMAPPER_INITIALIZE();
 }
 
 void loop()

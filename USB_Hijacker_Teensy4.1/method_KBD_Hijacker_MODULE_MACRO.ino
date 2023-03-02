@@ -23,16 +23,19 @@ void MODULE_MACRO_PLAYER_OR_RECORDER_START(const char* fname)
         return;
     
     
-    char filename[strlen(fname)+6] = "";
-    bool isREADONLY;
+    char filename[strlen(fname)+6] = ""; strcpy(filename,fname);
+    bool isREADONLY=true;
 
     //"TXT" file is WRITABLE.
     //"_R.TXT" file is READONLY, it do not use recording function.
-    //"_R.TXT" file has priority over ".TXT" file. Therefore, ".TXT" file is ignored if "_R.TXT" file exist.
-    strcpy(filename,fname); strcat(filename,"_R.TXT"); isREADONLY=true;
+    if(String(filename).indexOf("_R") < 0)
+        strcat(filename,"_R");
+        
+    strcat(filename,".TXT");
+    
+    //"_R.TXT" file has priority over ".TXT" file. Therefore ".TXT" file is ignored if "_R.TXT" file exist.
     if(!SD.exists(filename))
     { strcpy(filename,fname); strcat(filename,".TXT"); isREADONLY=false; }
-    
     
     // CHECK "PLAY" or "RECORD" by pressed ms
     uint32_t mspressed = 0;
@@ -55,6 +58,7 @@ void MODULE_MACRO_PLAYER_OR_RECORDER_START(const char* fname)
         isMacroPlaying=true; numPlayed=0; msLeftUntilNextMacro=0;
         if(isSerial) Serial.println("MODULE_MACRO_PLAYER_START");
     }
+    
     // START RECORDER
     else
     {
@@ -222,7 +226,10 @@ void MODULE_MACRO_PLAYER_ONGOING()
             if(readline[i] == '\"')
                 break;
         }
-    
+
+        //Check readline
+        if(isSerial){ Serial.print("\nREADLINE:"); Serial.println(readline); }
+
         //analyze MacroEvent
         if(-1 < readline.indexOf("DNUP"))
         {
@@ -378,23 +385,24 @@ void MODULE_MACRO_PLAYER_SETSTATE_BY_FORCE()
 String split_findNum(String str)
 {
     int8_t index_Num = -1;
-
-    char buf[str.length()+1];
-    str.toCharArray(buf,str.length()+1);
+    uint32_t lastIndex_Num = 0;
     
-    char* s = buf;
-    uint32_t x = 0;
-    while(true)
+    for(uint32_t i=0; i<str.length(); i++)
     {
-        if ('0' <= *s && *s <= '9'){
-            index_Num = x;
-            break;
+        if(index_Num == -1){
+            if ('0' <= str[i] && str[i] <= '9'){
+                index_Num = i;
+            }
         }
-        
-        s++; x++;
+        else{
+            if (!('0' <= str[i] && str[i] <= '9')){
+                lastIndex_Num = i;
+                break;
+            }
+        }
     }
 
-    if(-1 < index_Num) return str.substring(index_Num);
+    if(-1 < index_Num) return str.substring(index_Num, lastIndex_Num);
     
     return "0"; // Invalid str !!
 }

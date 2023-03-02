@@ -28,6 +28,13 @@ void KeyboardHijacker::txHijackedKeyEvent()
 
 
 
+    // If mapped?, HIJACK! 
+    MODULE_KEYMAPPER_HIJACK();
+
+
+
+
+
 /*  Example1)
  *          Hijack One KEY to Another KEY
 
@@ -169,51 +176,39 @@ void KeyboardHijacker::txHijackedKeyEvent()
             }
             break;
             
-//            case KEYPAD_MINUS:
-//            {
-//                key = KEY_LEFT_GUI;
-//            }
-//            break;
-//            
-//            case KEYPAD_PLUS:
-//            {
-//                key = KEY_LEFT_SHIFT;
-//            }
-//            break;
-            
             case KEYPAD_0:
             {
                 key = KEY_LEFT_ALT;
             }
             break;
             
-            case KEY_BACKSPACE:
-            {
-                // if Ctrl pressing
-                if(getPhysicalState(KEYPAD_SLASH))
-                {
-                    if(event)
-                    {
-                        releaseAllBeingHoldDownKey(); delay(10);
-                        
-                        pressandreleaseShortcutKey( 3 , new int32_t[3] {KEY_CTRL,KEY_SHIFT,KEY_ESC} );
-                    }
-                    key=0;
-                }
-                
-                // if Alt is pressing
-                if(getPhysicalState(KEYPAD_0))
-                {
-                    if(event)
-                    {
-                        releaseAllBeingHoldDownKey(); delay(10);
-                        
-                        pressandreleaseShortcutKey( 2 , new int32_t[2] {KEY_ALT,KEY_F4} );
-                    }
-                    key=0;
-                }
-            }
-            break;
+//            case KEY_BACKSPACE:
+//            {
+//                // if Ctrl pressing
+//                if(getLogicalState(KEY_LEFT_CTRL))
+//                {
+//                    if(event)
+//                    {
+//                        releaseAllBeingHoldDownKey(); delay(10);
+//                        
+//                        pressandreleaseShortcutKey( 3 , new int32_t[3] {KEY_CTRL,KEY_SHIFT,KEY_ESC} );
+//                    }
+//                    key=0;
+//                }
+//                
+//                // if Alt is pressing
+//                if(getLogicalState(KEY_LEFT_ALT))
+//                {
+//                    if(event)
+//                    {
+//                        releaseAllBeingHoldDownKey(); delay(10);
+//                        
+//                        pressandreleaseShortcutKey( 2 , new int32_t[2] {KEY_ALT,KEY_F4} );
+//                    }
+//                    key=0;
+//                }
+//            }
+//            break;
             
             case KEYPAD_1:
             case KEYPAD_2:
@@ -226,7 +221,9 @@ void KeyboardHijacker::txHijackedKeyEvent()
             case KEYPAD_9:
             {
                 // MACRO Function KEYs (Ctrl+Alt+1, Ctrl+Alt+2, Ctrl+Alt+3, … Ctrl+Alt+9)
-                if(getPhysicalState(KEYPAD_SLASH) && getPhysicalState(KEYPAD_0))
+                if(getLogicalState(KEY_LEFT_CTRL) && getLogicalState(KEY_LEFT_ALT))
+//              if(getPhysicalState(KEYPAD_SLASH) && getPhysicalState(KEYPAD_0))
+
                 {
                     if(event)
                     {
@@ -267,7 +264,7 @@ void KeyboardHijacker::txHijackedKeyEvent()
                 }
 
                 // MACRO Function KEYs (Ctrl+1, Ctrl+2, Ctrl+3, … Ctrl+9)
-                else if(getPhysicalState(KEYPAD_SLASH))
+                else if(getLogicalState(KEY_LEFT_CTRL))
                 {
                     if(event)
                     {
@@ -308,7 +305,7 @@ void KeyboardHijacker::txHijackedKeyEvent()
                 }
 
                 // Multipurpose Shortcut KEYs (Alt+1, Alt+2, Alt+3, … Alt+9)
-                else if(getPhysicalState(KEYPAD_0))
+                else if(getLogicalState(KEY_LEFT_ALT))
                 {
                     if(event)
                     {
@@ -348,7 +345,7 @@ void KeyboardHijacker::txHijackedKeyEvent()
                     key=0;
                 }
 
-                // Multipurpose Shortcut KEYs (Shift+1, Shift+2, Shift+3, … Shift+9)
+//                // Multipurpose Shortcut KEYs (Shift+1, Shift+2, Shift+3, … Shift+9)
 //                else if(getPhysicalState(KEYPAD_PLUS))
 //                {
 //                    if(event)
@@ -451,16 +448,16 @@ void KeyboardHijacker::txHijackedKeyEvent()
         }
         else
         {
-            //Skip KEY release event, if key already released by 'releaseAllBeingHoldDownKey()'
+            //Skip KEY release event, if key ALREADY RELEASED
             if(!getLogicalState(key))
                 return;
 
             Keyboard.release(key);
-            if (numBeingHoldDownKey)numBeingHoldDownKey--;
+            if (numBeingHoldDownKey) numBeingHoldDownKey--;
             setLogicalState(key,false);
 
             //Release all Pressed signals for contingencies, When only ESC event
-            if (key == KEY_ESC && numBeingHoldDownKey == 0) { releaseAllBeingHoldDownKey(); }
+            if (key == KEY_ESC && numBeingHoldDownKey == 0) releaseAllBeingHoldDownKey();
         }
     }
 
@@ -471,9 +468,9 @@ void KeyboardHijacker::txHijackedKeyEvent()
             uint8_t keycode = TeensyLayout_To_Keycode(key);
             Serial.print(F("( After Hijack) Executed KEY "));
             if(event)
-            { Serial.print(F("Press   : 0x")); if(keycode<16)Serial.print('0'); Serial.println(keycode, HEX); }
+            {   Serial.print(F("Press   : ")); print8bitHex(keycode); Serial.println();   }
             else
-            { Serial.print(F("Release : 0x")); if(keycode<16)Serial.print('0'); Serial.println(keycode, HEX); }
+            {   Serial.print(F("Release : ")); print8bitHex(keycode); Serial.println();   }
         }
         else
         {
@@ -482,19 +479,15 @@ void KeyboardHijacker::txHijackedKeyEvent()
         
         if(isExistHoldingDownKey())
         {
-            bool isFirst=true;
+            Serial.print(F("( After Hijack) Now Holding Down KEY : "));
             
+            uint8_t notFirst=0;
             for(uint16_t i=0; i<255; i++)
             {
                 if(stateLogical[i])
-                {
-                    if(isFirst)
-                    { Serial.print(F("( After Hijack) Now Holding Down KEY : 0x")); if(i<16)Serial.print('0'); Serial.print(i, HEX); isFirst=false; }
-                    else
-                    { Serial.print(F(",0x")); if(i<16)Serial.print('0'); Serial.print(i, HEX); }
-                    
-                }
+                {   Serial.print(notFirst++ ? "," : ""); print8bitHex(i); Serial.println();   }
             }
+            
             Serial.print("\n");
         }
         else

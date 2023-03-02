@@ -56,8 +56,198 @@ static uint8_t TeensyLayout_To_Keycode(int32_t key)
 
 
 
+uint32_t StringHex_To_int(String str) 
+{
+    char buf[str.length()+1];
+    str.toCharArray(buf,str.length()+1);
+    
+    char* s = buf+2; // except '0x'
+    uint32_t x = 0;
+    while(true)
+    {
+        char c = *s;
+        
+        if ('0' <= c && c <= '9'){
+            x *= 16;
+            x += c - '0'; 
+        } else if ('A' <= c && c <= 'F'){
+            x *= 16;
+            x += (c - 'A')+10;
+        } else if ('a' <= c && c <= 'f'){
+            x *= 16;
+            x += (c - 'a')+10;
+        }
+        else break;
+        
+        s++;
+    }
+    return x;
+}
+
 #include <map>
 
+uint8_t keycodeStr_To_uint8_t(String str)
+{
+    static std::map<String, uint8_t> keycodeStrMap;
+    static bool isMapInit = false;
+    if(!isMapInit)
+    {
+        keycodeStrMap["KEY_RESERVED"]           = 0x00;
+        keycodeStrMap["KEY_ERROR_ROLLOVER"]     = 0x01;
+        keycodeStrMap["KEY_POST_FAIL"]          = 0x02;
+        keycodeStrMap["KEY_ERROR_UNDEFINED"]    = 0x03;
+        keycodeStrMap["KEY_A"]                  = 0x04;
+        keycodeStrMap["KEY_B"]                  = 0x05;
+        keycodeStrMap["KEY_C"]                  = 0x06;
+        keycodeStrMap["KEY_D"]                  = 0x07;
+        keycodeStrMap["KEY_E"]                  = 0x08;
+        keycodeStrMap["KEY_F"]                  = 0x09;
+        keycodeStrMap["KEY_G"]                  = 0x0A;
+        keycodeStrMap["KEY_H"]                  = 0x0B;
+        keycodeStrMap["KEY_I"]                  = 0x0C;
+        keycodeStrMap["KEY_J"]                  = 0x0D;
+        keycodeStrMap["KEY_K"]                  = 0x0E;
+        keycodeStrMap["KEY_L"]                  = 0x0F;
+        keycodeStrMap["KEY_M"]                  = 0x10;
+        keycodeStrMap["KEY_N"]                  = 0x11;
+        keycodeStrMap["KEY_O"]                  = 0x12;
+        keycodeStrMap["KEY_P"]                  = 0x13;
+        keycodeStrMap["KEY_Q"]                  = 0x14;
+        keycodeStrMap["KEY_R"]                  = 0x15;
+        keycodeStrMap["KEY_S"]                  = 0x16;
+        keycodeStrMap["KEY_T"]                  = 0x17;
+        keycodeStrMap["KEY_U"]                  = 0x18;
+        keycodeStrMap["KEY_V"]                  = 0x19;
+        keycodeStrMap["KEY_W"]                  = 0x1A;
+        keycodeStrMap["KEY_X"]                  = 0x1B;
+        keycodeStrMap["KEY_Y"]                  = 0x1C;
+        keycodeStrMap["KEY_Z"]                  = 0x1D;
+        keycodeStrMap["KEY_1"]                  = 0x1E;
+        keycodeStrMap["KEY_2"]                  = 0x1F;
+        keycodeStrMap["KEY_3"]                  = 0x20;
+        keycodeStrMap["KEY_4"]                  = 0x21;
+        keycodeStrMap["KEY_5"]                  = 0x22;
+        keycodeStrMap["KEY_6"]                  = 0x23;
+        keycodeStrMap["KEY_7"]                  = 0x24;
+        keycodeStrMap["KEY_8"]                  = 0x25;
+        keycodeStrMap["KEY_9"]                  = 0x26;
+        keycodeStrMap["KEY_0"]                  = 0x27;
+        keycodeStrMap["KEY_ENTER"]              = 0x28;
+        keycodeStrMap["KEY_ESC"]                = 0x29;
+        keycodeStrMap["KEY_BACKSPACE"]          = 0x2A;
+        keycodeStrMap["KEY_TAB"]                = 0x2B;
+        keycodeStrMap["KEY_SPACE"]              = 0x2C;
+        keycodeStrMap["KEY_MINUS"]              = 0x2D;
+        keycodeStrMap["KEY_EQUAL"]              = 0x2E;
+        keycodeStrMap["KEY_LEFT_BRACE"]         = 0x2F;
+        keycodeStrMap["KEY_RIGHT_BRACE"]        = 0x30;
+        keycodeStrMap["KEY_BACKSLASH"]          = 0x31;
+        keycodeStrMap["KEY_NON_US_NUM"]         = 0x32;
+        keycodeStrMap["KEY_SEMICOLON"]          = 0x33;
+        keycodeStrMap["KEY_QUOTE"]              = 0x34;
+        keycodeStrMap["KEY_TILDE"]              = 0x35;
+        keycodeStrMap["KEY_COMMA"]              = 0x36;
+        keycodeStrMap["KEY_PERIOD"]             = 0x37;
+        keycodeStrMap["KEY_SLASH"]              = 0x38;
+        keycodeStrMap["KEY_CAPS_LOCK"]          = 0x39;
+        keycodeStrMap["KEY_CAPSLOCK"]           = 0x39;
+        keycodeStrMap["KEY_F1"]                 = 0x3A;
+        keycodeStrMap["KEY_F2"]                 = 0x3B;
+        keycodeStrMap["KEY_F3"]                 = 0x3C;
+        keycodeStrMap["KEY_F4"]                 = 0x3D;
+        keycodeStrMap["KEY_F5"]                 = 0x3E;
+        keycodeStrMap["KEY_F6"]                 = 0x3F;
+        keycodeStrMap["KEY_F7"]                 = 0x40;
+        keycodeStrMap["KEY_F8"]                 = 0x41;
+        keycodeStrMap["KEY_F9"]                 = 0x42;
+        keycodeStrMap["KEY_F10"]                = 0x43;
+        keycodeStrMap["KEY_F11"]                = 0x44;
+        keycodeStrMap["KEY_F12"]                = 0x45;
+        keycodeStrMap["KEY_PRINTSCREEN"]        = 0x46;
+        keycodeStrMap["KEY_SCROLL_LOCK"]        = 0x47;
+        keycodeStrMap["KEY_SCROLLLOCK"]         = 0x47;
+        keycodeStrMap["KEY_PAUSE"]              = 0x48;
+        keycodeStrMap["KEY_INSERT"]             = 0x49;
+        keycodeStrMap["KEY_HOME"]               = 0x4A;
+        keycodeStrMap["KEY_PAGE_UP"]            = 0x4B;
+        keycodeStrMap["KEY_DELETE"]             = 0x4C;
+        keycodeStrMap["KEY_END"]                = 0x4D;
+        keycodeStrMap["KEY_PAGE_DOWN"]          = 0x4E;
+        keycodeStrMap["KEY_RIGHT_ARROW"]        = 0x4F;
+        keycodeStrMap["KEY_LEFT_ARROW"]         = 0x50;
+        keycodeStrMap["KEY_DOWN_ARROW"]         = 0x51;
+        keycodeStrMap["KEY_UP_ARROW"]           = 0x52;
+        keycodeStrMap["KEY_RIGHT"]              = 0x4F;
+        keycodeStrMap["KEY_LEFT"]               = 0x50;
+        keycodeStrMap["KEY_DOWN"]               = 0x51;
+        keycodeStrMap["KEY_UP"]                 = 0x52;
+        keycodeStrMap["KEY_NUM_LOCK"]           = 0x53;
+        keycodeStrMap["KEY_NUMLOCK"]            = 0x53;
+        keycodeStrMap["KEYPAD_DIVIDE"]          = 0x54;
+        keycodeStrMap["KEYPAD_MULTIPLY"]        = 0x55;
+        keycodeStrMap["KEYPAD_SUBTRACT"]        = 0x56;
+        keycodeStrMap["KEYPAD_ADD"]             = 0x57;
+        keycodeStrMap["KEYPAD_ENTER"]           = 0x58;
+        keycodeStrMap["KEYPAD_1"]               = 0x59;
+        keycodeStrMap["KEYPAD_2"]               = 0x5A;
+        keycodeStrMap["KEYPAD_3"]               = 0x5B;
+        keycodeStrMap["KEYPAD_4"]               = 0x5C;
+        keycodeStrMap["KEYPAD_5"]               = 0x5D;
+        keycodeStrMap["KEYPAD_6"]               = 0x5E;
+        keycodeStrMap["KEYPAD_7"]               = 0x5F;
+        keycodeStrMap["KEYPAD_8"]               = 0x60;
+        keycodeStrMap["KEYPAD_9"]               = 0x61;
+        keycodeStrMap["KEYPAD_0"]               = 0x62;
+        keycodeStrMap["KEYPAD_DOT"]             = 0x63;
+        keycodeStrMap["KEY_NON_US"]             = 0x64;
+        keycodeStrMap["KEY_APPLICATION"]        = 0x65;
+        keycodeStrMap["KEY_CONTEXT"]            = 0x65;
+        keycodeStrMap["KEY_MENU"]               = 0x65;
+        
+        keycodeStrMap["KEY_KORENG"]             = 0x90;
+        
+        keycodeStrMap["KEY_CTRL"]               = 0x67;
+        keycodeStrMap["KEY_SHIFT"]              = 0x68;
+        keycodeStrMap["KEY_ALT"]                = 0x69;
+        keycodeStrMap["KEY_GUI"]                = 0x6A;
+        keycodeStrMap["KEY_WINDOWS"]            = 0x6A;
+        keycodeStrMap["KEY_LEFT_CTRL"]          = 0x67;
+        keycodeStrMap["KEY_LEFT_SHIFT"]         = 0x68;
+        keycodeStrMap["KEY_LEFT_ALT"]           = 0x69;
+        keycodeStrMap["KEY_LEFT_GUI"]           = 0x6A;
+        keycodeStrMap["KEY_LEFT_WINDOWS"]       = 0x6A;
+        keycodeStrMap["KEY_RIGHT_CTRL"]         = 0x6B;
+        keycodeStrMap["KEY_RIGHT_SHIFT"]        = 0x6C;
+        keycodeStrMap["KEY_RIGHT_ALT"]          = 0x6D;
+        keycodeStrMap["KEY_RIGHT_GUI"]          = 0x6E;
+        keycodeStrMap["KEY_RIGHT_WINDOWS"]      = 0x6E;
+
+        isMapInit = true;
+    }
+    
+    char buf[str.length()+1];
+    str.toCharArray(buf,str.length()+1);
+    
+    char* s = buf;
+    uint8_t end_num = 0;
+    while(true)
+    {
+        char c = *s;
+        
+        if (('0' <= c && c <= '9') || ('A' <= c && c <= 'Z') || c == '_')
+            end_num++;
+        else
+            break;
+        
+        s++;
+    }    
+
+    if(0<end_num) return keycodeStrMap[ str.substring(0,end_num) ];
+
+    return 0; // Invalid str !!
+}
+
+/*
 // AMAZING DEFINE !! https://oojjrs.tistory.com/25
 #define STR_SWITCH_BEGIN(key)                               \
 {                                                           \
@@ -243,48 +433,25 @@ uint8_t keycodeStr_To_keycode(String keycodeStr)
 
     return 0; // Invalid keycodeStr !!
 }
-
-uint32_t StringHex_To_int(String str) 
-{
-    char buf[str.length()+1];
-    str.toCharArray(buf,str.length()+1);
-    
-    char* s = buf; s+=2; // except '0x'
-    uint32_t x = 0;
-    while(true)
-    {
-        char c = *s;
-        
-        if ('0' <= c && c <= '9'){
-            x *= 16;
-            x += c - '0'; 
-        } else if ('A' <= c && c <= 'F'){
-            x *= 16;
-            x += (c - 'A')+10;
-        } else if ('a' <= c && c <= 'f'){
-            x *= 16;
-            x += (c - 'a')+10;
-        }
-        else break;
-        
-        s++;
-    }
-    return x;
-}
+*/
 
 uint8_t String_To_keycode(String str)
 {
-    int8_t index_KEY = str.indexOf("KEY");
-    int8_t index_0x  = str.indexOf("0X");
+    if (str.indexOf("0X") >= 0)
+    {
+        //Serial.println("*************************"); Serial.println(StringHex_To_int(   str.substring(str.indexOf("0X"))   ));
 
-    if      (index_KEY >= 0)
-        return keycodeStr_To_keycode( split_keycodeStr( str.substring(index_KEY) ) );
-        
-    else if (index_0x >= 0)
-        return StringHex_To_int( str.substring(index_0x) );
-        
-    else
-        return 0; // Invalid str !!
+        return StringHex_To_int(   str.substring(str.indexOf("0X"))   );
+    }
+
+    if (str.indexOf("KEY") >= 0)
+    {
+        //Serial.println("*************************"); Serial.println(keycodeStr_To_uint8_t( str.substring(str.indexOf("KEY")) ));
+
+        return keycodeStr_To_uint8_t( str.substring(str.indexOf("KEY")) );
+    }
+
+    return 0; // Invalid str !!
 }
 
 
