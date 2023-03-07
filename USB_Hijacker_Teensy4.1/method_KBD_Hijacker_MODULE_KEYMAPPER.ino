@@ -1,4 +1,15 @@
 
+#define MASK_NL     0b10000000
+#define MASK_CL     0b01000000
+#define MASK_SL     0b00100000
+
+#define MASK_IsLock 0b00010000
+
+#define MASK_CTRL   0b00001000
+#define MASK_SHIFT  0b00000100
+#define MASK_ALT    0b00000010
+#define MASK_GUI    0b00000001
+
 struct MappedData {
     uint8_t stateNCS_CSAG;
     uint8_t mappedLen;
@@ -26,6 +37,10 @@ void MODULE_KEYMAPPER_INITIALIZE()
     while(textfile.available())
     {
         readline = textfile.readStringUntil('\n');
+
+        //exclude COMMENT
+        if(0==readline.indexOf('/'))
+            continue;
         
         // To uppercase
         for(uint32_t i=0; i<readline.length(); i++)
@@ -51,41 +66,37 @@ void MODULE_KEYMAPPER_INITIALIZE()
             {
                 String strNLCLSL = strNCS_CSAG.substring(0, index_CSAG);
                 
-                if      (strNLCLSL.indexOf("NL") > -1 || strNLCLSL.indexOf("NUMLOCK") > -1)
-                    stateNCS_CSAG |= 0b10000000;
-                else if (strNLCLSL.indexOf("CL") > -1 || strNLCLSL.indexOf("CAPSLOCK") > -1)
-                    stateNCS_CSAG |= 0b01000000;
-                else if (strNLCLSL.indexOf("SL") > -1 || strNLCLSL.indexOf("SCROLLLOCK") > -1)
-                    stateNCS_CSAG |= 0b00100000;
+                stateNCS_CSAG |= (strNLCLSL.indexOf("NL") > -1 || strNLCLSL.indexOf("NUMLOCK") > -1) ? MASK_NL : 0;
+                stateNCS_CSAG |= (strNLCLSL.indexOf("CL") > -1 || strNLCLSL.indexOf("CAPSLOCK") > -1) ? MASK_CL : 0;
+                stateNCS_CSAG |= (strNLCLSL.indexOf("SL") > -1 || strNLCLSL.indexOf("SCROLLLOCK") > -1) ? MASK_SL : 0;
                 
-                if (strNLCLSL.lastIndexOf('T') > -1)
-                    stateNCS_CSAG |= 0b00010000;
+                stateNCS_CSAG |= (strNLCLSL.lastIndexOf('T') > -1) ? MASK_IsLock : 0;
             }
 
             // Reflect CtrlShiftAltGui states
             {
                 String strCSAG = strNCS_CSAG.substring(index_CSAG);
                 
-                if (strCSAG.indexOf('C') > -1)
-                    stateNCS_CSAG |= 0b00001000;
-                if (strCSAG.indexOf('S') > -1)
-                    stateNCS_CSAG |= 0b00000100;
-                if (strCSAG.indexOf('A') > -1)
-                    stateNCS_CSAG |= 0b00000010;
-                if (strCSAG.indexOf('G') > -1)
-                    stateNCS_CSAG |= 0b00000001;
+                stateNCS_CSAG |= (strCSAG.indexOf('C') > -1) ? MASK_CTRL : 0;
+                stateNCS_CSAG |= (strCSAG.indexOf('S') > -1) ? MASK_SHIFT : 0;
+                stateNCS_CSAG |= (strCSAG.indexOf('A') > -1) ? MASK_ALT : 0;
+                stateNCS_CSAG |= (strCSAG.indexOf('G') > -1) ? MASK_GUI : 0;
             }
         }
 
         // Map!
-        if(readline.indexOf('[') < readline.indexOf(']') && (keymapKey & 0b11111111) != 0)
+        if(readline.indexOf('[') < readline.indexOf(']') && keymapKey != 0)
         {
             String strMapThings = readline.substring(readline.indexOf('[')+1,readline.indexOf(']'));
 
-            if(strMapThings.indexOf(".TXT") > -1)
+            if(strMapThings.indexOf("\"") > -1)
             {
                 int8_t index_Start = readline.indexOf("\"")+1;
-                int8_t index_End = (readline.lastIndexOf("_R.TXT") > -1 ? readline.lastIndexOf("_R") : readline.lastIndexOf(".TXT"));
+                int8_t index_End;
+                if(readline.lastIndexOf(".TXT") > -1)
+                    index_End = (readline.lastIndexOf("_R") > -1) ? readline.lastIndexOf("_R") : readline.lastIndexOf(".TXT");
+                else
+                    index_End = (readline.lastIndexOf("_R") > -1) ? readline.lastIndexOf("_R") : readline.lastIndexOf("\"");
 
                 // When SYNTAX ERROR occured, Go to 'while'
                 if(index_Start<0||index_Start>=index_End)
@@ -196,62 +207,119 @@ void MODULE_KEYMAPPER_INITIALIZE()
 
 void MODULE_KEYMAPPER_HIJACK()
 {
+    // Hmmm.. ALREADY DEAD KeyEvent
     if(key == 0 || !isActivateKeyEvent)
         return;
 
+    // THIS KEY IS NOT MAPPED
     if(keymap.find( TeensyLayout_To_Keycode(key) ) == keymap.end())
         return;
-    
+
+
     uint8_t keycode = TeensyLayout_To_Keycode(key);
-    
+
     uint8_t nowStateCSAG = 0;
-    if(KBD_Hijacker.getLogicalState(KEY_LEFT_CTRL) || KBD_Hijacker.getLogicalState(KEY_RIGHT_CTRL))
-        nowStateCSAG |= 0b00001000;
-    if(KBD_Hijacker.getLogicalState(KEY_LEFT_SHIFT)|| KBD_Hijacker.getLogicalState(KEY_RIGHT_SHIFT))
-        nowStateCSAG |= 0b00000100;
-    if(KBD_Hijacker.getLogicalState(KEY_LEFT_ALT)  || KBD_Hijacker.getLogicalState(KEY_RIGHT_ALT))
-        nowStateCSAG |= 0b00000010;
-    if(KBD_Hijacker.getLogicalState(KEY_LEFT_GUI)  || KBD_Hijacker.getLogicalState(KEY_RIGHT_GUI))
-        nowStateCSAG |= 0b00000001;
+    nowStateCSAG |= (KBD_Hijacker.getLogicalState(KEY_LEFT_CTRL) || KBD_Hijacker.getLogicalState(KEY_RIGHT_CTRL)) ? MASK_CTRL : 0;
+    nowStateCSAG |= (KBD_Hijacker.getLogicalState(KEY_LEFT_SHIFT)|| KBD_Hijacker.getLogicalState(KEY_RIGHT_SHIFT))? MASK_SHIFT: 0;
+    nowStateCSAG |= (KBD_Hijacker.getLogicalState(KEY_LEFT_ALT)  || KBD_Hijacker.getLogicalState(KEY_RIGHT_ALT))  ? MASK_ALT  : 0;
+    nowStateCSAG |= (KBD_Hijacker.getLogicalState(KEY_LEFT_GUI)  || KBD_Hijacker.getLogicalState(KEY_RIGHT_GUI))  ? MASK_GUI  : 0;
 
-//    bool nowStateNumLock    = KBD_Hijacker.getStateNumLockToggle();
-//    bool nowStateCapsLock   = KBD_Hijacker.getStateCapsLockToggle();
-//    bool nowStateScrollLock = KBD_Hijacker.getStateScrollLockToggle();
-        
-    //if(isSerial){ Serial.println(); Serial.println("MODULE_KEYMAPPER_HIJACK ACTIVATED"); Serial.print("Now Hijacking KEY : "); print8bitHex(keycode); Serial.println(); Serial.println(); }
+    bool nowStateNumLock    = KBD_Hijacker.getStateNumLockToggle();
+    bool nowStateCapsLock   = KBD_Hijacker.getStateCapsLockToggle();
+    bool nowStateScrollLock = KBD_Hijacker.getStateScrollLockToggle();
 
 
-    Serial.println("******************************************");
-    for (auto& data : keymap[keycode]) {
+    for (auto& data : keymap[keycode])
+    {
+        // CSAGState IS NOT MATCHED !!
+        if((data.stateNCS_CSAG & 0b00001111) != 0 && (data.stateNCS_CSAG & 0b00001111) != nowStateCSAG)
+            continue;
 
+        bool isMatchLockState = false;
 
-
-
-
-        
-        Serial.print("MAPPED mask    : ");
-        print8bitBin(data.stateNCS_CSAG); Serial.println();
-        
-        Serial.print("    mappedLength : ");
-        Serial.println(data.mappedLen);
-
-        if(data.mappedLen == 0)
+        if      ((data.stateNCS_CSAG & MASK_NL) && (data.stateNCS_CSAG & MASK_IsLock)==nowStateNumLock)
         {
-            Serial.print("    mappedTXT : ");
-            Serial.println(((char*)data.mappedThings));
+            isMatchLockState = true;
         }
+        else if ((data.stateNCS_CSAG & MASK_CL) && (data.stateNCS_CSAG & MASK_IsLock)==nowStateCapsLock)
+        {
+            isMatchLockState = true;
+        }
+        else if ((data.stateNCS_CSAG & MASK_SL) && (data.stateNCS_CSAG & MASK_IsLock)==nowStateScrollLock)
+        {
+            isMatchLockState = true;
+        }
+        
+        // LockState IS NOT MATCHED !!
+        if(!isMatchLockState)
+            continue;
+
+
+        // BOTH CSAGState & LockState ALL MATCHED !
+        if(isSerial)
+        {
+            Serial.println();
+            Serial.println("******************************************");
+
+            Serial.println("MAPPED HIJACK EVENT ACTIVATED !"); 
+            Serial.print("Now Hijacking KEY : "); print8bitHex(keycode); Serial.println(); Serial.println();
+
+            Serial.print("MAPPED mask    : ");
+            print8bitBin(data.stateNCS_CSAG); Serial.println();
+            
+            Serial.print("    mappedLength : ");
+            Serial.println(data.mappedLen);
+    
+            if(data.mappedLen == 0)
+            {
+                Serial.print("    mappedTXT : ");
+                Serial.println(((char*)data.mappedThings));
+            }
+            else
+            {
+                for(uint8_t i=0; i<data.mappedLen; i++)
+                { 
+                    Serial.print("    mappedThings[");Serial.print(i);Serial.print("] : ");
+                    print8bitHex( ((uint8_t*)data.mappedThings)[i] ); Serial.println();
+                }
+            }
+
+            Serial.println("******************************************");
+            Serial.println();
+        }
+
+        // This key Mapped One key to One key
+        if(data.mappedLen == 1)
+        {
+            key = keycode_To_TeensyLayout( ((uint8_t*)data.mappedThings)[0] );
+        }
+        // This key Mapped One KEY to NONE And press Shortcut KEY
+        else if(data.mappedLen > 1)
+        {
+            if(event)
+            {
+                KBD_Hijacker.releaseAllBeingHoldDownKey(); delay(10);
+                
+                int32_t keys[data.mappedLen];
+                for(uint8_t i=0; i<data.mappedLen; i++)
+                    keys[i] = keycode_To_TeensyLayout( ((uint8_t*)data.mappedThings)[i] );
+                
+                KBD_Hijacker.pressandreleaseShortcutKey(keys, data.mappedLen, false);
+            }
+            key=0;
+        }
+        // This key Mapped One KEY to NONE And excute MACRO
         else
         {
-            for(uint8_t i=0; i<data.mappedLen; i++)
-            { 
-                Serial.print("    mappedThings[");Serial.print(i);Serial.print("] : ");
-                print8bitHex( ((uint8_t*)data.mappedThings)[i] ); Serial.println();
+            if(event)
+            {
+                KBD_Hijacker.releaseAllBeingHoldDownKey(); delay(10);
+                
+                MODULE_MACRO_PLAYER_OR_RECORDER_START( ((char*)data.mappedThings) );
             }
+            key=0;
         }
+
+        break;
     }
-    Serial.println("******************************************");
-
-
-
-
 }

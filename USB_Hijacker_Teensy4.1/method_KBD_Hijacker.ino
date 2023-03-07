@@ -94,7 +94,7 @@ void KeyboardHijacker::pressandreleaseKey(int32_t key)
 
     return;
 }
-void KeyboardHijacker::pressandreleaseKeys(int32_t len, int32_t* keys)
+void KeyboardHijacker::pressandreleaseKeys(int32_t* keys, int32_t len, bool isKeysDynamic)
 {
     for(int32_t i=0; i<len; i++)
     {
@@ -103,7 +103,9 @@ void KeyboardHijacker::pressandreleaseKeys(int32_t len, int32_t* keys)
     }
     
     delay(11);
-    delete[] keys;
+
+    if(isKeysDynamic)
+        delete[] keys;
 
     return;
 }
@@ -128,7 +130,7 @@ void KeyboardHijacker::pressandreleaseKeys(String str)
     }
     return;
 }
-void KeyboardHijacker::pressandreleaseShortcutKey(int32_t len, int32_t* keys)
+void KeyboardHijacker::pressandreleaseShortcutKey(int32_t* keys, int32_t len, bool isKeysDynamic)
 {
     for(int32_t i=0; i<len; i++)
     {
@@ -141,7 +143,9 @@ void KeyboardHijacker::pressandreleaseShortcutKey(int32_t len, int32_t* keys)
     }
     
     delay(11);
-    delete[] keys;
+
+    if(isKeysDynamic)
+        delete[] keys;
 
     return;
 }
@@ -153,7 +157,7 @@ void KeyboardHijacker::pressandreleaseKey_LikeHuman(int32_t key)
 
     return;
 }
-void KeyboardHijacker::pressandreleaseKeys_LikeHuman(int32_t len, int32_t* keys)
+void KeyboardHijacker::pressandreleaseKeys_LikeHuman(int32_t* keys, int32_t len, bool isKeysDynamic)
 {
     for(int32_t i=0; i<len; i++)
     {
@@ -162,7 +166,9 @@ void KeyboardHijacker::pressandreleaseKeys_LikeHuman(int32_t len, int32_t* keys)
     }
     
     delay(11);
-    delete[] keys;
+
+    if(isKeysDynamic)
+        delete[] keys;
 
     return;
 }
@@ -178,7 +184,7 @@ void KeyboardHijacker::pressandreleaseKeys_LikeHuman(String str)
 
     return;
 }
-void KeyboardHijacker::pressandreleaseShortcutKey_LikeHuman(int32_t len, int32_t* keys)
+void KeyboardHijacker::pressandreleaseShortcutKey_LikeHuman(int32_t* keys, int32_t len, bool isKeysDynamic)
 {
     for(int32_t i=0; i<len; i++)
     {
@@ -191,7 +197,9 @@ void KeyboardHijacker::pressandreleaseShortcutKey_LikeHuman(int32_t len, int32_t
     }
     
     delay(11);
-    delete[] keys;
+
+    if(isKeysDynamic)
+        delete[] keys;
 
     return;
 }

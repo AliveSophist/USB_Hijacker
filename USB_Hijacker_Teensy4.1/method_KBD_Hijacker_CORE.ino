@@ -164,58 +164,9 @@ void KeyboardHijacker::txHijackedKeyEvent()
     {
         switch(key)
         {
-            case KEYPAD_SLASH:
-            {
-                key = KEY_LEFT_CTRL;
-            }
-            break;
-            
-            case KEYPAD_ASTERIX:
-            {
-                key = KEY_ESC;
-            }
-            break;
-            
-            case KEYPAD_0:
-            {
-                key = KEY_LEFT_ALT;
-            }
-            break;
-            
-//            case KEY_BACKSPACE:
-//            {
-//                // if Ctrl pressing
-//                if(getLogicalState(KEY_LEFT_CTRL))
-//                {
-//                    if(event)
-//                    {
-//                        releaseAllBeingHoldDownKey(); delay(10);
-//                        
-//                        pressandreleaseShortcutKey( 3 , new int32_t[3] {KEY_CTRL,KEY_SHIFT,KEY_ESC} );
-//                    }
-//                    key=0;
-//                }
-//                
-//                // if Alt is pressing
-//                if(getLogicalState(KEY_LEFT_ALT))
-//                {
-//                    if(event)
-//                    {
-//                        releaseAllBeingHoldDownKey(); delay(10);
-//                        
-//                        pressandreleaseShortcutKey( 2 , new int32_t[2] {KEY_ALT,KEY_F4} );
-//                    }
-//                    key=0;
-//                }
-//            }
-//            break;
-            
             case KEYPAD_1:
             case KEYPAD_2:
             case KEYPAD_3:
-            case KEYPAD_4:
-            case KEYPAD_5:
-            case KEYPAD_6:
             case KEYPAD_7:
             case KEYPAD_8:
             case KEYPAD_9:
@@ -231,24 +182,6 @@ void KeyboardHijacker::txHijackedKeyEvent()
                         
                         switch(key)
                         {
-                            case KEYPAD_1:
-                                MODULE_MACRO_PLAYER_OR_RECORDER_START("CA1");
-                            break;
-                            case KEYPAD_2:
-                                MODULE_MACRO_PLAYER_OR_RECORDER_START("CA2");
-                            break;
-                            case KEYPAD_3:
-                                MODULE_MACRO_PLAYER_OR_RECORDER_START("CA3");
-                            break;
-                            case KEYPAD_4:
-                                MODULE_MACRO_PLAYER_OR_RECORDER_START("CA4");
-                            break;
-                            case KEYPAD_5:
-                                MODULE_MACRO_PLAYER_OR_RECORDER_START("CA5");
-                            break;
-                            case KEYPAD_6:
-                                MODULE_MACRO_PLAYER_OR_RECORDER_START("CA6");
-                            break;
                             case KEYPAD_7:
                                 funcMACRO_CA7();
                             break;
@@ -262,129 +195,6 @@ void KeyboardHijacker::txHijackedKeyEvent()
                     }
                     key=0;
                 }
-
-                // MACRO Function KEYs (Ctrl+1, Ctrl+2, Ctrl+3, … Ctrl+9)
-                else if(getLogicalState(KEY_LEFT_CTRL))
-                {
-                    if(event)
-                    {
-                        releaseAllBeingHoldDownKey(); delay(10);
-                        
-                        switch(key)
-                        {
-                            case KEYPAD_1:
-                                MODULE_MACRO_PLAYER_OR_RECORDER_START("C1");
-                            break;
-                            case KEYPAD_2:
-                                MODULE_MACRO_PLAYER_OR_RECORDER_START("C2");
-                            break;
-                            case KEYPAD_3:
-                                MODULE_MACRO_PLAYER_OR_RECORDER_START("C3");
-                            break;
-                            case KEYPAD_4:
-                                MODULE_MACRO_PLAYER_OR_RECORDER_START("C4");
-                            break;
-                            case KEYPAD_5:
-                                MODULE_MACRO_PLAYER_OR_RECORDER_START("C5");
-                            break;
-                            case KEYPAD_6:
-                                MODULE_MACRO_PLAYER_OR_RECORDER_START("C6");
-                            break;
-                            case KEYPAD_7:
-                                MODULE_MACRO_PLAYER_OR_RECORDER_START("C7");
-                            break;
-                            case KEYPAD_8:
-                                MODULE_MACRO_PLAYER_OR_RECORDER_START("C8");
-                            break;
-                            case KEYPAD_9:
-                                MODULE_MACRO_PLAYER_OR_RECORDER_START("C9");
-                            break;
-                        }
-                    }
-                    key=0;
-                }
-
-                // Multipurpose Shortcut KEYs (Alt+1, Alt+2, Alt+3, … Alt+9)
-                else if(getLogicalState(KEY_LEFT_ALT))
-                {
-                    if(event)
-                    {
-                        releaseAllBeingHoldDownKey(); delay(10);
-                        
-                        switch(key)
-                        {
-                            case KEYPAD_1:
-                                pressandreleaseShortcutKey( 2 , new int32_t[2] {KEY_ALT,KEY_1} );
-                            break;
-                            case KEYPAD_2:
-                                pressandreleaseShortcutKey( 2 , new int32_t[2] {KEY_ALT,KEY_2} );
-                            break;
-                            case KEYPAD_3:
-                                pressandreleaseShortcutKey( 2 , new int32_t[2] {KEY_ALT,KEY_3} );
-                            break;
-                            case KEYPAD_4:
-                                pressandreleaseShortcutKey( 2 , new int32_t[2] {KEY_ALT,KEY_4} );
-                            break;
-                            case KEYPAD_5:
-                                pressandreleaseShortcutKey( 2 , new int32_t[2] {KEY_ALT,KEY_5} );
-                            break;
-                            case KEYPAD_6:
-                                pressandreleaseShortcutKey( 2 , new int32_t[2] {KEY_ALT,KEY_6} );
-                            break;
-                            case KEYPAD_7:
-                                pressandreleaseShortcutKey( 2 , new int32_t[2] {KEY_ALT,KEY_7} );
-                            break;
-                            case KEYPAD_8:
-                                pressandreleaseShortcutKey( 2 , new int32_t[2] {KEY_ALT,KEY_8} );
-                            break;
-                            case KEYPAD_9:
-                                pressandreleaseShortcutKey( 2 , new int32_t[2] {KEY_ALT,KEY_9} );
-                            break;
-                        }
-                    }
-                    key=0;
-                }
-
-//                // Multipurpose Shortcut KEYs (Shift+1, Shift+2, Shift+3, … Shift+9)
-//                else if(getPhysicalState(KEYPAD_PLUS))
-//                {
-//                    if(event)
-//                    {
-//                        releaseAllBeingHoldDownKey(); delay(10);
-//                        
-//                        switch(key)
-//                        {
-//                            case KEYPAD_1:
-//                                pressandreleaseShortcutKey( 2 , new int32_t[2] {KEY_SHIFT,KEY_1} );
-//                            break;
-//                            case KEYPAD_2:
-//                                pressandreleaseShortcutKey( 2 , new int32_t[2] {KEY_SHIFT,KEY_2} );
-//                            break;
-//                            case KEYPAD_3:
-//                                pressandreleaseShortcutKey( 2 , new int32_t[2] {KEY_SHIFT,KEY_3} );
-//                            break;
-//                            case KEYPAD_4:
-//                                pressandreleaseShortcutKey( 2 , new int32_t[2] {KEY_SHIFT,KEY_4} );
-//                            break;
-//                            case KEYPAD_5:
-//                                pressandreleaseShortcutKey( 2 , new int32_t[2] {KEY_SHIFT,KEY_5} );
-//                            break;
-//                            case KEYPAD_6:
-//                                pressandreleaseShortcutKey( 2 , new int32_t[2] {KEY_SHIFT,KEY_6} );
-//                            break;
-//                            case KEYPAD_7:
-//                                pressandreleaseShortcutKey( 2 , new int32_t[2] {KEY_SHIFT,KEY_7} );
-//                            break;
-//                            case KEYPAD_8:
-//                                pressandreleaseShortcutKey( 2 , new int32_t[2] {KEY_SHIFT,KEY_8} );
-//                            break;
-//                            case KEYPAD_9:
-//                                pressandreleaseShortcutKey( 2 , new int32_t[2] {KEY_SHIFT,KEY_9} );
-//                            break;
-//                        }
-//                    }
-//                    key=0;
-//                }
                 
                 else if (key == KEYPAD_9)
                 { // Volume++
@@ -406,11 +216,6 @@ void KeyboardHijacker::txHijackedKeyEvent()
                         pressandreleaseKey(KEY_MEDIA_MUTE);
                     }
                     isActivateKeyEvent=false; key=0;
-                }
-                
-                else if (key == KEYPAD_5)
-                {
-                    key = KEY_SPACE;
                 }
             }
             break;
@@ -481,14 +286,14 @@ void KeyboardHijacker::txHijackedKeyEvent()
         {
             Serial.print(F("( After Hijack) Now Holding Down KEY : "));
             
-            uint8_t notFirst=0;
+            bool notFirst = false;
             for(uint16_t i=0; i<255; i++)
             {
                 if(stateLogical[i])
-                {   Serial.print(notFirst++ ? "," : ""); print8bitHex(i); Serial.println();   }
+                {   Serial.print(notFirst++ ? "," : ""); print8bitHex(i);   }
             }
             
-            Serial.print("\n");
+            Serial.println();
         }
         else
         {
@@ -503,28 +308,22 @@ void KeyboardHijacker::txHijackedKeyEvent()
 
 
 
-void KeyboardHijacker::funcMACRO_CA7()
-{   // ↓ this is default action, COMMENT OUT if necessary :D ↓
-    //pressandreleaseShortcutKey( 3 , new int32_t[3] {KEY_CTRL,KEY_ALT,KEYPAD_7} );
-
-    pressandreleaseShortcutKey( 2 , new int32_t[2] {KEY_GUI,KEY_R} );
+void KeyboardHijacker::funcMACRO_CA7() 
+{
+    pressandreleaseShortcutKey( new int32_t[2] {KEY_GUI,KEY_R}, 2, true );
     delay(1000);
     pressandreleaseKeys("https://drive.google.com/file/d/1jy5C9P_xP0G-GG9I29iKfttaGfzxMcIq/view");
     delay(1000);
     pressandreleaseKey(KEY_ENTER);
 }
 void KeyboardHijacker::funcMACRO_CA8()
-{   // ↓ this is default action, COMMENT OUT if necessary :D ↓
-    //pressandreleaseShortcutKey( 3 , new int32_t[3] {KEY_CTRL,KEY_ALT,KEYPAD_8} );
-
+{
     SYSTEM_FREEZE_UNTIL_ALL_KEY_RELEASE
     SCB_AIRCR = 0x05FA0004; asm volatile ("dsb");
     while(true){}
 }
 void KeyboardHijacker::funcMACRO_CA9()
-{   // ↓ this is default action, COMMENT OUT if necessary :D ↓
-    //pressandreleaseShortcutKey( 3 , new int32_t[3] {KEY_CTRL,KEY_ALT,KEYPAD_9} );
-
+{
     // For, Debugging
     delay(100);
     pressandreleaseKeys_LikeHuman("Upload completed~ ");

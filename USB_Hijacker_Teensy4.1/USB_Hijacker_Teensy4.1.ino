@@ -192,6 +192,7 @@ struct Buzzzzer
             melody[i]=m[i];
             rhythm[i]=r[i];
         }
+        
         delete[] m;
         delete[] r;
         
@@ -263,14 +264,14 @@ class KeyboardHijacker
     void syncBeingHoldDownKey           (void);
 
     void pressandreleaseKey             (int32_t key);
-    void pressandreleaseKeys            (int32_t len, int32_t* keys);
+    void pressandreleaseKeys            (int32_t* keys, int32_t len, bool isKeysDynamic);
     void pressandreleaseKeys            (String str);
-    void pressandreleaseShortcutKey     (int32_t len, int32_t* keys); // ex) ctrl+c, gui+r, ctrl+alt+esc
+    void pressandreleaseShortcutKey     (int32_t* keys, int32_t len, bool isKeysDynamic); // ex) ctrl+c, gui+r, ctrl+alt+esc
 
     void pressandreleaseKey_LikeHuman           (int32_t key);
-    void pressandreleaseKeys_LikeHuman          (int32_t len, int32_t* keys);
+    void pressandreleaseKeys_LikeHuman          (int32_t* keys, int32_t len, bool isKeysDynamic);
     void pressandreleaseKeys_LikeHuman          (String str);
-    void pressandreleaseShortcutKey_LikeHuman   (int32_t len, int32_t* keys); // ex) ctrl+c, gui+r, ctrl+alt+esc
+    void pressandreleaseShortcutKey_LikeHuman   (int32_t* keys, int32_t len, bool isKeysDynamic); // ex) ctrl+c, gui+r, ctrl+alt+esc
 
     uint32_t msBasedDelay                       = 30;
     uint32_t msExtraDelayMax                    = +50;

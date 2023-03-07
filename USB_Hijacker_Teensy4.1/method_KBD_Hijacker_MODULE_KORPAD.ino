@@ -260,10 +260,10 @@ inline void MODULE_KOREAN_KEYPAD_EVOLUTION()
     
                 KBD_Hijacker.pressandreleaseKey(KEY_F2);
                 delay(11);
-                KBD_Hijacker.pressandreleaseShortcutKey( 2 , new int32_t[2] {KEY_CTRL,KEY_C} );
+                KBD_Hijacker.pressandreleaseShortcutKey( new int32_t[2] {KEY_CTRL,KEY_C}, 2, true );
             }
             else if(PRESSED_TIME_UNTIL_RELEASE > 400){
-                KBD_Hijacker.pressandreleaseShortcutKey( 2 , new int32_t[2] {KEY_CTRL,KEY_F} );
+                KBD_Hijacker.pressandreleaseShortcutKey( new int32_t[2] {KEY_CTRL,KEY_F}, 2, true );
             }
             isActivateKeyEvent=false; key=0;
         }
@@ -276,10 +276,10 @@ inline void MODULE_KOREAN_KEYPAD_EVOLUTION()
     
                 KBD_Hijacker.pressandreleaseKey(KEY_F2);
                 delay(11);
-                KBD_Hijacker.pressandreleaseShortcutKey( 2 , new int32_t[2] {KEY_CTRL,KEY_V} );
+                KBD_Hijacker.pressandreleaseShortcutKey( new int32_t[2] {KEY_CTRL,KEY_V}, 2, true );
             }
             else if(PRESSED_TIME_UNTIL_RELEASE > 400){
-                KBD_Hijacker.pressandreleaseShortcutKey( 2 , new int32_t[2] {KEY_CTRL,KEY_H} );
+                KBD_Hijacker.pressandreleaseShortcutKey( new int32_t[2] {KEY_CTRL,KEY_H}, 2, true );
             }
             isActivateKeyEvent=false; key=0;
         }
@@ -290,13 +290,13 @@ inline void MODULE_KOREAN_KEYPAD_EVOLUTION()
             if(event){
                 KORPAD_resetConfirmedInputs();
     
-                KBD_Hijacker.pressandreleaseShortcutKey( 2 , new int32_t[2] {KEY_SHIFT,KEY_LEFT_ARROW} );
+                KBD_Hijacker.pressandreleaseShortcutKey( new int32_t[2] {KEY_SHIFT,KEY_LEFT_ARROW}, 2, true );
             }
             else if(PRESSED_TIME_UNTIL_RELEASE > 1600){
-                KBD_Hijacker.pressandreleaseShortcutKey( 2 , new int32_t[2] {KEY_CTRL,KEY_A} );
+                KBD_Hijacker.pressandreleaseShortcutKey( new int32_t[2] {KEY_CTRL,KEY_A}, 2, true );
             }
             else if(PRESSED_TIME_UNTIL_RELEASE > 400){
-                KBD_Hijacker.pressandreleaseShortcutKey( 2 , new int32_t[2] {KEY_CTRL,KEY_Z} );
+                KBD_Hijacker.pressandreleaseShortcutKey( new int32_t[2] {KEY_CTRL,KEY_Z}, 2, true );
             }
             isActivateKeyEvent=false; key=0;
         }
@@ -325,7 +325,7 @@ inline void MODULE_KOREAN_KEYPAD_EVOLUTION()
             if(event){
                 if(!ConvertMode_Alphabet){  //ConvertMode_Alphabet is OFF
                     if(strcmp(KorSlot0," ")==0){
-                        KBD_Hijacker.pressandreleaseShortcutKey( 2 , new int32_t[2] {KEY_SHIFT,KEY_ENTER} );
+                        KBD_Hijacker.pressandreleaseShortcutKey( new int32_t[2] {KEY_SHIFT,KEY_ENTER}, 2, true );
                     }
                     else{
                         KBD_Hijacker.pressandreleaseKey(KEY_ENTER);
