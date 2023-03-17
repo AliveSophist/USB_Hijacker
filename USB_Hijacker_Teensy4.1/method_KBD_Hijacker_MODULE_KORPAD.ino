@@ -2221,6 +2221,14 @@ inline void MODULE_KOREAN_KEYPAD_EVOLUTION()
                     strcpy(KorSlot0,";");
                 } else if(strcmp(KorSlot0,";")==0){
                     KBD_Hijacker.pressandreleaseKey(KEY_BACKSPACE);
+                    Keyboard.write ('('); Keyboard.write (')');
+                    strcpy(KorSlot0,"()");
+                } else if(strcmp(KorSlot0,"()")==0){
+                    KBD_Hijacker.pressandreleaseKey(KEY_BACKSPACE); KBD_Hijacker.pressandreleaseKey(KEY_BACKSPACE);
+                    Keyboard.write ('{'); Keyboard.write ('}');
+                    strcpy(KorSlot0,"{}");
+                } else if(strcmp(KorSlot0,"{}")==0){
+                    KBD_Hijacker.pressandreleaseKey(KEY_BACKSPACE); KBD_Hijacker.pressandreleaseKey(KEY_BACKSPACE);
                     Keyboard.write ('?');
                     strcpy(KorSlot0,"?");
                 } else if(strcmp(KorSlot0,"?")==0){

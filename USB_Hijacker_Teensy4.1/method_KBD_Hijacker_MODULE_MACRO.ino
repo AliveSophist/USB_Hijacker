@@ -2,6 +2,8 @@
 bool isMacroRecording   = false;
 bool isMacroPlaying     = false;
 
+bool isMacroOnStarting = false;
+
 uint32_t numRecorded;
 uint32_t numPlayed;
 
@@ -32,14 +34,19 @@ void MODULE_MACRO_PLAYER_OR_RECORDER_START(const char* fname)
         strcat(filename,"_R");
         
     strcat(filename,".TXT");
-    
-    //"_R.TXT" file has priority over ".TXT" file. Therefore ".TXT" file is ignored if "_R.TXT" file exist.
+
+    // CHECK READONLY
+    // "_R.TXT" file has priority over ".TXT" file. Therefore ".TXT" file is ignored if "_R.TXT" file exist.
     if(!SD.exists(filename))
     { strcpy(filename,fname); strcat(filename,".TXT"); isREADONLY=false; }
     
-    // CHECK "PLAY" or "RECORD" by pressed ms
+    // CHECK "PLAY" or "RECORD" by pressed ms, when NOT READONLY
     uint32_t mspressed = 0;
-    while(numDN){ delay(1); mspressed++; }
+    if(!isREADONLY)
+        while(numDN){ delay(1); mspressed++; }
+    else
+        isMacroOnStarting = true;
+    
 
     // START PLAYER
     if(isREADONLY||mspressed<1600)
@@ -344,6 +351,18 @@ void MODULE_MACRO_PLAYER_END()
     
     isMacroPlaying=false; byMacro=false;
     if(isSerial){ Serial.print("\nMODULE_MACRO_PLAYER_END    PLAYED LINES : "); Serial.println(numPlayed); Serial.println(); }
+}
+bool MODULE_MACRO_PREVENT_SEVERAL_EVENTS_ON_STARTING()
+{
+    if(isMacroOnStarting)
+    {
+        if(numDN == 0)
+            isMacroOnStarting = false;
+       
+        return true;
+    }
+
+    return false;
 }
 void MODULE_MACRO_PLAYER_SHUTDOWN_ARBITER()
 {

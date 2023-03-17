@@ -11,7 +11,9 @@
 #define MASK_GUI    0b00000001
 
 struct MappedData {
+    uint32_t millisThreshold;
     uint8_t stateNCS_CSAG;
+    
     uint8_t mappedLen;
     void* mappedThings;
 };
@@ -49,9 +51,11 @@ void MODULE_KEYMAPPER_INITIALIZE()
                 readline[i] -= 32;
         }
 
-        uint8_t keymapKey = String_To_keycode( readline.substring(0, readline.lastIndexOf('[')) );
-
+        uint8_t keymapKey = String_To_keycode( readline );
+        
+        uint32_t millisThreshold = 0;
         uint8_t stateNCS_CSAG = 0;
+        
         // Reflect NLCLSL states & CSAG states
         if(readline.indexOf('<') < readline.indexOf('>'))
         {
@@ -73,7 +77,14 @@ void MODULE_KEYMAPPER_INITIALIZE()
                 stateNCS_CSAG |= (strNLCLSL.lastIndexOf('T') > -1) ? MASK_IsLock : 0;
             }
 
+            // Threshold event and Shortcut(CtrlShiftAltGui) event CANNOT COEXIST
+            // Reflect Threshold millis
+            if(readline.indexOf("THRESHOLD") > -1)
+            {
+                millisThreshold = StringDec_To_int( split_findNum(readline.substring(readline.indexOf("THRESHOLD"))) );                
+            }
             // Reflect CtrlShiftAltGui states
+            else
             {
                 String strCSAG = strNCS_CSAG.substring(index_CSAG);
                 
@@ -113,6 +124,7 @@ void MODULE_KEYMAPPER_INITIALIZE()
         
                 // Create a MappedData object and assign values
                 MappedData data;
+                data.millisThreshold = millisThreshold;
                 data.stateNCS_CSAG = stateNCS_CSAG;
                 data.mappedLen = 0;
                 data.mappedThings = mappedFilename;
@@ -171,6 +183,7 @@ void MODULE_KEYMAPPER_INITIALIZE()
         
                 // Create a MappedData object and assign values
                 MappedData data;
+                data.millisThreshold = millisThreshold;
                 data.stateNCS_CSAG = stateNCS_CSAG;
                 data.mappedLen = mappedLen;
                 data.mappedThings = mappedKeycodes;
@@ -255,7 +268,59 @@ void MODULE_KEYMAPPER_HIJACK()
             continue;
 
 
-        // BOTH CSAGState & LockState ALL MATCHED !
+        // This key Mapped One key to One key
+        if      (data.mappedLen == 1)
+        {
+            key = keycode_To_TeensyLayout( ((uint8_t*)data.mappedThings)[0] );
+        }
+        
+        // This key Mapped One KEY to NONE And press Shortcut KEY
+        else if (data.mappedLen > 1)
+        {
+            isActivateKeyEvent=false; key=0;
+            
+            if(event)
+            {
+                if(data.millisThreshold != 0)
+                    continue;
+                
+                KBD_Hijacker.releaseAllBeingHoldDownKey(); delay(10);
+                
+                int32_t keys[data.mappedLen];
+                for(uint8_t i=0; i<data.mappedLen; i++)
+                    keys[i] = keycode_To_TeensyLayout( ((uint8_t*)data.mappedThings)[i] );
+                
+                KBD_Hijacker.pressandreleaseShortcutKey(keys, data.mappedLen, false);
+            }
+            else
+            {
+                if(data.millisThreshold >= PRESSED_TIME_UNTIL_RELEASE)
+                    continue;
+                
+                KBD_Hijacker.releaseAllBeingHoldDownKey(); delay(10);
+                
+                int32_t keys[data.mappedLen];
+                for(uint8_t i=0; i<data.mappedLen; i++)
+                    keys[i] = keycode_To_TeensyLayout( ((uint8_t*)data.mappedThings)[i] );
+                
+                KBD_Hijacker.pressandreleaseShortcutKey(keys, data.mappedLen, false);
+            }
+        }
+        
+        // This key Mapped One KEY to NONE And excute MACRO
+        else
+        {
+            isActivateKeyEvent=false; key=0;
+            
+            if(event)
+            {
+                KBD_Hijacker.releaseAllBeingHoldDownKey(); delay(10);
+                
+                MODULE_MACRO_PLAYER_OR_RECORDER_START( ((char*)data.mappedThings) );
+            }
+        }
+
+
         if(isSerial)
         {
             Serial.println();
@@ -287,39 +352,7 @@ void MODULE_KEYMAPPER_HIJACK()
             Serial.println("******************************************");
             Serial.println();
         }
-
-        // This key Mapped One key to One key
-        if(data.mappedLen == 1)
-        {
-            key = keycode_To_TeensyLayout( ((uint8_t*)data.mappedThings)[0] );
-        }
-        // This key Mapped One KEY to NONE And press Shortcut KEY
-        else if(data.mappedLen > 1)
-        {
-            if(event)
-            {
-                KBD_Hijacker.releaseAllBeingHoldDownKey(); delay(10);
-                
-                int32_t keys[data.mappedLen];
-                for(uint8_t i=0; i<data.mappedLen; i++)
-                    keys[i] = keycode_To_TeensyLayout( ((uint8_t*)data.mappedThings)[i] );
-                
-                KBD_Hijacker.pressandreleaseShortcutKey(keys, data.mappedLen, false);
-            }
-            key=0;
-        }
-        // This key Mapped One KEY to NONE And excute MACRO
-        else
-        {
-            if(event)
-            {
-                KBD_Hijacker.releaseAllBeingHoldDownKey(); delay(10);
-                
-                MODULE_MACRO_PLAYER_OR_RECORDER_START( ((char*)data.mappedThings) );
-            }
-            key=0;
-        }
-
+        
         break;
     }
 }

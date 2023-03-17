@@ -462,7 +462,10 @@ void OnRawPress(uint8_t keycode)
     
     isExistWaitingEvent_Press = true;
     numDN+=1;
-
+    
+    //PREVENT several events when MACRO is ON STARTING
+    if(MODULE_MACRO_PREVENT_SEVERAL_EVENTS_ON_STARTING())
+        isExistWaitingEvent_Press = false;
 
 
     if(isSerial)
@@ -490,10 +493,13 @@ void OnRawRelease(uint8_t keycode)
     
     isExistWaitingEvent_Release = true;
     if(numDN>0) numDN-=1;
+    
+    //PREVENT several events when MACRO is ON STARTING
+    if(MODULE_MACRO_PREVENT_SEVERAL_EVENTS_ON_STARTING())
+        isExistWaitingEvent_Release = false;
 
-    //syncToggleKeyStates() in a few ms
+    //syncToggleKeyStates() after a few ms
     if(key == KEY_NUM_LOCK || key == KEY_CAPS_LOCK || key == KEY_SCROLL_LOCK) KBD_Hijacker.reserveSyncTKS=true;
-
 
     
     if(isSerial)
@@ -501,7 +507,7 @@ void OnRawRelease(uint8_t keycode)
         MEASURE_FREE_MEMORY();
         
         Serial.print(F("\n(Before Hijack) UP ")); PrintKey(keycode);
-        Serial.print(F("         Pressed Time : ")); Serial.println(millis()-msLatestEventPressed);
+        Serial.print(F("         Threshold Time : ")); Serial.println(millis()-msLatestEventPressed);
     }
 }
 

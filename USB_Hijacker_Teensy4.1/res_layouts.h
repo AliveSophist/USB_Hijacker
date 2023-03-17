@@ -1,27 +1,45 @@
 
 static int32_t keycode_To_TeensyLayout(uint8_t keycode)
 {
-    if(keycode <= 0x65)
+    if      (keycode <= 0x65)
         return ( keycode | 0xF000 );
+
+    else if (0x81 <= keycode && keycode <= 0x83)
+        return ( keycode | 0xE200 );
+
+    else if (0xB0 <= keycode && keycode <= 0xEA)
+        return ( keycode | 0xE400 );
+
+    else if (0x67 <= keycode && keycode <= 0x6E)
+        return ( (1 << (keycode-0x67)) | 0xE000 );
+
+//  MODIFIERKEY_LEFT_CTRL   ( 0x01 | 0xE000 )   1
+//  MODIFIERKEY_LEFT_SHIFT  ( 0x02 | 0xE000 )   2
+//  MODIFIERKEY_LEFT_ALT    ( 0x04 | 0xE000 )   4
+//  MODIFIERKEY_LEFT_GUI    ( 0x08 | 0xE000 )   8
+//  MODIFIERKEY_RIGHT_CTRL  ( 0x10 | 0xE000 )   16
+//  MODIFIERKEY_RIGHT_SHIFT ( 0x20 | 0xE000 )   32
+//  MODIFIERKEY_RIGHT_ALT   ( 0x40 | 0xE000 )   64
+//  MODIFIERKEY_RIGHT_GUI   ( 0x80 | 0xE000 )   128
+//
+//    else if (keycode == 0x67)
+//        return ( MODIFIERKEY_LEFT_CTRL );
+//    else if (keycode == 0x68)
+//        return ( MODIFIERKEY_LEFT_SHIFT );
+//    else if (keycode == 0x69)
+//        return ( MODIFIERKEY_LEFT_ALT );
+//    else if (keycode == 0x6A)
+//        return ( MODIFIERKEY_LEFT_GUI );
+//    else if (keycode == 0x6B)
+//        return ( MODIFIERKEY_RIGHT_CTRL );
+//    else if (keycode == 0x6C)
+//        return ( MODIFIERKEY_RIGHT_SHIFT );
+//    else if (keycode == 0x6D)
+//        return ( MODIFIERKEY_RIGHT_ALT );
+//    else if (keycode == 0x6E)
+//        return ( MODIFIERKEY_RIGHT_GUI );
         
-    else if(keycode == 0x67)
-        return ( MODIFIERKEY_LEFT_CTRL );
-    else if(keycode == 0x68)
-        return ( MODIFIERKEY_LEFT_SHIFT );
-    else if(keycode == 0x69)
-        return ( MODIFIERKEY_LEFT_ALT );
-    else if(keycode == 0x6A)
-        return ( MODIFIERKEY_LEFT_GUI );
-    else if(keycode == 0x6B)
-        return ( MODIFIERKEY_RIGHT_CTRL );
-    else if(keycode == 0x6C)
-        return ( MODIFIERKEY_RIGHT_SHIFT );
-    else if(keycode == 0x6D)
-        return ( MODIFIERKEY_RIGHT_ALT );
-    else if(keycode == 0x6E)
-        return ( MODIFIERKEY_RIGHT_GUI );
-        
-    else if(keycode == 0x90) //  KEY_KORENG
+    else if (keycode == 0x90) //  KEY_KORENG
         return ( MODIFIERKEY_RIGHT_ALT );
 
     return 0;
@@ -29,24 +47,43 @@ static int32_t keycode_To_TeensyLayout(uint8_t keycode)
 
 static uint8_t TeensyLayout_To_Keycode(int32_t key)
 {
-    if( 0xF000 <= key && key <= 0xF065 )
+    if      (0xF000 <= key && key <= 0xF065)
         return ( key & ~(0xF000) );
         
-    else if(key == MODIFIERKEY_LEFT_CTRL)
+    else if (0xE281 <= key && key <= 0xE283)
+        return ( key & ~(0xE200) );
+        
+    else if (0xE4B0 <= key && key <= 0xE4EA)
+        return ( key & ~(0xE400) );
+
+
+
+
+        
+//    else if (0xE001 <= key && key <= 0xE080)
+//        return ( key & ~(0xE000) );
+
+
+//    else if (0x67 <= keycode && keycode <= 0x6E)
+
+
+
+        
+    else if (key == MODIFIERKEY_LEFT_CTRL)
         return 0x67;
-    else if(key == MODIFIERKEY_LEFT_SHIFT)
+    else if (key == MODIFIERKEY_LEFT_SHIFT)
         return 0x68;
-    else if(key == MODIFIERKEY_LEFT_ALT)
+    else if (key == MODIFIERKEY_LEFT_ALT)
         return 0x69;
-    else if(key == MODIFIERKEY_LEFT_GUI)
+    else if (key == MODIFIERKEY_LEFT_GUI)
         return 0x6A;
-    else if(key == MODIFIERKEY_RIGHT_CTRL)
+    else if (key == MODIFIERKEY_RIGHT_CTRL)
         return 0x6B;
-    else if(key == MODIFIERKEY_RIGHT_SHIFT)
+    else if (key == MODIFIERKEY_RIGHT_SHIFT)
         return 0x6C;
-    else if(key == MODIFIERKEY_RIGHT_ALT)
+    else if (key == MODIFIERKEY_RIGHT_ALT)
         return 0x6D;
-    else if(key == MODIFIERKEY_RIGHT_GUI)
+    else if (key == MODIFIERKEY_RIGHT_GUI)
         return 0x6E;
 
     return 0;
@@ -460,8 +497,6 @@ uint8_t String_To_keycode(String str)
 //  KEY_CONTEXT         0x65 //   Alias
 //  KEY_MENU            0x65 //   Alias
 //  
-//  KEY_KORENG          0x90 //   KOR-ENG Swap
-//  
 //  KEY_CTRL            0x67
 //  KEY_SHIFT           0x68
 //  KEY_ALT             0x69
@@ -477,6 +512,8 @@ uint8_t String_To_keycode(String str)
 //  KEY_RIGHT_ALT       0x6D
 //  KEY_RIGHT_GUI       0x6E
 //  KEY_RIGHT_WINDOWS   0x6E //   Alias
+//  
+//  KEY_KORENG          0x90 //   KOR-ENG Swap
 
 
 
