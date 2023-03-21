@@ -11,6 +11,8 @@ bool byMacro;
 
 uint32_t msLeftUntilNextMacro;
 
+//static std::map<String, uint8_t> MAP_CUSTOM_DELAY;
+
 
 
 
@@ -215,15 +217,17 @@ void MODULE_MACRO_PLAYER_ONGOING()
         }
         else
         {
+            if(isSerial) Serial.println();
+            
             MODULE_MACRO_PLAYER_END();
             return;
         }
     
-        //exclude COMMENT
+        // Exclude COMMENT
         if(0==readline.indexOf('/'))
             return;
 
-        //To uppercase
+        // To uppercase
         for(uint32_t i=0; i<readline.length(); i++)
         {
             if('a' <= readline[i] && readline[i] <= 'z')
@@ -234,10 +238,10 @@ void MODULE_MACRO_PLAYER_ONGOING()
                 break;
         }
 
-        //Check readline
-        if(isSerial){ Serial.print("\nREADLINE:"); Serial.println(readline); }
+        // Check readline
+        //if(isSerial){ Serial.print("\nREADLINE:"); Serial.println(readline); }
 
-        //analyze MacroEvent
+        // Analyze MacroEvent
         if(-1 < readline.indexOf("DNUP"))
         {
             uint8_t keycode = String_To_keycode(readline);
@@ -245,10 +249,13 @@ void MODULE_MACRO_PLAYER_ONGOING()
             if(keycode!=0)
             {
                 // OnRawPress By Macro
-                KeyLogger.push(keycode);
                 key   = keycode_To_TeensyLayout(keycode);
                 event = true;
+                
+                KeyLogger.push(keycode);
+                
                 if(isSerial){ Serial.print(F("\n(*MACRO EVENT*) DN ")); PrintKey(keycode); Serial.println(); }
+
 
                 // txHijackedKeyEvent By Macro
                 msLatestEventCame = msLatestEventPressed = millis();
@@ -259,16 +266,18 @@ void MODULE_MACRO_PLAYER_ONGOING()
                 // OnRawRelease By Macro
                 key   = keycode_To_TeensyLayout(keycode);
                 event = false;
-                if(isSerial){ Serial.print(F("\n(*MACRO EVENT*) UP ")); PrintKey(keycode); Serial.print(F("         Pressed Time : ")); Serial.println(millis()-msLatestEventPressed); }
-            
+
+                if(isSerial){ Serial.print(F("(*MACRO EVENT*) UP ")); PrintKey(keycode); Serial.print(F("         Pressed Time : ")); Serial.println(millis()-msLatestEventPressed); }
+
+
                 // txHijackedKeyEvent By Macro
                 msLatestEventCame = millis();
                 KBD_Hijacker.txHijackedKeyEvent();
             }
-            
+
             byMacro=true;
             numPlayed++;
-            return;
+            continue;
         }
         else if(-1 < readline.indexOf("DN"))
         {
@@ -277,10 +286,13 @@ void MODULE_MACRO_PLAYER_ONGOING()
             if(keycode!=0)
             {
                 // OnRawPress By Macro
-                KeyLogger.push(keycode);
                 key   = keycode_To_TeensyLayout(keycode);
                 event = true;
+                
+                KeyLogger.push(keycode);
+                
                 if(isSerial){ Serial.print(F("\n(*MACRO EVENT*) DN ")); PrintKey(keycode); Serial.println(); }
+
 
                 // txHijackedKeyEvent By Macro
                 msLatestEventCame = msLatestEventPressed = millis();
@@ -289,7 +301,7 @@ void MODULE_MACRO_PLAYER_ONGOING()
             
             byMacro=true;
             numPlayed++;
-            return;
+            continue;
         }
         else if(-1 < readline.indexOf("UP"))
         {
@@ -300,16 +312,18 @@ void MODULE_MACRO_PLAYER_ONGOING()
                 // OnRawRelease By Macro
                 key   = keycode_To_TeensyLayout(keycode);
                 event = false;
+                
                 if(isSerial){ Serial.print(F("\n(*MACRO EVENT*) UP ")); PrintKey(keycode); Serial.print(F("         Pressed Time : ")); Serial.println(millis()-msLatestEventPressed); }
+
 
                 // txHijackedKeyEvent By Macro
                 msLatestEventCame = millis();
                 KBD_Hijacker.txHijackedKeyEvent();
             }
-            
+
             byMacro=true;
             numPlayed++;
-            return;
+            continue;
         }
         else if (-1 < readline.indexOf("TY"))
         {
@@ -320,17 +334,22 @@ void MODULE_MACRO_PLAYER_ONGOING()
             String strTyping = readline.substring(index_Start+1,index_End);
 
             KBD_Hijacker.pressandreleaseKeys(strTyping);
+
+            if(isSerial){ Serial.print(F("\n(*MACRO EVENT*) TYPE : ")); Serial.println(strTyping); }
             
             byMacro=true;
             numPlayed++;
-            return;
+            continue;
         }
         else
         {
             msLeftUntilNextMacro = StringDec_To_int(split_findNum(readline));
-    
-            if(isSerial){ Serial.print(F("                                            Next MacroEvent lefts : ")); Serial.println(msLeftUntilNextMacro); }
             
+            if(msLeftUntilNextMacro == 0)
+                continue;
+
+            if(isSerial){ Serial.print(F("                                            Next MacroEvent lefts : ")); Serial.println(msLeftUntilNextMacro); }
+
             byMacro=true;
             numPlayed++;
             return;

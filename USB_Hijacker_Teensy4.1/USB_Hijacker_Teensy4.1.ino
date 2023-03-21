@@ -28,6 +28,7 @@ extern "C"
     };
 
     usb_string_descriptor_struct usb_string_manufacturer_name = {
+        
     /*
      *  2 + MANUFACTURER_NAME_LEN * 2,
      *  3,
@@ -40,6 +41,7 @@ extern "C"
     };
     
     usb_string_descriptor_struct usb_string_product_name = {
+        
     /*
      *  2 + PRODUCT_NAME_LEN * 2,
      *  3,
@@ -58,6 +60,7 @@ extern "C"
     };
     
     usb_string_descriptor_struct usb_string_serial_number = {
+        
     /*
      *  2 + SERIAL_NUMBER_LEN * 2,
      *  3,
@@ -68,7 +71,7 @@ extern "C"
         3,
         {}
     };
-    
+
 #ifdef __cplusplus
 }
 #endif
@@ -84,13 +87,11 @@ extern "C"
 
 #include <USBHost_t36.h>
 
-//#include <SPI.h>
+#include "res_layouts.h"
+#include "res_pitches.h"
 
 #include <SD.h>
 File textfile;
-
-#include "res_layouts.h"
-#include "res_pitches.h"
 
 
 
@@ -261,7 +262,6 @@ class KeyboardHijacker
 
     bool isExistHoldingDownKey          (void) { return (numBeingHoldDownKey>0); }
     void releaseAllBeingHoldDownKey     (void);
-    void syncBeingHoldDownKey           (void);
 
     void pressandreleaseKey             (int32_t key);
     void pressandreleaseKeys            (int32_t* keys, int32_t len, bool isKeysDynamic);
@@ -281,7 +281,6 @@ class KeyboardHijacker
 
     // THE C.O.R.E. of HIJACKER
     void txHijackedKeyEvent();
-    void funcMACRO_CA7(), funcMACRO_CA8(), funcMACRO_CA9();
 } KBD_Hijacker;
 
 
@@ -297,9 +296,10 @@ volatile int32_t key;   //keycode on the Teensy layout
 volatile bool event;    //true:pressed false:released
 volatile bool isActivateKeyEvent;
 
-bool statePhysical[255] = {false};
-void setPhysicalState   (int32_t key, bool state)   { statePhysical[TeensyLayout_To_Keycode(key)] = state; }
-bool getPhysicalState   (int32_t key)               { return statePhysical[TeensyLayout_To_Keycode(key)]; }
+//Physical features may not has any meaning...
+//bool statePhysical[255] = {false};
+//void setPhysicalState   (int32_t key, bool state)   { statePhysical[TeensyLayout_To_Keycode(key)] = state; }
+//bool getPhysicalState   (int32_t key)               { return statePhysical[TeensyLayout_To_Keycode(key)]; }
 
 volatile bool isExistWaitingEvent_Press     = false;
 volatile bool isExistWaitingEvent_Release   = false;
@@ -445,12 +445,19 @@ void PrintKey(uint8_t keycode)
 }
 void OnRawPress(uint8_t keycode)
 {
-    KeyLogger.push(keycode);
-    
     key   = keycode_To_TeensyLayout(keycode);
     event = true;
-    setPhysicalState(key,true);
     
+    isExistWaitingEvent_Press = true;
+    
+    numDN+=1;
+    
+    KeyLogger.push(keycode);
+
+    
+    //setPhysicalState(key,true);
+
+
     //MODULE_MACRO
     {
         //if Recording
@@ -458,14 +465,11 @@ void OnRawPress(uint8_t keycode)
 
         //if Playing
         MODULE_MACRO_PLAYER_SETSTATE_BY_FORCE();
+        
+        //PREVENT several events when MACRO is ON STARTING
+        if(MODULE_MACRO_PREVENT_SEVERAL_EVENTS_ON_STARTING())
+            isExistWaitingEvent_Press = false;
     }
-    
-    isExistWaitingEvent_Press = true;
-    numDN+=1;
-    
-    //PREVENT several events when MACRO is ON STARTING
-    if(MODULE_MACRO_PREVENT_SEVERAL_EVENTS_ON_STARTING())
-        isExistWaitingEvent_Press = false;
 
 
     if(isSerial)
@@ -480,7 +484,14 @@ void OnRawRelease(uint8_t keycode)
 {
     key   = keycode_To_TeensyLayout(keycode);
     event = false;
-    setPhysicalState(key,false);
+    
+    isExistWaitingEvent_Release = true;
+    
+    if(numDN>0) numDN-=1;
+
+    
+    //setPhysicalState(key,false);
+
 
     //MODULE_MACRO
     {
@@ -489,25 +500,19 @@ void OnRawRelease(uint8_t keycode)
 
         //if Playing
         MODULE_MACRO_PLAYER_SETSTATE_BY_FORCE();
+
+        //PREVENT several events when MACRO is ON STARTING
+        if(MODULE_MACRO_PREVENT_SEVERAL_EVENTS_ON_STARTING())
+            isExistWaitingEvent_Release = false;
     }
-    
-    isExistWaitingEvent_Release = true;
-    if(numDN>0) numDN-=1;
-    
-    //PREVENT several events when MACRO is ON STARTING
-    if(MODULE_MACRO_PREVENT_SEVERAL_EVENTS_ON_STARTING())
-        isExistWaitingEvent_Release = false;
 
-    //syncToggleKeyStates() after a few ms
-    if(key == KEY_NUM_LOCK || key == KEY_CAPS_LOCK || key == KEY_SCROLL_LOCK) KBD_Hijacker.reserveSyncTKS=true;
 
-    
     if(isSerial)
     {
         MEASURE_FREE_MEMORY();
         
         Serial.print(F("\n(Before Hijack) UP ")); PrintKey(keycode);
-        Serial.print(F("         Threshold Time : ")); Serial.println(millis()-msLatestEventPressed);
+        Serial.print(F("         Pressed Time : ")); Serial.println(millis()-msLatestEventPressed);
     }
 }
 
@@ -528,14 +533,14 @@ void per1ms()
         MODULE_MACRO_PLAYER_ONGOING();
 
         static int8_t countdownSyncTKS = -1;
-        if(-1<countdownSyncTKS)
+        if(countdownSyncTKS>-1)
         {
             countdownSyncTKS--;
             if(countdownSyncTKS==0) KBD_Hijacker.syncToggleKeyStates();
         }
         if(KBD_Hijacker.reserveSyncTKS)
         {
-            countdownSyncTKS=70;
+            countdownSyncTKS=77;
             KBD_Hijacker.reserveSyncTKS=false;
         }
     }

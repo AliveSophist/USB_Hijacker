@@ -223,7 +223,7 @@ inline void MODULE_KOREAN_KEYPAD_EVOLUTION()
                 bool stateBeforeReverse = KBD_Hijacker.getStateScrollLockToggle();
                 
                 KBD_Hijacker.pressandreleaseKey(KEY_KORENG);
-                KBD_Hijacker.reserveSyncTKS=true; delay(80);
+                KBD_Hijacker.reserveSyncTKS=true; delay(100);
 
                 //Rollback KorEng status, if system is not using KorEngStatus.exe
                 if(stateBeforeReverse == KBD_Hijacker.getStateScrollLockToggle()){
@@ -236,7 +236,7 @@ inline void MODULE_KOREAN_KEYPAD_EVOLUTION()
                 KBD_Hijacker.pressandreleaseKey(KEY_KORENG);
             }
             //syncToggleKeyStates() in a few ms
-            KBD_Hijacker.reserveSyncTKS=true; delay(80);
+            KBD_Hijacker.reserveSyncTKS=true; delay(100);
             KORPAD_resetConfirmedInputs();
 
             isActivateKeyEvent=false; key=0;
