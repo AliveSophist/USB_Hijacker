@@ -146,7 +146,17 @@ void KORPAD_switchCapsLockToggleIfBattered4()
                 }
                 else if(KORPAD_isExistConsonant(KorSlot2))
                 {
-                    if((strcmp(KorSlot2,"r")==0&&strcmp(KorSlot1,"t")==0)||(strcmp(KorSlot2,"s")==0&&strcmp(KorSlot1,"w")==0)||(strcmp(KorSlot2,"s")==0&&strcmp(KorSlot1,"g")==0)||(strcmp(KorSlot2,"f")==0&&strcmp(KorSlot1,"r")==0)||(strcmp(KorSlot2,"f")==0&&strcmp(KorSlot1,"a")==0)||(strcmp(KorSlot2,"f")==0&&strcmp(KorSlot1,"q")==0)||(strcmp(KorSlot2,"f")==0&&strcmp(KorSlot1,"t")==0)||(strcmp(KorSlot2,"f")==0&&strcmp(KorSlot1,"x")==0)||(strcmp(KorSlot2,"f")==0&&strcmp(KorSlot1,"v")==0)||(strcmp(KorSlot2,"f")==0&&strcmp(KorSlot1,"g")==0)||(strcmp(KorSlot2,"q")==0&&strcmp(KorSlot1,"t")==0))
+                    if( (strcmp(KorSlot2,"r")==0&&strcmp(KorSlot1,"t")==0) ||
+                        (strcmp(KorSlot2,"s")==0&&strcmp(KorSlot1,"w")==0) ||
+                        (strcmp(KorSlot2,"s")==0&&strcmp(KorSlot1,"g")==0) ||
+                        (strcmp(KorSlot2,"f")==0&&strcmp(KorSlot1,"r")==0) ||
+                        (strcmp(KorSlot2,"f")==0&&strcmp(KorSlot1,"a")==0) ||
+                        (strcmp(KorSlot2,"f")==0&&strcmp(KorSlot1,"q")==0) ||
+                        (strcmp(KorSlot2,"f")==0&&strcmp(KorSlot1,"t")==0) ||
+                        (strcmp(KorSlot2,"f")==0&&strcmp(KorSlot1,"x")==0) ||
+                        (strcmp(KorSlot2,"f")==0&&strcmp(KorSlot1,"v")==0) ||
+                        (strcmp(KorSlot2,"f")==0&&strcmp(KorSlot1,"g")==0) ||
+                        (strcmp(KorSlot2,"q")==0&&strcmp(KorSlot1,"t")==0) )
                     {
                         if(KORPAD_isExistVowel(KorSlot3))
                         {
@@ -197,9 +207,8 @@ inline void MODULE_KOREAN_KEYPAD_EVOLUTION()
             KoreanKeypadToggle = false;
             ConvertMode_Alphabet = false;
             
-            Buzzzzer.reserveBuzz(   new uint16_t[1] {NOTE_D3},
-                                    new uint16_t[1] {181},
-                                    1   );
+            Buzzzzer.reserveBuzz(   { NOTE_D3 }
+                                ,   { 181     }   );
         }
         else if(PRESSED_TIME_UNTIL_RELEASE > 400){
             
@@ -208,9 +217,8 @@ inline void MODULE_KOREAN_KEYPAD_EVOLUTION()
             //Turn On  KoreanKeypadToggle
             KoreanKeypadToggle = true;
             
-            Buzzzzer.reserveBuzz(   new uint16_t[1] {NOTE_G5},
-                                    new uint16_t[1] {333},
-                                    1   );
+            Buzzzzer.reserveBuzz(   { NOTE_G5 }
+                                ,   { 333     }   );
             
             //While KoreanKeypadToggle is on, Numlock is always on
             if(!KBD_Hijacker.getStateNumLockToggle()){
@@ -260,10 +268,10 @@ inline void MODULE_KOREAN_KEYPAD_EVOLUTION()
     
                 KBD_Hijacker.pressandreleaseKey(KEY_F2);
                 delay(11);
-                KBD_Hijacker.pressandreleaseShortcutKey( new int32_t[2] {KEY_CTRL,KEY_C}, 2, true );
+                KBD_Hijacker.pressandreleaseShortcutKey( {KEY_CTRL,KEY_C} );
             }
             else if(PRESSED_TIME_UNTIL_RELEASE > 400){
-                KBD_Hijacker.pressandreleaseShortcutKey( new int32_t[2] {KEY_CTRL,KEY_F}, 2, true );
+                KBD_Hijacker.pressandreleaseShortcutKey( {KEY_CTRL,KEY_F} );
             }
             isActivateKeyEvent=false; key=0;
         }
@@ -276,10 +284,10 @@ inline void MODULE_KOREAN_KEYPAD_EVOLUTION()
     
                 KBD_Hijacker.pressandreleaseKey(KEY_F2);
                 delay(11);
-                KBD_Hijacker.pressandreleaseShortcutKey( new int32_t[2] {KEY_CTRL,KEY_V}, 2, true );
+                KBD_Hijacker.pressandreleaseShortcutKey( {KEY_CTRL,KEY_V} );
             }
             else if(PRESSED_TIME_UNTIL_RELEASE > 400){
-                KBD_Hijacker.pressandreleaseShortcutKey( new int32_t[2] {KEY_CTRL,KEY_H}, 2, true );
+                KBD_Hijacker.pressandreleaseShortcutKey( {KEY_CTRL,KEY_H} );
             }
             isActivateKeyEvent=false; key=0;
         }
@@ -290,13 +298,13 @@ inline void MODULE_KOREAN_KEYPAD_EVOLUTION()
             if(event){
                 KORPAD_resetConfirmedInputs();
     
-                KBD_Hijacker.pressandreleaseShortcutKey( new int32_t[2] {KEY_SHIFT,KEY_LEFT_ARROW}, 2, true );
+                KBD_Hijacker.pressandreleaseShortcutKey( {KEY_SHIFT,KEY_LEFT_ARROW} );
             }
             else if(PRESSED_TIME_UNTIL_RELEASE > 1600){
-                KBD_Hijacker.pressandreleaseShortcutKey( new int32_t[2] {KEY_CTRL,KEY_A}, 2, true );
+                KBD_Hijacker.pressandreleaseShortcutKey( {KEY_CTRL,KEY_A} );
             }
             else if(PRESSED_TIME_UNTIL_RELEASE > 400){
-                KBD_Hijacker.pressandreleaseShortcutKey( new int32_t[2] {KEY_CTRL,KEY_Z}, 2, true );
+                KBD_Hijacker.pressandreleaseShortcutKey( {KEY_CTRL,KEY_Z} );
             }
             isActivateKeyEvent=false; key=0;
         }
@@ -323,27 +331,22 @@ inline void MODULE_KOREAN_KEYPAD_EVOLUTION()
         case KEYPAD_ENTER:
         {
             if(event){
-                if(!ConvertMode_Alphabet){  //ConvertMode_Alphabet is OFF
-                    if(strcmp(KorSlot0," ")==0){
-                        KBD_Hijacker.pressandreleaseShortcutKey( new int32_t[2] {KEY_SHIFT,KEY_ENTER}, 2, true );
-                    }
-                    else{
-                        KBD_Hijacker.pressandreleaseKey(KEY_ENTER);
-                    }
+                // whether ConvertMode_Alphabet ON or OFF
+                if(strcmp(KorSlot0," ")==0){
+                    KBD_Hijacker.pressandreleaseKey(KEY_BACKSPACE);
+                    KBD_Hijacker.pressandreleaseShortcutKey( {KEY_SHIFT,KEY_ENTER} );
                     KORPAD_resetConfirmedInputs();
                 }
-                else{                       //ConvertMode_Alphabet is ON
-                    if       (strcmp(KorSlot0," ")==0){
-                        //Turn Off ConvertMode_Alphabet
-                        ConvertMode_Alphabet = false;
-                        
-                        Buzzzzer.reserveBuzz(   new uint16_t[7] {   NOTE_AS5,0, NOTE_GS5,0, NOTE_FS5,0, NOTE_FS5    },
-                                                new uint16_t[7] {   300,50,     230,50,     170,100,    350         },
-                                                7   );
-                        
-                        KORPAD_resetConfirmedInputs();
-                        
-                    } else if(KORPAD_isAlphabetPronounce("d","o","d","l")){
+
+                // ConvertMode_Alphabet OFF only
+                else if(!ConvertMode_Alphabet){
+                    KBD_Hijacker.pressandreleaseKey(KEY_ENTER);
+                    KORPAD_resetConfirmedInputs();
+                }
+                
+                // ConvertMode_Alphabet ON only
+                else{
+                    if       (KORPAD_isAlphabetPronounce("d","o","d","l")){
                         KBD_Hijacker.pressandreleaseKey(KEY_SPACE); KBD_Hijacker.pressandreleaseKey(KEY_BACKSPACE);
                         KBD_Hijacker.pressandreleaseKey(KEY_BACKSPACE); KBD_Hijacker.pressandreleaseKey(KEY_BACKSPACE);
                         KORPAD_writeAlphabet('a');
@@ -1480,9 +1483,8 @@ inline void MODULE_KOREAN_KEYPAD_EVOLUTION()
                     //Turn On  ConvertMode_Alphabet
                     ConvertMode_Alphabet = true;
                         
-                    Buzzzzer.reserveBuzz(   new uint16_t[9] {   NOTE_FS5,0, NOTE_GS5,0, NOTE_AS5,0, NOTE_DS6,0, NOTE_CS6    },
-                                            new uint16_t[9] {   200,30,     100,150,    120,200,    150,150,    450         },
-                                            9   );
+                    Buzzzzer.reserveBuzz(   { NOTE_FS5,0, NOTE_GS5,0, NOTE_AS5,0, NOTE_DS6,0, NOTE_CS6 }
+                                        ,   { 200,30,     100,150,    120,200,    150,150,    450      }   );
                     
                     //If CAPSLOCK was On, Turn Off BY FORCE
                     if(KBD_Hijacker.getStateCapsLockToggle()){
@@ -1496,9 +1498,8 @@ inline void MODULE_KOREAN_KEYPAD_EVOLUTION()
                     //Turn Off ConvertMode_Alphabet
                     ConvertMode_Alphabet = false;
                         
-                    Buzzzzer.reserveBuzz(   new uint16_t[7] {   NOTE_AS5,0, NOTE_GS5,0, NOTE_FS5,0, NOTE_FS5    },
-                                            new uint16_t[7] {   300,50,     230,50,     170,100,    350         },
-                                            7   );
+                    Buzzzzer.reserveBuzz(   { NOTE_AS5,0, NOTE_GS5,0, NOTE_FS5,0, NOTE_FS5 }
+                                        ,   { 300,50,     230,50,     170,100,    350      }   );
                 }
             } else{
                 if       (strcmp(KorSlot0,"")==0){
@@ -2150,9 +2151,8 @@ inline void MODULE_KOREAN_KEYPAD_EVOLUTION()
                     //Turn On  ConvertMode_Alphabet
                     ConvertMode_Alphabet = true;
     
-                    Buzzzzer.reserveBuzz(   new uint16_t[9] {   NOTE_FS5,0, NOTE_GS5,0, NOTE_AS5,0, NOTE_DS6,0, NOTE_CS6    },
-                                            new uint16_t[9] {   200,30,     100,150,    120,200,    150,150,    450         },
-                                            9   );
+                    Buzzzzer.reserveBuzz(   { NOTE_FS5,0, NOTE_GS5,0, NOTE_AS5,0, NOTE_DS6,0, NOTE_CS6 }
+                                        ,   { 200,30,     100,150,    120,200,    150,150,    450      }   );
                     
                     //If CAPSLOCK was On, Turn Off BY FORCE
                     if(KBD_Hijacker.getStateCapsLockToggle()){
@@ -2166,9 +2166,8 @@ inline void MODULE_KOREAN_KEYPAD_EVOLUTION()
                     //Turn Off ConvertMode_Alphabet
                     ConvertMode_Alphabet = false;
                                             
-                    Buzzzzer.reserveBuzz(   new uint16_t[7] {   NOTE_AS5,0, NOTE_GS5,0, NOTE_FS5,0, NOTE_FS5    },
-                                            new uint16_t[7] {   300,50,     230,50,     170,100,    350         },
-                                            7   );
+                    Buzzzzer.reserveBuzz(   { NOTE_AS5,0, NOTE_GS5,0, NOTE_FS5,0, NOTE_FS5 }
+                                        ,   { 300,50,     230,50,     170,100,    350      }   );
                 }
             } else{
                 if       (strcmp(KorSlot0,"r")==0){

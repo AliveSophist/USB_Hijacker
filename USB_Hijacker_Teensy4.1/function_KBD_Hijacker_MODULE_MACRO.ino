@@ -11,7 +11,8 @@ bool byMacro;
 
 uint32_t msLeftUntilNextMacro;
 
-//static std::map<String, uint8_t> MAP_CUSTOM_DELAY;
+std::map<String, list<String>> MAP_MINI_MACRO;
+list<String> QUEUE_NOW_MINI_MACRO;
 
 
 
@@ -65,6 +66,7 @@ void MODULE_MACRO_PLAYER_OR_RECORDER_START(const char* fname)
         textfile = SD.open(filename);
         
         isMacroPlaying=true; numPlayed=0; msLeftUntilNextMacro=0;
+        MAP_MINI_MACRO.clear();
         if(isSerial) Serial.println("MODULE_MACRO_PLAYER_START");
     }
     
@@ -75,9 +77,8 @@ void MODULE_MACRO_PLAYER_OR_RECORDER_START(const char* fname)
         if(SD.exists(filename)) SD.remove(filename);
         textfile = SD.open(filename,FILE_WRITE);
         
-        Buzzzzer.reserveBuzz(   new uint16_t[11] {  NOTE_E5,0,  NOTE_G5,0,  NOTE_E6,0,  NOTE_C6,0,  NOTE_D6,0,  NOTE_G6 },
-                                new uint16_t[11] {  170,20,     170,20,     170,20,     170,20,     170,20,     200     },
-                                11  );
+        Buzzzzer.reserveBuzz(   { NOTE_E5,0,  NOTE_G5,0,  NOTE_E6,0,  NOTE_C6,0,  NOTE_D6,0,  NOTE_G6 }
+                            ,   { 170,20,     170,20,     170,20,     170,20,     170,20,     200     }   );
         
         isMacroRecording=true; numRecorded=0;
         if(isSerial) Serial.println("MODULE_MACRO_RECORDER_START");
@@ -96,20 +97,23 @@ void MODULE_MACRO_RECORDER_REC_PRESSED(uint8_t keycode, uint32_t delayed)
         return;
 
 
-    if(keycode == TeensyLayout_To_Keycode(KEY_NUM_LOCK))
-        if(keycode == KeyLogger.peek_keycode(1) && keycode == KeyLogger.peek_keycode(2))
-        {
-            textfile.println("1ms");
-            MODULE_MACRO_RECORDER_END(textfile.name());
-        }
+    //MODULE_RECORDER's shutdown signal (KEY_NUMLOCK x3 press&release)
+    if  (   keycode == KeyLogger.peek_keycode(1) &&
+            keycode == KeyLogger.peek_keycode(2) &&
+            keycode == TeensyLayout_To_keycode(KEY_NUM_LOCK)
+        )
+        MODULE_MACRO_RECORDER_END( strdup(textfile.name()) );
 
-    if(numRecorded) //if numRecorded==0 DO NOT RECORD DELAY, only record "DN 0x##"
+
+    // RECORD DELAY
+    if(numRecorded) //if numRecorded==0 DO NOT RECORD DELAY !
     {
         textfile.print(String(delayed, DEC)); textfile.println("ms");
         if(isSerial) Serial.println("MODULE_MACRO_RECORDER_REC_DELAY");
         numRecorded++;
     }
-    
+
+    // RECORD DN event
     textfile.print("DN 0x"); if(keycode<16)textfile.print('0'); textfile.println(String(keycode, HEX));
     if(isSerial) Serial.println("MODULE_MACRO_RECORDER_REC_DNKEY");
     numRecorded++;
@@ -122,10 +126,12 @@ void MODULE_MACRO_RECORDER_REC_RELEASED(uint8_t keycode, uint32_t delayed)
         return;
 
 
+    // RECORD DELAY
     textfile.print(String(delayed, DEC)); textfile.println("ms");
     if(isSerial) Serial.println("MODULE_MACRO_RECORDER_REC_DELAY");
     numRecorded++;
-    
+
+    // RECORD UP event
     textfile.print("UP 0x"); if(keycode<16)textfile.print('0'); textfile.println(String(keycode, HEX));
     if(isSerial) Serial.println("MODULE_MACRO_RECORDER_REC_UPKEY");
     numRecorded++;
@@ -140,53 +146,68 @@ void MODULE_MACRO_RECORDER_END(const char* filename)
 
     textfile.close();
 
+    File bakfile;
+    uint32_t numValidLine=0;
+
 
     //Copy textfile to bakfile
-    if(SD.exists("temp.bak")) SD.remove("temp.bak");
-    File bakfile = SD.open("temp.bak",FILE_WRITE);
-    textfile = SD.open(filename);
+    {
+        //reset file
+        if(SD.exists("temp.bak")) SD.remove("temp.bak");
+
+        bakfile = SD.open("temp.bak",FILE_WRITE);
+        textfile = SD.open(filename);
     
-    uint32_t numValidLine=0;
-    while(textfile.available())
-    {
-        String str = textfile.readStringUntil('\n');
-        bakfile.println(str.substring(0,str.lastIndexOf('\r')));
-        
-        numValidLine++;
-    }
-    textfile.close();
-    bakfile.close();
-    SD.remove(filename);
-
-
-    //Copy bakfile to textfile, except for the MODULE_RECORDER's shutdown signal
-    bakfile = SD.open("temp.bak");
-    textfile = SD.open(filename,FILE_WRITE);
-
-    if(numValidLine>9)
-    {
-        numValidLine -= 9;
-        for(uint32_t i=0; i<numValidLine; i++)
+        uint32_t i=0;
+        while(textfile.available())
         {
-            String str = bakfile.readStringUntil('\n');
-            textfile.println(str.substring(0,str.lastIndexOf('\r')));
-        }
-    }
-    bakfile.close();
-    textfile.close();
-    SD.remove("temp.bak");
+            String line = textfile.readStringUntil('\n');
+            bakfile.println(line.indexOf('\r') > -1 ? line.substring(0,line.lastIndexOf('\r')) : line);
     
-    if(isSerial) MODULE_MACRO_PRINT(filename); //For, Debugging
+    
+            uint8_t lineKeycode = String_To_keycode(line.toUpperCase());
+            if(lineKeycode)
+            {
+                if(lineKeycode == TeensyLayout_To_keycode(KEY_NUM_LOCK))
+                {
+                    if(numValidLine == 0)
+                        numValidLine = i;
+                }
+                else
+                    numValidLine = 0;
+            }
+            
+            i++;
+        }
+        textfile.close();
+        bakfile.close();
+        SD.remove(filename);
+    }
 
 
+    //Copy bakfile to textfile, except for the MODULE_RECORDER's shutdown signal (KEY_NUMLOCK x3 press&release)
+    {
+        bakfile = SD.open("temp.bak");
+        textfile = SD.open(filename,FILE_WRITE);
+    
+        for(uint32_t i=0; i<numValidLine-1; i++) // numValidLine-1 meaning except last DELAY
+        {
+            String line = bakfile.readStringUntil('\n');
+            textfile.println(line.indexOf('\r') > -1 ? line.substring(0,line.lastIndexOf('\r')) : line);
+        }
+        bakfile.close();
+        textfile.close();
+        SD.remove("temp.bak");
+    }
+
+    
     KBD_Hijacker.releaseAllBeingHoldDownKey();
                                         
-    Buzzzzer.reserveBuzz(   new uint16_t[11] {  NOTE_A4,    NOTE_E4,    NOTE_A3,0,  NOTE_A4,    NOTE_E4,    NOTE_A3,0,  NOTE_A4,    NOTE_E4,    NOTE_A3 },
-                            new uint16_t[11] {  80,         80,         80,150,     80,         80,         80,150,     80,         80,         80      },
-                            11  );
+    Buzzzzer.reserveBuzz(   { NOTE_A4,    NOTE_E4,    NOTE_A3,0,  NOTE_A4,    NOTE_E4,    NOTE_A3,0,  NOTE_A4,    NOTE_E4,    NOTE_A3 }
+                        ,   { 80,         80,         80,150,     80,         80,         80,150,     80,         80,         80      }   );
     
+    if(isSerial){ MODULE_MACRO_PRINT(filename); Serial.print("MODULE_MACRO_RECORDER_END    RECORDED LINES : "); Serial.println(numRecorded); }
     isMacroRecording=false;
-    if(isSerial){ Serial.print("MODULE_MACRO_RECORDER_END    RECORDED LINES : "); Serial.println(numRecorded); }
 }
 
 
@@ -211,9 +232,24 @@ void MODULE_MACRO_PLAYER_ONGOING()
 
     while(true)
     {
-        if(textfile.available())
+        if(textfile.available() || QUEUE_NOW_MINI_MACRO.size()>0)
         {
-            readline = textfile.readStringUntil('\n');
+            if(QUEUE_NOW_MINI_MACRO.size()==0)
+            {
+                readline = textfile.readStringUntil('\n');
+
+                // To UPPERCASE without contents after double quotation mark
+                uint16_t index_DQM = readline.indexOf("\"");
+                if(!index_DQM)
+                    readline = readline.toUpperCase();
+                else
+                    readline = String( readline.substring(0,index_DQM).toUpperCase() + readline.substring(index_DQM) );
+            }
+            else
+            {
+                readline = QUEUE_NOW_MINI_MACRO.front();
+                QUEUE_NOW_MINI_MACRO.pop_front();
+            }
         }
         else
         {
@@ -227,21 +263,8 @@ void MODULE_MACRO_PLAYER_ONGOING()
         if(0==readline.indexOf('/'))
             return;
 
-        // To uppercase
-        for(uint32_t i=0; i<readline.length(); i++)
-        {
-            if('a' <= readline[i] && readline[i] <= 'z')
-                readline[i] -= 32;
 
-            //ignore 'TY ("")' inner strings
-            if(readline[i] == '\"')
-                break;
-        }
-
-        // Check readline
-        //if(isSerial){ Serial.print("\nREADLINE:"); Serial.println(readline); }
-
-        // Analyze MacroEvent
+        // Analyze MacroEvents
         if(-1 < readline.indexOf("DNUP"))
         {
             uint8_t keycode = String_To_keycode(readline);
@@ -275,7 +298,6 @@ void MODULE_MACRO_PLAYER_ONGOING()
                 KBD_Hijacker.txHijackedKeyEvent();
             }
 
-            byMacro=true;
             numPlayed++;
             continue;
         }
@@ -299,7 +321,6 @@ void MODULE_MACRO_PLAYER_ONGOING()
                 KBD_Hijacker.txHijackedKeyEvent();
             }
             
-            byMacro=true;
             numPlayed++;
             continue;
         }
@@ -321,7 +342,6 @@ void MODULE_MACRO_PLAYER_ONGOING()
                 KBD_Hijacker.txHijackedKeyEvent();
             }
 
-            byMacro=true;
             numPlayed++;
             continue;
         }
@@ -337,14 +357,56 @@ void MODULE_MACRO_PLAYER_ONGOING()
 
             if(isSerial){ Serial.print(F("\n(*MACRO EVENT*) TYPE : ")); Serial.println(strTyping); }
             
-            byMacro=true;
             numPlayed++;
+            continue;
+        }
+        else if(-1 < readline.indexOf('@'))
+        {
+            String mapKey = trimming_str( readline.substring(readline.indexOf('@')+1) );
+
+            // SKIP until '{'
+            textfile.readStringUntil('{');
+
+            // MINI_MACRO's contents RECORD
+            while(true)
+            {
+                readline = textfile.readStringUntil('\n').toUpperCase();;
+
+                if(readline.indexOf('}') > -1)
+                    break;
+
+                MAP_MINI_MACRO[mapKey].push_back(readline);
+            }   MAP_MINI_MACRO[mapKey].push_back(readline.replace('}',' '));
+
+            continue;
+        }
+        else if(-1 < readline.indexOf('$'))
+        {
+            // MINI_MACRO SEARCH
+            for (auto iteratorM = MAP_MINI_MACRO.begin(); iteratorM != MAP_MINI_MACRO.end(); iteratorM++)
+            {
+                // MINI_MACRO START
+                if(readline.indexOf(iteratorM->first) > -1)
+                {
+                    for(auto iteratorL = (iteratorM->second).begin(); iteratorL != (iteratorM->second).end(); iteratorL++)
+                    {
+                        QUEUE_NOW_MINI_MACRO.push_back( *iteratorL );
+                    }
+                }
+            }
+            
             continue;
         }
         else
         {
-            msLeftUntilNextMacro = StringDec_To_int(split_findNum(readline));
-            
+            // Based Delay
+            msLeftUntilNextMacro = StringDec_To_uint32_t(trimming_num(readline));
+
+            // Extra Delay
+            if(readline.indexOf('~') > -1)
+                msLeftUntilNextMacro += random( StringDec_To_uint32_t(trimming_num(readline.substring(readline.indexOf('~')))) +1 );
+
+            // Invalid Delay !!
             if(msLeftUntilNextMacro == 0)
                 continue;
 
@@ -420,61 +482,8 @@ void MODULE_MACRO_PLAYER_SETSTATE_BY_FORCE()
 
 
 
-String split_findNum(String str)
-{
-    int8_t index_Num = -1;
-    uint32_t lastIndex_Num = 0;
-    
-    for(uint32_t i=0; i<str.length(); i++)
-    {
-        if(index_Num == -1){
-            if ('0' <= str[i] && str[i] <= '9'){
-                index_Num = i;
-            }
-        }
-        else{
-            if (!('0' <= str[i] && str[i] <= '9')){
-                lastIndex_Num = i;
-                break;
-            }
-        }
-    }
-
-    if(-1 < index_Num) return str.substring(index_Num, lastIndex_Num);
-    
-    return "0"; // Invalid str !!
-}
-
-uint32_t StringDec_To_int(String str) 
-{
-    char buf[str.length()+1];
-    str.toCharArray(buf,str.length()+1);
-    
-    char* s = buf;
-    uint32_t x = 0;
-    while(true)
-    {
-        char c = *s;
-        
-        if ('0' <= c && c <= '9'){
-            x *= 10;
-            x += c - '0'; 
-        }
-        else break;
-        
-        s++;
-    }
-    return x;
-}
-
-
-
-
-
 void MODULE_MACRO_PRINT(const char* filename) //For, Debugging
 {
-    if(!isSerial) return;
-    
     textfile = SD.open(filename);
     
     Serial.println();

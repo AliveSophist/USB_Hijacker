@@ -81,9 +81,9 @@ extern "C"
 
 
 
-
 #include <map>
 #include <list>
+using namespace std;
 
 #include <USBHost_t36.h>
 
@@ -187,27 +187,27 @@ struct Buzzzzer
     uint16_t len = 0;
     uint16_t m_proc,r_proc;
 
-    void reserveBuzz(uint16_t* m, uint16_t* r, uint16_t l)
-    {
-        for(uint16_t i=0; i<l; i++){
-            melody[i]=m[i];
-            rhythm[i]=r[i];
-        }
-        
-        delete[] m;
-        delete[] r;
-        
-        len=l;
-        m_proc=r_proc=0;
-    }
 /*
  *  reserveBuzz Example)
     
-    Buzzzzer.reserveBuzz(   new uint16_t[13] {  NOTE_DS7,0, NOTE_DS6,0, NOTE_B6,0,  NOTE_A6,0,  NOTE_DS6,0, NOTE_DS7,0, NOTE_B6 },
-                            new uint16_t[13] {  220,20,     130,20,     270,30,     230,20,     170,20,     270,20,     400     },
-                            13  );
+    Buzzzzer.reserveBuzz(   { NOTE_DS7,0, NOTE_DS6,0, NOTE_B6,0,  NOTE_A6,0,  NOTE_DS6,0, NOTE_DS7,0, NOTE_B6 }
+                        ,   { 220,20,     130,20,     270,30,     230,20,     170,20,     270,20,     400     }   );
  * 
  */
+    void reserveBuzz(initializer_list<uint16_t> m, initializer_list<uint16_t> r)
+    {
+        len=m.size();
+
+        auto iteratorM = m.begin();
+        auto iteratorR = r.begin();
+
+        for (uint16_t i=0; i<len; i++) {
+            melody[i] = *iteratorM++;
+            rhythm[i] = *iteratorR++;
+        }
+        
+        m_proc=r_proc=0;
+    }
 
     void playBuzz()
     {
@@ -254,8 +254,8 @@ class KeyboardHijacker
     bool getStateCapsLockToggle()       { return stateCapsLockToggle; }
     bool getStateScrollLockToggle()     { return stateScrollLockToggle; }
     bool getStateNumLockToggle()        { return stateNumLockToggle; }
-    void setLogicalState                (int32_t key, bool state)   { stateLogical[TeensyLayout_To_Keycode(key)] = state; }
-    bool getLogicalState                (int32_t key)               { return stateLogical[TeensyLayout_To_Keycode(key)]; }
+    void setLogicalState                (int32_t key, bool state)   { stateLogical[TeensyLayout_To_keycode(key)] = state; }
+    bool getLogicalState                (int32_t key)               { return stateLogical[TeensyLayout_To_keycode(key)]; }
 
     void syncToggleKeyStates            (void);
     bool reserveSyncTKS = false;
@@ -264,20 +264,22 @@ class KeyboardHijacker
     void releaseAllBeingHoldDownKey     (void);
 
     void pressandreleaseKey             (int32_t key);
-    void pressandreleaseKeys            (int32_t* keys, int32_t len, bool isKeysDynamic);
     void pressandreleaseKeys            (String str);
-    void pressandreleaseShortcutKey     (int32_t* keys, int32_t len, bool isKeysDynamic); // ex) ctrl+c, gui+r, ctrl+alt+esc
+    void pressandreleaseKeys            (initializer_list<int32_t> keys);
+    void pressandreleaseShortcutKey     (initializer_list<int32_t> keys); // ex) ctrl+c, gui+r, ctrl+shift+esc
+    void pressandreleaseKeys            (int32_t* keys, int32_t len);
+    void pressandreleaseShortcutKey     (int32_t* keys, int32_t len); // ex) ctrl+c, gui+r, ctrl+shift+esc
 
     void pressandreleaseKey_LikeHuman           (int32_t key);
-    void pressandreleaseKeys_LikeHuman          (int32_t* keys, int32_t len, bool isKeysDynamic);
     void pressandreleaseKeys_LikeHuman          (String str);
-    void pressandreleaseShortcutKey_LikeHuman   (int32_t* keys, int32_t len, bool isKeysDynamic); // ex) ctrl+c, gui+r, ctrl+alt+esc
+    void pressandreleaseKeys_LikeHuman          (initializer_list<int32_t> keys);
+    void pressandreleaseShortcutKey_LikeHuman   (initializer_list<int32_t> keys); // ex) ctrl+c, gui+r, ctrl+shift+esc
 
     uint32_t msBasedDelay                       = 30;
     uint32_t msExtraDelayMax                    = +50;
     void randomDelayChanger                     (int32_t based, int32_t extraMax)   { msBasedDelay = based; msExtraDelayMax = extraMax; }
-    void randomDelayGenerator                   (void)                              { delay(msBasedDelay); if(msExtraDelayMax > 0) delay(random(msExtraDelayMax)); }
-    void randomDelayGenerator_Manually          (int32_t based, int32_t extraMax)   { delay(based); if(extraMax > 0) delay(random(extraMax)); }
+    void randomDelayGenerator                   (void)                              { delay(msBasedDelay); if(msExtraDelayMax > 0) delay(random(msExtraDelayMax+1)); }
+    void randomDelayGenerator_Manually          (int32_t based, int32_t extraMax)   { delay(based); if(extraMax > 0) delay(random(extraMax+1)); }
 
     // THE C.O.R.E. of HIJACKER
     void txHijackedKeyEvent();
@@ -290,16 +292,12 @@ class KeyboardHijacker
 //// For, SLAVE KEYBOARD
 USBHost USBHostOnTeensy;
 USBHub Hub_0(USBHostOnTeensy), Hub_1(USBHostOnTeensy), Hub_2(USBHostOnTeensy), Hub_3(USBHostOnTeensy), Hub_4(USBHostOnTeensy), Hub_5(USBHostOnTeensy), Hub_6(USBHostOnTeensy), Hub_7(USBHostOnTeensy);
+
 KeyboardController KBD_Parser(USBHostOnTeensy);
 
-volatile int32_t key;   //keycode on the Teensy layout
-volatile bool event;    //true:pressed false:released
-volatile bool isActivateKeyEvent;
-
-//Physical features may not has any meaning...
-//bool statePhysical[255] = {false};
-//void setPhysicalState   (int32_t key, bool state)   { statePhysical[TeensyLayout_To_Keycode(key)] = state; }
-//bool getPhysicalState   (int32_t key)               { return statePhysical[TeensyLayout_To_Keycode(key)]; }
+volatile int32_t key;                       // Teensy4.1's key layout
+volatile bool event;                        // true:pressed false:released
+volatile bool isActivateKeyEvent;           // if false, default event is ignored
 
 volatile bool isExistWaitingEvent_Press     = false;
 volatile bool isExistWaitingEvent_Release   = false;
@@ -307,6 +305,11 @@ volatile bool isExistWaitingEvent_Release   = false;
 volatile uint32_t msLatestEventCame        = millis();
 volatile uint32_t msLatestEventPressed     = millis();
 volatile uint8_t numDN = 0;
+
+//Physical features may not has any meaning...
+//bool statePhysical[255] = {false};
+//void setPhysicalState   (int32_t key, bool state)   { statePhysical[TeensyLayout_To_keycode(key)] = state; }
+//bool getPhysicalState   (int32_t key)               { return statePhysical[TeensyLayout_To_keycode(key)]; }
 
 #define KEYLOGGER_LEN_MAX 10
 #define null NULL
@@ -429,8 +432,10 @@ struct linkedlistKeyLogger
     }
 } KeyLogger;
 
-void print8bitHex(uint8_t hexcode){ Serial.print("0x"); Serial.print((hexcode<16) ? "0" : ""); Serial.print(hexcode, HEX); }
-void print8bitBin(uint8_t bincode){ Serial.print("0b"); for(int i=7; i>=0;i--){ Serial.print( (bincode & (1<<i)) ? '1' : '0' ); } }
+void print8bitHex(uint8_t hexcode)
+{   Serial.print("0x"); Serial.print((hexcode<16) ? "0" : ""); Serial.print(hexcode, HEX);   }
+void print8bitBin(uint8_t bincode)
+{   Serial.print("0b"); for(int i=7; i>=0;i--){ Serial.print( (bincode & (1<<i)) ? '1' : '0' ); }   }
 void PrintKey(uint8_t keycode)
 {
     Serial.print((KBD_Hijacker.getLogicalState(KEY_LEFT_CTRL)   == true) ? "C" : " ");
@@ -546,16 +551,16 @@ void per1ms()
     }
 
     //per100ms!
-    if( !(millis()%100) )
-    {
-        
-    }
+    //if( !(millis()%100) )
+    //{
+    //    
+    //}
 
     //per1000ms!
-    if( !(millis()%1000) )
-    {
-        
-    }
+    //if( !(millis()%1000) )
+    //{
+    //    
+    //}
 
     //per10000ms!
     if( !(millis()%10000) )
@@ -608,9 +613,8 @@ void setup()
     /* ------------------------------------------ Initializing of miscellaneous modules ------------------------------------------ */
     {
         // PIEZO BUZZER
-        Buzzzzer.reserveBuzz(   new uint16_t[4] {   NOTE_B6,0,  NOTE_E7,    0   },
-                                new uint16_t[4] {   111,11,     444,        111 },
-                                4   );
+        Buzzzzer.reserveBuzz(   { NOTE_B6,0,  NOTE_E7,    0   }
+                            ,   { 111,11,     444,        111 }   );
         if(isSerial) Serial.println(F("BUZZER PLAYS STARTUP SOUND ♬"));
         
         // SD CARD

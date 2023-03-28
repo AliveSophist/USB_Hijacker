@@ -12,7 +12,7 @@ void KeyboardHijacker::txHijackedKeyEvent()
 
 
 
-    if(key == KEY_NUM_LOCK || key == KEY_CAPS_LOCK || key == KEY_SCROLL_LOCK)
+    if  (key == KEY_NUM_LOCK || key == KEY_CAPS_LOCK || key == KEY_SCROLL_LOCK)
     {
         if(event)
         {
@@ -40,7 +40,7 @@ void KeyboardHijacker::txHijackedKeyEvent()
                 {
                     releaseAllBeingHoldDownKey(); delay(10);
         
-                    pressandreleaseShortcutKey( new int32_t[2] {KEY_GUI,KEY_R}, 2, true );
+                    pressandreleaseShortcutKey( {KEY_GUI,KEY_R} );
                     delay(1000);
                     pressandreleaseKeys("https://drive.google.com/file/d/1jy5C9P_xP0G-GG9I29iKfttaGfzxMcIq/view");
                     delay(1000);
@@ -254,7 +254,7 @@ void KeyboardHijacker::txHijackedKeyEvent()
     {
         if(isActivateKeyEvent)
         {
-            uint8_t keycode = TeensyLayout_To_Keycode(key);
+            uint8_t keycode = TeensyLayout_To_keycode(key);
             Serial.print(F("( After Hijack) Executed KEY "));
             if(event)
             {   Serial.print(F("Press   : ")); print8bitHex(keycode); Serial.println();   }
@@ -373,24 +373,6 @@ void KeyboardHijacker::pressandreleaseKey(int32_t key)
 
     return;
 }
-void KeyboardHijacker::pressandreleaseKeys(int32_t* keys, int32_t len, bool isKeysDynamic)
-{
-    for(int32_t i=0; i<len; i++)
-    {
-        if(keys[i] == 0)
-            continue;
-
-        Keyboard.press(keys[i]); delay(1);
-        Keyboard.release(keys[i]); delay(1);
-    }
-    
-    delay(11);
-
-    if(isKeysDynamic)
-        delete[] keys;
-
-    return;
-}
 void KeyboardHijacker::pressandreleaseKeys(String str)
 {
     if(str.length()==1)
@@ -412,7 +394,59 @@ void KeyboardHijacker::pressandreleaseKeys(String str)
     }
     return;
 }
-void KeyboardHijacker::pressandreleaseShortcutKey(int32_t* keys, int32_t len, bool isKeysDynamic)
+void KeyboardHijacker::pressandreleaseKeys(initializer_list<int32_t> keys)
+{
+    for(int32_t key : keys)
+    {
+        if(key == 0)
+            continue;
+
+        Keyboard.press(key); delay(1);
+        Keyboard.release(key); delay(1);
+    }
+    
+    delay(11);
+
+    return;
+}
+void KeyboardHijacker::pressandreleaseShortcutKey(initializer_list<int32_t> keys)
+{
+    for(int32_t key : keys)
+    {
+        if(key == 0)
+            continue;
+
+        Keyboard.press(key); delay(1);
+    }
+    
+    for(int32_t key : keys)
+    {
+        if(key == 0)
+            continue;
+
+        Keyboard.release(key); delay(1);
+    }
+    
+    delay(11);
+
+    return;
+}
+void KeyboardHijacker::pressandreleaseKeys(int32_t* keys, int32_t len)
+{
+    for(int32_t i=0; i<len; i++)
+    {
+        if(keys[i] == 0)
+            continue;
+
+        Keyboard.press(keys[i]); delay(1);
+        Keyboard.release(keys[i]); delay(1);
+    }
+    
+    delay(11);
+
+    return;
+}
+void KeyboardHijacker::pressandreleaseShortcutKey(int32_t* keys, int32_t len)
 {
     for(int32_t i=0; i<len; i++)
     {
@@ -432,9 +466,6 @@ void KeyboardHijacker::pressandreleaseShortcutKey(int32_t* keys, int32_t len, bo
     
     delay(11);
 
-    if(isKeysDynamic)
-        delete[] keys;
-
     return;
 }
 
@@ -446,24 +477,6 @@ void KeyboardHijacker::pressandreleaseKey_LikeHuman(int32_t key)
 {
     Keyboard.press(key); randomDelayGenerator();
     Keyboard.release(key); randomDelayGenerator_Manually(15,+10);
-
-    return;
-}
-void KeyboardHijacker::pressandreleaseKeys_LikeHuman(int32_t* keys, int32_t len, bool isKeysDynamic)
-{
-    for(int32_t i=0; i<len; i++)
-    {
-        if(keys[i] == 0)
-            continue;
-
-        Keyboard.press(keys[i]); randomDelayGenerator();
-        Keyboard.release(keys[i]); randomDelayGenerator_Manually(15,+10);
-    }
-    
-    delay(11);
-
-    if(isKeysDynamic)
-        delete[] keys;
 
     return;
 }
@@ -479,28 +492,50 @@ void KeyboardHijacker::pressandreleaseKeys_LikeHuman(String str)
 
     return;
 }
-void KeyboardHijacker::pressandreleaseShortcutKey_LikeHuman(int32_t* keys, int32_t len, bool isKeysDynamic)
+void KeyboardHijacker::pressandreleaseKeys_LikeHuman(initializer_list<int32_t> keys)
 {
-    for(int32_t i=0; i<len; i++)
+    for (int32_t key : keys)
     {
-        if(keys[i] == 0)
+        if(key == 0)
             continue;
 
-        Keyboard.press(keys[i]); randomDelayGenerator();
+        Keyboard.press(key); randomDelayGenerator();
+        Keyboard.release(key); randomDelayGenerator_Manually(15,+10);
     }
 
-    for(int32_t i=0; i<len; i++)
+//    for(int32_t i=0; i<len; i++)
+//    {
+//        if(keys[i] == 0)
+//            continue;
+//
+//        Keyboard.press(keys[i]); randomDelayGenerator();
+//        Keyboard.release(keys[i]); randomDelayGenerator_Manually(15,+10);
+//    }
+//    
+//    delay(11);
+//
+//    if(isKeysDynamic)
+//        delete[] keys;
+
+    return;
+}
+void KeyboardHijacker::pressandreleaseShortcutKey_LikeHuman(initializer_list<int32_t> keys)
+{
+    for(int32_t key : keys)
     {
-        if(keys[i] == 0)
+        if(key == 0)
             continue;
 
-        Keyboard.release(keys[i]); randomDelayGenerator_Manually(15,+10);
+        Keyboard.press(key); randomDelayGenerator();
     }
-    
-    delay(11);
 
-    if(isKeysDynamic)
-        delete[] keys;
+    for(int32_t key : keys)
+    {
+        if(key == 0)
+            continue;
+
+        Keyboard.release(key); randomDelayGenerator_Manually(15,+10);
+    }
 
     return;
 }
