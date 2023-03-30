@@ -19,7 +19,7 @@ struct MappedData
     void* mappedThings;
 };
 
-static std::map<uint8_t, list<MappedData>> MAP_KEYMAPPER;
+static std::map<uint8_t, std::list<MappedData>> MAP_KEYMAPPER;
 
 void MODULE_KEYMAPPER_INITIALIZE()
 {
@@ -285,8 +285,6 @@ void MODULE_KEYMAPPER_HIJACK()
         // This key Mapped One KEY to NONE And press Shortcut KEY
         else if (data.mappedLen > 1)
         {
-            isActivateKeyEvent=false; key=0;
-            
             if  (   event &&
                     data.millisPressedTime[0]==0
                 )
@@ -314,19 +312,21 @@ void MODULE_KEYMAPPER_HIJACK()
             }
             else
                 continue;
+
+            isActivateKeyEvent=false; key=0;
         }
         
         // This key Mapped One KEY to NONE And excute MACRO
         else
         {
-            isActivateKeyEvent=false; key=0;
-            
             if(event)
             {
                 KBD_Hijacker.releaseAllBeingHoldDownKey(); delay(10);
                 
                 MODULE_MACRO_PLAYER_OR_RECORDER_START( ((char*)data.mappedThings) );
             }
+            
+            isActivateKeyEvent=false; key=0;
         }
 
 

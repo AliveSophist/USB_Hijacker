@@ -11,8 +11,8 @@ bool byMacro;
 
 uint32_t msLeftUntilNextMacro;
 
-std::map<String, list<String>> MAP_MINI_MACRO;
-list<String> QUEUE_NOW_MINI_MACRO;
+std::map<String, std::list<String>> MAP_MINI_MACRO;
+std::list<String> QUEUE_NOW_MINI_MACRO;
 
 
 
@@ -98,11 +98,11 @@ void MODULE_MACRO_RECORDER_REC_PRESSED(uint8_t keycode, uint32_t delayed)
 
 
     //MODULE_RECORDER's shutdown signal (KEY_NUMLOCK x3 press&release)
-    if  (   keycode == KeyLogger.peek_keycode(1) &&
-            keycode == KeyLogger.peek_keycode(2) &&
+    if  (   keycode == KBD_Parser.KeyLogger.peek_keycode(1) &&
+            keycode == KBD_Parser.KeyLogger.peek_keycode(2) &&
             keycode == TeensyLayout_To_keycode(KEY_NUM_LOCK)
-        )
-        MODULE_MACRO_RECORDER_END( strdup(textfile.name()) );
+        )        
+        MODULE_MACRO_RECORDER_END( String(textfile.name()).c_str() ); //this textfile will remove, therefore textfile.name() have to copy!
 
 
     // RECORD DELAY
@@ -275,14 +275,14 @@ void MODULE_MACRO_PLAYER_ONGOING()
                 key   = keycode_To_TeensyLayout(keycode);
                 event = true;
                 
-                KeyLogger.push(keycode);
+                KBD_Parser.KeyLogger.push(keycode);
                 
-                if(isSerial){ Serial.print(F("\n(*MACRO EVENT*) DN ")); PrintKey(keycode); Serial.println(); }
+                if(isSerial){ Serial.print(F("\n(*MACRO EVENT*) DN ")); KBD_Hijacker.printKeyInfo(keycode); Serial.println(); }
 
 
-                // txHijackedKeyEvent By Macro
+                // TRANSMIT_AFTER_HIJACK By Macro
                 msLatestEventCame = msLatestEventPressed = millis();
-                KBD_Hijacker.txHijackedKeyEvent();
+                KBD_Hijacker.TRANSMIT_AFTER_HIJACK();
 
                 delay(11);
                 
@@ -290,12 +290,12 @@ void MODULE_MACRO_PLAYER_ONGOING()
                 key   = keycode_To_TeensyLayout(keycode);
                 event = false;
 
-                if(isSerial){ Serial.print(F("(*MACRO EVENT*) UP ")); PrintKey(keycode); Serial.print(F("         Pressed Time : ")); Serial.println(millis()-msLatestEventPressed); }
+                if(isSerial){ Serial.print(F("(*MACRO EVENT*) UP ")); KBD_Hijacker.printKeyInfo(keycode); Serial.print(F("         Pressed Time : ")); Serial.println(millis()-msLatestEventPressed); }
 
 
-                // txHijackedKeyEvent By Macro
+                // TRANSMIT_AFTER_HIJACK By Macro
                 msLatestEventCame = millis();
-                KBD_Hijacker.txHijackedKeyEvent();
+                KBD_Hijacker.TRANSMIT_AFTER_HIJACK();
             }
 
             numPlayed++;
@@ -311,14 +311,14 @@ void MODULE_MACRO_PLAYER_ONGOING()
                 key   = keycode_To_TeensyLayout(keycode);
                 event = true;
                 
-                KeyLogger.push(keycode);
+                KBD_Parser.KeyLogger.push(keycode);
                 
-                if(isSerial){ Serial.print(F("\n(*MACRO EVENT*) DN ")); PrintKey(keycode); Serial.println(); }
+                if(isSerial){ Serial.print(F("\n(*MACRO EVENT*) DN ")); KBD_Hijacker.printKeyInfo(keycode); Serial.println(); }
 
 
-                // txHijackedKeyEvent By Macro
+                // TRANSMIT_AFTER_HIJACK By Macro
                 msLatestEventCame = msLatestEventPressed = millis();
-                KBD_Hijacker.txHijackedKeyEvent();
+                KBD_Hijacker.TRANSMIT_AFTER_HIJACK();
             }
             
             numPlayed++;
@@ -334,12 +334,12 @@ void MODULE_MACRO_PLAYER_ONGOING()
                 key   = keycode_To_TeensyLayout(keycode);
                 event = false;
                 
-                if(isSerial){ Serial.print(F("\n(*MACRO EVENT*) UP ")); PrintKey(keycode); Serial.print(F("         Pressed Time : ")); Serial.println(millis()-msLatestEventPressed); }
+                if(isSerial){ Serial.print(F("\n(*MACRO EVENT*) UP ")); KBD_Hijacker.printKeyInfo(keycode); Serial.print(F("         Pressed Time : ")); Serial.println(millis()-msLatestEventPressed); }
 
 
-                // txHijackedKeyEvent By Macro
+                // TRANSMIT_AFTER_HIJACK By Macro
                 msLatestEventCame = millis();
-                KBD_Hijacker.txHijackedKeyEvent();
+                KBD_Hijacker.TRANSMIT_AFTER_HIJACK();
             }
 
             numPlayed++;

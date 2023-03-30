@@ -1,4 +1,40 @@
 
+extern unsigned long _heap_end; //extern char *__brkval;
+void MEASURE_FREE_MEMORY() // for Teensy® 4.1 =32bit!!
+{
+    char* p=(char*)malloc(10000); free(p); // size should be quite big, to avoid allocating fragment!
+    uint32_t freeMemory = (char *)&_heap_end - p;
+
+    Serial.print("\nNow Measured FreeMemory : "); Serial.println(freeMemory); //=__brkval;
+}
+
+volatile uint32_t msMeasuredForDebugging;
+void MEASURE_MILLIS_START_POINT()
+{
+    msMeasuredForDebugging=millis();
+}
+void MEASURE_MILLIS_END_POINT()
+{
+    Serial.print(F("\nMeasured Time : ")); Serial.println(millis()-msMeasuredForDebugging);
+}
+
+void print8bitHex(uint8_t hexcode)
+{
+    Serial.print("0x");
+    Serial.print((hexcode<16) ? "0" : ""); Serial.print(hexcode, HEX);
+}
+
+void print8bitBin(uint8_t bincode)
+{
+    Serial.print("0b");
+    for(int i=7; i>=0;i--)
+        Serial.print( (bincode & (1<<i)) ? '1' : '0' );
+}
+
+
+
+
+
 String trimming_str(String str)
 {
     int8_t index_Num = -1;

@@ -1,4 +1,3 @@
-
 static int32_t keycode_To_TeensyLayout(uint8_t keycode)
 {
     if      (keycode <= 0x65)
@@ -189,7 +188,7 @@ static uint8_t TeensyLayout_To_keycode(int32_t key)
 
 /******************************************************************
  **                                                              **
- **                    Teensy4.1's key layout                    **
+ **                    Teensy® 4.1's key layout                    **
  **                                                              **
  ** ArduinoFolder\hardware\teensy\avr\cores\teensy4\keylayouts.h **
  **                                                              **

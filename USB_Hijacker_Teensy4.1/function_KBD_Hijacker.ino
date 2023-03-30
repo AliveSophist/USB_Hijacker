@@ -1,18 +1,17 @@
 
 #define PRESSED_TIME_UNTIL_RELEASE millis()-msLatestEventPressed
-#define SYSTEM_FREEZE_UNTIL_ALL_KEY_RELEASE while(numDN){}
 
 
 
 
 
-void KeyboardHijacker::txHijackedKeyEvent()
+void KeyboardHijacker::TRANSMIT_AFTER_HIJACK()
 {
     isActivateKeyEvent=true;
 
 
 
-    if  (key == KEY_NUM_LOCK || key == KEY_CAPS_LOCK || key == KEY_SCROLL_LOCK)
+    if(key == KEY_NUM_LOCK || key == KEY_CAPS_LOCK || key == KEY_SCROLL_LOCK)
     {
         if(event)
         {
@@ -46,7 +45,7 @@ void KeyboardHijacker::txHijackedKeyEvent()
                     delay(1000);
                     pressandreleaseKey(KEY_ENTER);
                 }
-                key=0;
+                isActivateKeyEvent=false; key=0;
             }
             if(key == KEYPAD_8)
             {
@@ -54,11 +53,10 @@ void KeyboardHijacker::txHijackedKeyEvent()
                 {
                     releaseAllBeingHoldDownKey(); delay(10);
                     
-                    SYSTEM_FREEZE_UNTIL_ALL_KEY_RELEASE
-                    SCB_AIRCR = 0x05FA0004; asm volatile ("dsb");
-                    while(true){}
+                    while(numDN){}
+                    REBOOT();
                 }
-                key=0;
+                isActivateKeyEvent=false; key=0;
             }
             if(key == KEYPAD_9)
             {
@@ -66,12 +64,10 @@ void KeyboardHijacker::txHijackedKeyEvent()
                 {
                     releaseAllBeingHoldDownKey(); delay(10);
                     
-                    // For, Debugging
-                    delay(100);
-                    pressandreleaseKeys_LikeHuman("Upload completed~ ");
+                    pressandreleaseKeys_LikeHuman(F("Upload completed~ "));
                     pressandreleaseKeys_LikeHuman(__TIMESTAMP__);
                 }
-                key=0;
+                isActivateKeyEvent=false; key=0;
             }
         }
     }
@@ -88,121 +84,115 @@ void KeyboardHijacker::txHijackedKeyEvent()
 
 
 
-/*  Example1)
- *          Hijack One KEY to Another KEY
+    /*  Example1)
+    *          Hijack One KEY to Another KEY
 
-    if(key == KEY_***)
-    {
-        key = KEY_$$$;
-    }
-
-
- *  Example2)
- *          Hijack One KEY to ROTATE KEY
-
-    static uint8_t rotateNum_*** = 0;
-    if(key == KEY_***)
-    {
-        switch(rotateNum_***) //rotation
+        if(key == KEY_***)
         {
-            case 0:
-                key = KEY_$$$;
-                break;
+            key = KEY_$$$;
+        }
+
+
+    *  Example2)
+    *          Hijack One KEY to ROTATE KEY
+
+        static uint8_t rotateNum_*** = 0;
+        if(key == KEY_***)
+        {
+            switch(rotateNum_***) //rotation
+            {
+                case 0:
+                    key = KEY_$$$;
+                    break;
+                    
+                …
+                …
+                …
                 
-            …
-            …
-            …
-            
-            case n:
-                key = KEY_%%%;
-                break;
+                case n:
+                    key = KEY_%%%;
+                    break;
+            }
+            if(!event) rotateNum_***++; //after released, next Event change
+            if(rotateNum_***>n) rotateNum_***=0; //reset
         }
-        if(!event) rotateNum_***++; //after released, next Event change
-        if(rotateNum_***>n) rotateNum_***=0; //reset
-    }
-    else rotateNum_***=0;
+        else rotateNum_***=0;
 
 
- *  Example3)
- *          Hijack One KEY to NONE And excute MACRO
+    *  Example3)
+    *          Hijack One KEY to NONE And excute MACRO
 
-    if(key == KEY_***)
-    {
-        releaseAllBeingHoldDownKey();       //To prevent INTERFERENCE, if release needed
-        
-        if(event){                          //MACROs, Only excute 'release' event
-        
-            …
-            …
-            …
-        
-        }
-    }
-
-
- *  Example4)
- *          Hijack Shortcut KEY to NONE And excute MACRO
-
-    if(key == KEY_*** && getLogicalState(KEY_$$$))
-    {
-        releaseAllBeingHoldDownKey();       //To prevent INTERFERENCE, if release needed
-        
-        if(event){                          //MACROs, Only excute 'release' event
-        
-            …
-            …
-            …
-        
-        }
-    }
-
-
- *  Example5)
- *          ROTATE KEY Example...
-    static uint8_t rotateNum_TILDE = 0;
-    if (key == KEY_TILDE)
-    {
-        switch(rotateNum_TILDE) //rotation
+        if(key == KEY_***)
         {
-            case 0:
-                key = KEY_0;
-                break;
-            case 1:
-                key = KEY_1;
-                break;
-            case 2:
-                key = KEY_2;
-                break;
-            case 3:
-                key = KEY_3;
-                break;
-            case 4:
-                key = KEY_4;
-                break;
-            case 5:
-                key = KEY_5;
-                break;
-            case 6:
-                key = KEY_6;
-                break;
-            case 7:
-                key = KEY_7;
-                break;
-            case 8:
-                key = KEY_8;
-                break;
-            case 9:
-                key = KEY_9;
-                break;
+            if(event){
+                releaseAllBeingHoldDownKey();   //To prevent INTERFERENCE, if press/release needed
+                …
+                …
+            }
+            isActivateKeyEvent=false; key=0;    //To prevent default event
         }
-        if(!event) rotateNum_TILDE++; //after released, next Event change
-        if(rotateNum_TILDE>9) rotateNum_TILDE=0; //reset
-    }
-    else rotateNum_TILDE=0;
 
-    
- *  
- */
+
+    *  Example4)
+    *          Hijack Shortcut KEY to NONE And excute MACRO
+
+        if(key == KEY_*** && getLogicalState(KEY_$$$))
+        {
+            if(event){
+                releaseAllBeingHoldDownKey();   //To prevent INTERFERENCE, if press/release needed
+                …
+                …
+            }
+            isActivateKeyEvent=false; key=0;    //To prevent default event
+        }
+
+
+    *  Example5)
+    *          ROTATE KEY Example...
+        static uint8_t rotateNum_TILDE = 0;
+        if (key == KEY_TILDE)
+        {
+            switch(rotateNum_TILDE) //rotation
+            {
+                case 0:
+                    key = KEY_0;
+                    break;
+                case 1:
+                    key = KEY_1;
+                    break;
+                case 2:
+                    key = KEY_2;
+                    break;
+                case 3:
+                    key = KEY_3;
+                    break;
+                case 4:
+                    key = KEY_4;
+                    break;
+                case 5:
+                    key = KEY_5;
+                    break;
+                case 6:
+                    key = KEY_6;
+                    break;
+                case 7:
+                    key = KEY_7;
+                    break;
+                case 8:
+                    key = KEY_8;
+                    break;
+                case 9:
+                    key = KEY_9;
+                    break;
+            }
+            if(!event) rotateNum_TILDE++; //after released, next Event change
+            if(rotateNum_TILDE>9) rotateNum_TILDE=0; //reset
+        }
+        else rotateNum_TILDE=0;
+
+        
+    *  
+    */
 
 
 
@@ -341,6 +331,23 @@ void KeyboardHijacker::syncToggleKeyStates() //Synchronize "SLAVE" kbd LEDs to "
 
 
 
+void KeyboardHijacker::printKeyInfo(uint8_t keycode)
+{
+    Serial.print(getLogicalState(KEY_LEFT_CTRL)  ? "C" : " ");
+    Serial.print(getLogicalState(KEY_LEFT_SHIFT) ? "S" : " ");
+    Serial.print(getLogicalState(KEY_LEFT_ALT)   ? "A" : " ");
+    Serial.print(getLogicalState(KEY_LEFT_GUI)   ? "G" : " ");
+    Serial.print(" >"); print8bitHex(keycode); Serial.print("< ");
+    Serial.print(getLogicalState(KEY_RIGHT_CTRL)  ? "C" : " ");
+    Serial.print(getLogicalState(KEY_RIGHT_SHIFT) ? "S" : " ");
+    Serial.print(getLogicalState(KEY_RIGHT_ALT)   ? "A" : " ");
+    Serial.print(getLogicalState(KEY_RIGHT_GUI)   ? "G" : " ");
+}
+
+
+
+
+
 void KeyboardHijacker::releaseAllBeingHoldDownKey()
 {
     //Keyboard.releaseAll();
@@ -394,7 +401,7 @@ void KeyboardHijacker::pressandreleaseKeys(String str)
     }
     return;
 }
-void KeyboardHijacker::pressandreleaseKeys(initializer_list<int32_t> keys)
+void KeyboardHijacker::pressandreleaseKeys(std::initializer_list<int32_t> keys)
 {
     for(int32_t key : keys)
     {
@@ -409,7 +416,7 @@ void KeyboardHijacker::pressandreleaseKeys(initializer_list<int32_t> keys)
 
     return;
 }
-void KeyboardHijacker::pressandreleaseShortcutKey(initializer_list<int32_t> keys)
+void KeyboardHijacker::pressandreleaseShortcutKey(std::initializer_list<int32_t> keys)
 {
     for(int32_t key : keys)
     {
@@ -492,7 +499,7 @@ void KeyboardHijacker::pressandreleaseKeys_LikeHuman(String str)
 
     return;
 }
-void KeyboardHijacker::pressandreleaseKeys_LikeHuman(initializer_list<int32_t> keys)
+void KeyboardHijacker::pressandreleaseKeys_LikeHuman(std::initializer_list<int32_t> keys)
 {
     for (int32_t key : keys)
     {
@@ -503,23 +510,9 @@ void KeyboardHijacker::pressandreleaseKeys_LikeHuman(initializer_list<int32_t> k
         Keyboard.release(key); randomDelayGenerator_Manually(15,+10);
     }
 
-//    for(int32_t i=0; i<len; i++)
-//    {
-//        if(keys[i] == 0)
-//            continue;
-//
-//        Keyboard.press(keys[i]); randomDelayGenerator();
-//        Keyboard.release(keys[i]); randomDelayGenerator_Manually(15,+10);
-//    }
-//    
-//    delay(11);
-//
-//    if(isKeysDynamic)
-//        delete[] keys;
-
     return;
 }
-void KeyboardHijacker::pressandreleaseShortcutKey_LikeHuman(initializer_list<int32_t> keys)
+void KeyboardHijacker::pressandreleaseShortcutKey_LikeHuman(std::initializer_list<int32_t> keys)
 {
     for(int32_t key : keys)
     {
