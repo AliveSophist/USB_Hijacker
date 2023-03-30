@@ -1,2 +1,2 @@
 # USB_Hijacker
-Hey, USB. Hi, Jack!
+hey, USB! Hi, me Jack!
