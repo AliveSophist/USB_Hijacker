@@ -2,7 +2,7 @@
 bool isMacroRecording   = false;
 bool isMacroPlaying     = false;
 
-bool isMacroOnStarting = false;
+bool isMacroJustStarted = false;
 
 uint32_t numRecorded;
 uint32_t numPlayed;
@@ -42,14 +42,17 @@ void MODULE_MACRO_PLAYER_OR_RECORDER_START(const char* fname)
     // "_R.TXT" file has priority over ".TXT" file. Therefore ".TXT" file is ignored if "_R.TXT" file exist.
     if(!SD.exists(filename))
     { strcpy(filename,fname); strcat(filename,".TXT"); isREADONLY=false; }
-    
-    // CHECK "PLAY" or "RECORD" by pressed ms, when NOT READONLY
+
+
+    // there is a difference in START TRIGGER between READONLY and NON-READONLY
+    // if READONLY, START TRIGGER is pressed event. (without release event)
+    // or NOT,      START TRIGGER is release event. (need to CHECK "PLAY" or "RECORD" by pressed ms)
     uint32_t mspressed = 0;
     if(!isREADONLY)
         while(numDN){ delay(1); mspressed++; }
     else
-        isMacroOnStarting = true;
-    
+        isMacroJustStarted = true; // similar to while(numDN){}
+
 
     // START PLAYER
     if(isREADONLY||mspressed<1600)
@@ -83,6 +86,10 @@ void MODULE_MACRO_PLAYER_OR_RECORDER_START(const char* fname)
         isMacroRecording=true; numRecorded=0;
         if(isSerial) Serial.println("MODULE_MACRO_RECORDER_START");
     }
+
+
+    // PREVENT EVENT when MACRO EVENT JUST STARTED
+    isExistWaitingEvent_Release = false;
 }
 
 
@@ -118,6 +125,7 @@ void MODULE_MACRO_RECORDER_REC_PRESSED(uint8_t keycode, uint32_t delayed)
     if(isSerial) Serial.println("MODULE_MACRO_RECORDER_REC_DNKEY");
     numRecorded++;
 }
+
 void MODULE_MACRO_RECORDER_REC_RELEASED(uint8_t keycode, uint32_t delayed)
 {
     if(!isExistSD)
@@ -136,6 +144,7 @@ void MODULE_MACRO_RECORDER_REC_RELEASED(uint8_t keycode, uint32_t delayed)
     if(isSerial) Serial.println("MODULE_MACRO_RECORDER_REC_UPKEY");
     numRecorded++;
 }
+
 void MODULE_MACRO_RECORDER_END(const char* filename)
 {
     if(!isExistSD)
@@ -264,6 +273,32 @@ void MODULE_MACRO_PLAYER_ONGOING()
             return;
 
 
+        // DN and UP function by Lambda
+        auto func_DN =  [](uint8_t keycode)
+                        {
+                            if(isSerial){ Serial.print(F("(*MACRO EVENT*) DN ")); KBD_Hijacker.printKeyInfo(keycode); Serial.println(); }
+                            KBD_Parser.KeyLogger.push(keycode);
+
+                            // TRANSMIT_AFTER_HIJACK By Macro
+                            key   = keycode_To_TeensyLayout(keycode);
+                            event = true;
+                            msLatestEventCame = msLatestEventPressed = millis();
+
+                            KBD_Hijacker.TRANSMIT_AFTER_HIJACK();
+                        };
+        auto func_UP =  [](uint8_t keycode)
+                        {
+                            if(isSerial){ Serial.print(F("(*MACRO EVENT*) UP ")); KBD_Hijacker.printKeyInfo(keycode); Serial.print(F("         Pressed Time : ")); Serial.println(MILLIS_FROM_PRESSED_UNTIL_RELEASE); }
+
+                            // TRANSMIT_AFTER_HIJACK By Macro
+                            key   = keycode_To_TeensyLayout(keycode);
+                            event = false;
+                            msLatestEventCame = millis();
+
+                            KBD_Hijacker.TRANSMIT_AFTER_HIJACK();
+                        };
+
+
         // Analyze MacroEvents
         if(-1 < readline.indexOf("DNUP"))
         {
@@ -271,31 +306,9 @@ void MODULE_MACRO_PLAYER_ONGOING()
             
             if(keycode!=0)
             {
-                // OnRawPress By Macro
-                key   = keycode_To_TeensyLayout(keycode);
-                event = true;
-                
-                KBD_Parser.KeyLogger.push(keycode);
-                
-                if(isSerial){ Serial.print(F("\n(*MACRO EVENT*) DN ")); KBD_Hijacker.printKeyInfo(keycode); Serial.println(); }
-
-
-                // TRANSMIT_AFTER_HIJACK By Macro
-                msLatestEventCame = msLatestEventPressed = millis();
-                KBD_Hijacker.TRANSMIT_AFTER_HIJACK();
-
-                delay(11);
-                
-                // OnRawRelease By Macro
-                key   = keycode_To_TeensyLayout(keycode);
-                event = false;
-
-                if(isSerial){ Serial.print(F("(*MACRO EVENT*) UP ")); KBD_Hijacker.printKeyInfo(keycode); Serial.print(F("         Pressed Time : ")); Serial.println(millis()-msLatestEventPressed); }
-
-
-                // TRANSMIT_AFTER_HIJACK By Macro
-                msLatestEventCame = millis();
-                KBD_Hijacker.TRANSMIT_AFTER_HIJACK();
+                Serial.println();
+                func_DN(keycode); delay(11);
+                func_UP(keycode);
             }
 
             numPlayed++;
@@ -307,18 +320,8 @@ void MODULE_MACRO_PLAYER_ONGOING()
             
             if(keycode!=0)
             {
-                // OnRawPress By Macro
-                key   = keycode_To_TeensyLayout(keycode);
-                event = true;
-                
-                KBD_Parser.KeyLogger.push(keycode);
-                
-                if(isSerial){ Serial.print(F("\n(*MACRO EVENT*) DN ")); KBD_Hijacker.printKeyInfo(keycode); Serial.println(); }
-
-
-                // TRANSMIT_AFTER_HIJACK By Macro
-                msLatestEventCame = msLatestEventPressed = millis();
-                KBD_Hijacker.TRANSMIT_AFTER_HIJACK();
+                Serial.println();
+                func_DN(keycode);
             }
             
             numPlayed++;
@@ -327,19 +330,12 @@ void MODULE_MACRO_PLAYER_ONGOING()
         else if(-1 < readline.indexOf("UP"))
         {
             uint8_t keycode = String_To_keycode(readline);
+            Serial.println();
             
             if(keycode!=0)
             {
-                // OnRawRelease By Macro
-                key   = keycode_To_TeensyLayout(keycode);
-                event = false;
-                
-                if(isSerial){ Serial.print(F("\n(*MACRO EVENT*) UP ")); KBD_Hijacker.printKeyInfo(keycode); Serial.print(F("         Pressed Time : ")); Serial.println(millis()-msLatestEventPressed); }
-
-
-                // TRANSMIT_AFTER_HIJACK By Macro
-                msLatestEventCame = millis();
-                KBD_Hijacker.TRANSMIT_AFTER_HIJACK();
+                Serial.println();
+                func_UP(keycode);
             }
 
             numPlayed++;
@@ -418,6 +414,7 @@ void MODULE_MACRO_PLAYER_ONGOING()
         }
     }
 }
+
 void MODULE_MACRO_PLAYER_END()
 {
     if(!isExistSD)
@@ -433,18 +430,20 @@ void MODULE_MACRO_PLAYER_END()
     isMacroPlaying=false; byMacro=false;
     if(isSerial){ Serial.print("\nMODULE_MACRO_PLAYER_END    PLAYED LINES : "); Serial.println(numPlayed); Serial.println(); }
 }
-bool MODULE_MACRO_PREVENT_SEVERAL_EVENTS_ON_STARTING()
+
+bool MODULE_MACRO_PREVENT_SEVERAL_EVENTS_JUST_STARTED()
 {
-    if(isMacroOnStarting)
+    if(isMacroJustStarted)
     {
         if(numDN == 0)
-            isMacroOnStarting = false;
+            isMacroJustStarted = false;
        
         return true;
     }
 
     return false;
 }
+
 void MODULE_MACRO_PLAYER_SHUTDOWN_ARBITER()
 {
     if(!isExistSD)
@@ -453,11 +452,11 @@ void MODULE_MACRO_PLAYER_SHUTDOWN_ARBITER()
         return;
 
 
+    // ONLY BY FORCE, CONSIDER SHUTDOWN!
     if(byMacro)
         return;
 
-
-    // KEY_ESC PUSHED BY FORCE, SHUTDOWN MACRO!!
+    // WHEN KEY_ESC PUSHED, SHUTDOWN MACRO!!
     if (key == KEY_ESC)
     {
         if(event)
@@ -467,6 +466,7 @@ void MODULE_MACRO_PLAYER_SHUTDOWN_ARBITER()
         isActivateKeyEvent=false; key=0;
     }
 }
+
 void MODULE_MACRO_PLAYER_SETSTATE_BY_FORCE()
 {
     if(!isExistSD)

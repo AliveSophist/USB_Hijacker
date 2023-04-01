@@ -16,66 +16,12 @@
 
 
 
-/**⦓   For, Hardware   ⦔**/
 
-// CUSTOMIZE YOUR USB DESCRIPTION !
-#ifdef __cplusplus
-extern "C"
-{
-#endif
-    struct usb_string_descriptor_struct
-    {
-        uint8_t bLength;
-        uint8_t bDescriptorType;
-        uint16_t wString[100];
-    };
-    usb_string_descriptor_struct usb_string_manufacturer_name = {
-    /*  
-     *  2 + MANUFACTURER_NAME_LEN * 2,
-     *  3,
-     *  { MANUFACTURER_NAME }
-     */
-        2 + 7 * 2,
-        3,
-        {'$','0','?','H','!','$','+'}
-    };
-    usb_string_descriptor_struct usb_string_product_name = {
-    /*
-     *  2 + PRODUCT_NAME_LEN * 2,
-     *  3,
-     *  { PRODUCT_NAME }
-     */
-        #if defined(USB_KEYBOARDONLY)   // [USB Type: "Keyboard"]
-        2 + 19 * 2,
-        3,
-        {'I','\'','m',' ','n','o','t',' ','H','i','j','a','c','k','e','r',' ','X','D'}
-        #elif defined(USB_SERIAL_HID)   // [USB Type: "Serial + Keyboard + Mouse + Joystick"]
-        2 + 28 * 2,
-        3,
-        {'I','\'','m',' ','n','o','t',' ','H','i','j','a','c','k','e','r',' ','S','E','R','I','A','L',' ','M','O','D','E'}
-        #endif
-    };
-    usb_string_descriptor_struct usb_string_serial_number = {
-    /*
-     *  2 + SERIAL_NUMBER_LEN * 2,
-     *  3,
-     *  { SERIAL_NUMBER }
-     */
-        2 + 0 * 2,
-        3,
-        {}
-    };
-    /*  
-     *  And you can also edit VID, PID, etc. from
-     *  Arduino 2.0.x below : YourArduinoFolder\hardware\teensy\avr\cores\teensy4\usb_desc.h
-     *  Arduino 2.0.x above : \Appdata\Local\Arduino15\packages\teensy\hardware\avr\1.57.2\cores\teensy4\usb_desc.h
-     *  usb_desc.h file's
-     *  > #elif defined(USB_KEYBOARDONLY)    ◀ [USB Type: "Keyboard"]
-     *  > #elif defined(USB_SERIAL_HID)      ◀ [USB Type: "Serial + Keyboard + Mouse + Joystick"]
-     */
-#ifdef __cplusplus
-}
-#endif
+
+
+
+
+/**⦓   For, HARDWARE   ⦔**/
 
 // Teensy® 4.1's PIN MAP !
 //      PIN_                00
@@ -124,7 +70,73 @@ extern "C"
 #define PIN_RANDOMSEED      A16
 #define PIN_BUZZER          A17
 
+#ifdef __cplusplus
+extern "C"
+{
+#endif
+    struct usb_string_descriptor_struct
+    {
+        uint8_t bLength;
+        uint8_t bDescriptorType;
+        uint16_t wString[100];
+    };
+    usb_string_descriptor_struct usb_string_manufacturer_name = {
+    /*  
+     *  2 + MANUFACTURER_NAME_LEN * 2,
+     *  3,
+     *  { MANUFACTURER_NAME }
+     */
+        2 + 7 * 2,
+        3,
+        {'$','0','?','H','!','$','+'}
+    };
+    usb_string_descriptor_struct usb_string_product_name = {
+    /*
+     *  2 + PRODUCT_NAME_LEN * 2,
+     *  3,
+     *  { PRODUCT_NAME }
+     */
+        #if defined(USB_KEYBOARDONLY)   // [USB Type: "Keyboard"]
+        2 + 19 * 2,
+        3,
+        {'I','\'','m',' ','n','o','t',' ','H','i','j','a','c','k','e','r',' ','X','D'}
+        #elif defined(USB_SERIAL_HID)   // [USB Type: "Serial + Keyboard + Mouse + Joystick"]
+        2 + 28 * 2,
+        3,
+        {'I','\'','m',' ','n','o','t',' ','H','i','j','a','c','k','e','r',' ','S','E','R','I','A','L',' ','M','O','D','E'}
+        #endif
+    };
+    usb_string_descriptor_struct usb_string_serial_number = {
+    /*
+     *  2 + SERIAL_NUMBER_LEN * 2,
+     *  3,
+     *  { SERIAL_NUMBER }
+     */
+        2 + 0 * 2,
+        3,
+        {}
+    };
+    /*
+     *  CUSTOMIZE YOUR USB DESCRIPTION !!
+     *
+     *  And you can also edit VID, PID, etc. from usb_desc.h
+     *  Arduino 2.0.x below : YourArduinoFolder\hardware\teensy\avr\cores\teensy4\usb_desc.h
+     *  Arduino 2.0.x above : \Appdata\Local\Arduino15\packages\teensy\hardware\avr\1.57.2\cores\teensy4\usb_desc.h
+     *
+     *  usb_desc.h file's
+     *  > #elif defined(USB_KEYBOARDONLY)    ◀ [USB Type: "Keyboard"]
+     *  > #elif defined(USB_SERIAL_HID)      ◀ [USB Type: "Serial + Keyboard + Mouse + Joystick"]
+     */
+#ifdef __cplusplus
+}
+#endif
+
 void REBOOT() { SCB_AIRCR = 0x05FA0004; asm volatile ("dsb"); while(true){} }
+
+
+
+
+
 
 
 
@@ -146,58 +158,6 @@ File textfile;
 
 
 
-/**⦓ For, HOST(OS) ⦔**/
-
-class KeyboardHijacker
-{
-private:
-    bool stateCapsLockToggle    = false;
-    bool stateScrollLockToggle  = false;
-    bool stateNumLockToggle     = false;
-    bool stateLogical[255]      = {false};
-    
-    uint8_t numBeingHoldDownKey = 0;
-
-    uint32_t msBasedDelay       = 30;
-    uint32_t msExtraDelayMax    = +50;
-
-public:
-    // THE C.O.R.E. of HIJACKER
-    void TRANSMIT_AFTER_HIJACK          (void);
-
-    void setLogicalState                (int32_t key, bool state) { stateLogical[TeensyLayout_To_keycode(key)] = state; }
-    bool getLogicalState                (int32_t key) { return stateLogical[TeensyLayout_To_keycode(key)]; }
-    void printKeyInfo                   (uint8_t keycode);
-
-    void switchStateCapsLockToggle()    { stateCapsLockToggle=!stateCapsLockToggle; }
-    void switchStateScrollLockToggle()  { stateScrollLockToggle=!stateScrollLockToggle; }
-    void switchStateNumLockToggle()     { stateNumLockToggle=!stateNumLockToggle; }
-    bool getStateCapsLockToggle()       { return stateCapsLockToggle; }
-    bool getStateScrollLockToggle()     { return stateScrollLockToggle; }
-    bool getStateNumLockToggle()        { return stateNumLockToggle; }
-    void syncToggleKeyStates            (void);
-    bool reserveSyncTKS = false;
-
-    bool isExistHoldingDownKey          (void) { return (numBeingHoldDownKey>0); }
-    void releaseAllBeingHoldDownKey     (void);
-
-    void pressandreleaseKey             (int32_t key);
-    void pressandreleaseKeys            (String str);
-    void pressandreleaseKeys            (std::initializer_list<int32_t> keys);
-    void pressandreleaseShortcutKey     (std::initializer_list<int32_t> keys); // ex) ctrl+c, gui+r, ctrl+shift+esc
-    void pressandreleaseKeys            (int32_t* keys, int32_t len);
-    void pressandreleaseShortcutKey     (int32_t* keys, int32_t len); // ex) ctrl+c, gui+r, ctrl+shift+esc
-
-    // About Auto Delay functions
-    void randomDelayChanger                     (int32_t based, int32_t extraMax) { msBasedDelay = based; msExtraDelayMax = extraMax; }
-    void randomDelayGenerator                   (void) { delay(msBasedDelay); if(msExtraDelayMax > 0) delay(random(msExtraDelayMax+1)); }
-    void randomDelayGenerator_Manually          (int32_t based, int32_t extraMax) { delay(based); if(extraMax > 0) delay(random(extraMax+1)); }
-    void pressandreleaseKey_LikeHuman           (int32_t key);
-    void pressandreleaseKeys_LikeHuman          (String str);
-    void pressandreleaseKeys_LikeHuman          (std::initializer_list<int32_t> keys);
-    void pressandreleaseShortcutKey_LikeHuman   (std::initializer_list<int32_t> keys); // ex) ctrl+c, gui+r, ctrl+shift+esc
-
-} KBD_Hijacker;
 
 
 
@@ -205,20 +165,18 @@ public:
 
 /**⦓ For, SLAVE KEYBOARD ⦔**/
 
-USBHost USBHostOnTeensy;
-USBHub Hub_0(USBHostOnTeensy), Hub_1(USBHostOnTeensy), Hub_2(USBHostOnTeensy), Hub_3(USBHostOnTeensy), Hub_4(USBHostOnTeensy), Hub_5(USBHostOnTeensy), Hub_6(USBHostOnTeensy), Hub_7(USBHostOnTeensy);
-
 volatile uint8_t numDN = 0;
 
-volatile int32_t key;
-volatile bool event, isActivateKeyEvent;
+volatile bool isExistWaitingEvent_Press   = false;
+volatile bool isExistWaitingEvent_Release = false;
 
-volatile uint32_t msLatestEventCame = 0, msLatestEventPressed = 0;
+USBHost USBHostOnTeensy;
+USBHub Hub_0(USBHostOnTeensy), Hub_1(USBHostOnTeensy), Hub_2(USBHostOnTeensy), Hub_3(USBHostOnTeensy), Hub_4(USBHostOnTeensy), Hub_5(USBHostOnTeensy), Hub_6(USBHostOnTeensy), Hub_7(USBHostOnTeensy);
 
 class KeyboardParser : public KeyboardController
 {
     #define KEYLOGGER_LEN_MAX 10
-    struct DoublyLinkedListKeyLogger
+    struct DoublyLinkedStackKeyLogger
     {
         struct nodeKeycode
         {
@@ -230,7 +188,7 @@ class KeyboardParser : public KeyboardController
         } *top, *bottom;
         uint32_t len;
 
-        DoublyLinkedListKeyLogger() //Initialize
+        DoublyLinkedStackKeyLogger() //Initialize
         {
             top = bottom = NULL;
             len = 0;
@@ -319,26 +277,99 @@ class KeyboardParser : public KeyboardController
     };
 
 private:
-    static void OnRawPress   (uint8_t keycode);
-    static void OnRawRelease (uint8_t keycode);
+    static void OnRawPress      (uint8_t keycode);
+    static void OnRawRelease    (uint8_t keycode);
 
-    //bool statePhysical[255] = {false};
-    //void setPhysicalState   (int32_t key, bool state)   { statePhysical[TeensyLayout_To_keycode(key)] = state; }
-    //bool getPhysicalState   (int32_t key)               { return statePhysical[TeensyLayout_To_keycode(key)]; }
+    volatile uint8_t rawKeycode;
 
-public: 
+public:
     KeyboardParser(USBHost usbhost) : KeyboardController(usbhost)
     {
-        this->attachRawPress    (this->OnRawPress);
-        this->attachRawRelease  (this->OnRawRelease);
+        this->attachRawPress    (OnRawPress);
+        this->attachRawRelease  (OnRawRelease);
     }
 
-    bool isExistWaitingEvent_Press   = false;
-    bool isExistWaitingEvent_Release = false;
+    uint8_t getRawKeycode       () { return this->rawKeycode; }
 
-    DoublyLinkedListKeyLogger KeyLogger;
+    DoublyLinkedStackKeyLogger  KeyLogger;
 
 } KBD_Parser(USBHostOnTeensy);
+
+
+
+
+
+
+
+
+
+
+/**⦓ For, TRANSMIT TO HOST(OS) ⦔**/
+
+volatile int32_t key;
+volatile bool event;
+volatile bool isActivateKeyEvent;
+
+volatile uint32_t msLatestEventCame     = 0;
+volatile uint32_t msLatestEventPressed  = 0;
+#define MILLIS_SINCE_LATEST_EVENT           millis()-msLatestEventCame
+#define MILLIS_FROM_PRESSED_UNTIL_RELEASE   millis()-msLatestEventPressed
+
+class KeyboardHijacker
+{
+private:
+    bool stateCapsLockToggle    = false;
+    bool stateScrollLockToggle  = false;
+    bool stateNumLockToggle     = false;
+    bool stateLogical[255]      = {false};
+    
+    uint8_t numBeingHoldDownKey = 0;
+
+    uint32_t msBasedDelay       = 30;
+    uint32_t msExtraDelayMax    = +50;
+
+public:
+    // THE C.O.R.E. of HIJACKER
+    void TRANSMIT_AFTER_HIJACK          (void);
+
+    void setLogicalState                (int32_t key, bool state) { stateLogical[TeensyLayout_To_keycode(key)] = state; }
+    bool getLogicalState                (int32_t key) { return stateLogical[TeensyLayout_To_keycode(key)]; }
+    void printKeyInfo                   (uint8_t keycode);
+
+    void switchStateCapsLockToggle()    { stateCapsLockToggle=!stateCapsLockToggle; }
+    void switchStateScrollLockToggle()  { stateScrollLockToggle=!stateScrollLockToggle; }
+    void switchStateNumLockToggle()     { stateNumLockToggle=!stateNumLockToggle; }
+    bool getStateCapsLockToggle()       { return stateCapsLockToggle; }
+    bool getStateScrollLockToggle()     { return stateScrollLockToggle; }
+    bool getStateNumLockToggle()        { return stateNumLockToggle; }
+    void syncToggleKeyStates            (void);
+    bool reserveSyncTKS = false;
+
+    bool isExistHoldingDownKey          (void) { return (numBeingHoldDownKey>0); }
+    void releaseAllBeingHoldDownKey     (void);
+
+    void pressandreleaseKey             (int32_t key);
+    void pressandreleaseKeys            (String str);
+    void pressandreleaseKeys            (std::initializer_list<int32_t> keys);
+    void pressandreleaseShortcutKey     (std::initializer_list<int32_t> keys); // ex) ctrl+c, gui+r, ctrl+shift+esc
+    void pressandreleaseKeys            (int32_t* keys, int32_t len);
+    void pressandreleaseShortcutKey     (int32_t* keys, int32_t len); // ex) ctrl+c, gui+r, ctrl+shift+esc
+
+    // About Auto Delay functions
+    void randomDelayChanger                     (int32_t based, int32_t extraMax) { msBasedDelay = based; msExtraDelayMax = extraMax; }
+    void randomDelayGenerator                   (void) { delay(msBasedDelay); if(msExtraDelayMax > 0) delay(random(msExtraDelayMax+1)); }
+    void randomDelayGenerator_Manually          (int32_t based, int32_t extraMax) { delay(based); if(extraMax > 0) delay(random(extraMax+1)); }
+    void pressandreleaseKey_LikeHuman           (int32_t key);
+    void pressandreleaseKeys_LikeHuman          (String str);
+    void pressandreleaseKeys_LikeHuman          (std::initializer_list<int32_t> keys);
+    void pressandreleaseShortcutKey_LikeHuman   (std::initializer_list<int32_t> keys); // ex) ctrl+c, gui+r, ctrl+shift+esc
+
+} KBD_Hijacker;
+
+
+
+
+
 
 
 
@@ -388,9 +419,9 @@ struct Buzzzzer
             if(r_proc<rhythm[m_proc]){
                 if(r_proc==0){
                     if(melody[m_proc]!=0)
-                    { tone(PIN_BUZZER,melody[m_proc],rhythm[m_proc]); }
+                        tone(PIN_BUZZER,melody[m_proc],rhythm[m_proc]);
                     else
-                    { noTone(PIN_BUZZER); }
+                        noTone(PIN_BUZZER);
                 }
                 r_proc++;
             }
@@ -399,7 +430,13 @@ struct Buzzzzer
                 r_proc=0;
             }
         else
-            len=m_proc=r_proc=0;
+            len = 0;
+    }
+    void replayBuzz()
+    {
+        len = m_proc+1;
+
+        m_proc=r_proc=0;
     }
 } Buzzzzer;
 
@@ -453,7 +490,7 @@ void setup()
                                             //per10000ms!
                                             if( !(millis()%10000) )
                                             {
-                                                isDormancy = (millis()-msLatestEventCame)>33333 ? true : false;
+                                                isDormancy = (MILLIS_SINCE_LATEST_EVENT)>33333 ? true : false;
 
                                                 if(isDormancy) KBD_Hijacker.syncToggleKeyStates();
                                             }
@@ -511,18 +548,26 @@ void loop()
 {
     USBHostOnTeensy.Task();
 
-    if(KBD_Parser.isExistWaitingEvent_Press)
+    if(isExistWaitingEvent_Press)
     {
+        key   = keycode_To_TeensyLayout( KBD_Parser.getRawKeycode() );
+        event = true;
+        msLatestEventCame = msLatestEventPressed = millis();
+
         KBD_Hijacker.TRANSMIT_AFTER_HIJACK();
         
-        KBD_Parser.isExistWaitingEvent_Press   = false;
+        isExistWaitingEvent_Press   = false;
     }
 
-    if(KBD_Parser.isExistWaitingEvent_Release)
+    if(isExistWaitingEvent_Release)
     {
+        key   = keycode_To_TeensyLayout( KBD_Parser.getRawKeycode() );
+        event = false;
+        msLatestEventCame = millis();
+
         KBD_Hijacker.TRANSMIT_AFTER_HIJACK();
         
-        KBD_Parser.isExistWaitingEvent_Release = false;
+        isExistWaitingEvent_Release = false;
     }
 
     numDN>0 ? digitalWrite(PIN_LED, HIGH) : digitalWrite(PIN_LED, LOW);

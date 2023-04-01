@@ -1,10 +1,4 @@
 
-#define PRESSED_TIME_UNTIL_RELEASE millis()-msLatestEventPressed
-
-
-
-
-
 void KeyboardHijacker::TRANSMIT_AFTER_HIJACK()
 {
     isActivateKeyEvent=true;
@@ -21,7 +15,7 @@ void KeyboardHijacker::TRANSMIT_AFTER_HIJACK()
         }
         else
         {
-            //syncToggleKeyStates() after a few ms
+            // SYNCHRONIZE ToggleKeyStates after a few ms
             reserveSyncTKS=true;
         }
     }
@@ -260,7 +254,7 @@ void KeyboardHijacker::TRANSMIT_AFTER_HIJACK()
         {
             Serial.print(F("( After Hijack) Now Holding Down KEY : "));
             
-            bool notFirst = false;
+            uint8_t notFirst = 0;
             for(uint16_t i=0; i<255; i++)
             {
                 if(stateLogical[i])
@@ -274,6 +268,8 @@ void KeyboardHijacker::TRANSMIT_AFTER_HIJACK()
             Serial.println(F("( After Hijack) Now Holding Down KEY : none"));
         }
     }
+
+
 
     isActivateKeyEvent=false;
 }
@@ -293,34 +289,34 @@ void KeyboardHijacker::syncToggleKeyStates() //Synchronize "SLAVE" kbd LEDs to "
 
     if (stateLEDs & LED_NUM_LOCK)       //if HOST 's NumLock state is ON
     {
-        KBD_Hijacker.stateNumLockToggle = true;
+        stateNumLockToggle = true;
         KBD_Parser.numLock(true);
     }
     else                                //if HOST 's NumLock state is OFF
     {
-        KBD_Hijacker.stateNumLockToggle = false;
+        stateNumLockToggle = false;
         KBD_Parser.numLock(false);
     }
     
     if (stateLEDs & LED_CAPS_LOCK)      //if HOST 's CapsLock state is ON
     {
-        KBD_Hijacker.stateCapsLockToggle = true;
+        stateCapsLockToggle = true;
         KBD_Parser.capsLock(true);
     }
     else                                //if HOST 's CapsLock state is OFF
     {
-        KBD_Hijacker.stateCapsLockToggle = false;
+        stateCapsLockToggle = false;
         KBD_Parser.capsLock(false);
     }
     
     if (stateLEDs & LED_SCROLL_LOCK)    //if HOST 's ScrollLock state is ON
     {
-        KBD_Hijacker.stateScrollLockToggle = true;
+        stateScrollLockToggle = true;
         KBD_Parser.scrollLock(true);
     }
     else                                //if HOST 's ScrollLock state is OFF
     {
-        KBD_Hijacker.stateScrollLockToggle = false;
+        stateScrollLockToggle = false;
         KBD_Parser.scrollLock(false);
     }
     
@@ -352,7 +348,7 @@ void KeyboardHijacker::releaseAllBeingHoldDownKey()
 {
     //Keyboard.releaseAll();
     
-    KBD_Hijacker.numBeingHoldDownKey = 0;
+    numBeingHoldDownKey = 0;
     isActivateKeyEvent=false;
     
     for(uint8_t i=0; i<255; i++)

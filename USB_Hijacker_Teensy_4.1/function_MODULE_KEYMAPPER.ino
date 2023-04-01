@@ -14,7 +14,7 @@ struct MappedData
 {
     uint32_t* millisPressedTime;
     uint8_t stateNCS_CSAG;
-    
+
     uint8_t mappedLen;
     void* mappedThings;
 };
@@ -299,7 +299,7 @@ void MODULE_KEYMAPPER_HIJACK()
             }
             else if (   !event &&
                         data.millisPressedTime[0]!=0 &&
-                        data.millisPressedTime[0]<PRESSED_TIME_UNTIL_RELEASE
+                        data.millisPressedTime[0]<MILLIS_FROM_PRESSED_UNTIL_RELEASE
                     )
             {
                 KBD_Hijacker.releaseAllBeingHoldDownKey(); delay(10);

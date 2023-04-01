@@ -3,8 +3,6 @@
 
 
 
-
-
 #if (KEYPAD_KOREAN_LAYOUT > 0)
 
 #define KORPAD_isExistVowel(KorSlotX)       strcmp(KorSlotX,"k")==0||strcmp(KorSlotX,"o")==0||strcmp(KorSlotX,"i")==0||strcmp(KorSlotX,"O")==0||strcmp(KorSlotX,"j")==0||strcmp(KorSlotX,"p")==0||strcmp(KorSlotX,"u")==0||strcmp(KorSlotX,"P")==0||strcmp(KorSlotX,"h")==0||strcmp(KorSlotX,"y")==0||strcmp(KorSlotX,"n")==0||strcmp(KorSlotX,"b")==0||strcmp(KorSlotX,"m")==0||strcmp(KorSlotX,"l")==0||strcmp(KorSlotX,"hk")==0||strcmp(KorSlotX,"ho")==0||strcmp(KorSlotX,"hl")==0||strcmp(KorSlotX,"nj")==0||strcmp(KorSlotX,"np")==0||strcmp(KorSlotX,"nl")==0||strcmp(KorSlotX,"ml")==0
@@ -33,7 +31,7 @@ void undoConfirmedInputs(char** ptrKorSlot0,char** ptrKorSlot1,char** ptrKorSlot
 {
     strcpy(*ptrKorSlot0,"");
     char* ptr = *ptrKorSlot0;
-    
+
     *ptrKorSlot0 = *ptrKorSlot1;
     *ptrKorSlot1 = *ptrKorSlot2;
     *ptrKorSlot2 = *ptrKorSlot3;
@@ -197,7 +195,7 @@ inline void MODULE_KOREAN_KEYPAD_EVOLUTION()
             Buzzzzer.reserveBuzz(   { NOTE_D3 }
                                 ,   { 181     }   );
         }
-        else if(PRESSED_TIME_UNTIL_RELEASE > 400){
+        else if(MILLIS_FROM_PRESSED_UNTIL_RELEASE > 400){
 
             KBD_Hijacker.releaseAllBeingHoldDownKey();   // KEY_NUM_LOCK release needed
 
@@ -227,7 +225,7 @@ inline void MODULE_KOREAN_KEYPAD_EVOLUTION()
             }
 
             //Reverse KorEng status, NumLock pressed more than 1200 millis, no matter the ScrollLock on/off
-            if(PRESSED_TIME_UNTIL_RELEASE > 1200){
+            if(MILLIS_FROM_PRESSED_UNTIL_RELEASE > 1200){
                 KBD_Hijacker.pressandreleaseKey(KEY_KORENG);
             }
             //syncToggleKeyStates() in a few ms
@@ -254,7 +252,7 @@ inline void MODULE_KOREAN_KEYPAD_EVOLUTION()
                 delay(11);
                 KBD_Hijacker.pressandreleaseShortcutKey( {KEY_CTRL,KEY_C} );
             }
-            else if(PRESSED_TIME_UNTIL_RELEASE > 400){
+            else if(MILLIS_FROM_PRESSED_UNTIL_RELEASE > 400){
                 KBD_Hijacker.pressandreleaseShortcutKey( {KEY_CTRL,KEY_F} );
             }
             isActivateKeyEvent=false; key=0;
@@ -270,7 +268,7 @@ inline void MODULE_KOREAN_KEYPAD_EVOLUTION()
                 delay(11);
                 KBD_Hijacker.pressandreleaseShortcutKey( {KEY_CTRL,KEY_V} );
             }
-            else if(PRESSED_TIME_UNTIL_RELEASE > 400){
+            else if(MILLIS_FROM_PRESSED_UNTIL_RELEASE > 400){
                 KBD_Hijacker.pressandreleaseShortcutKey( {KEY_CTRL,KEY_H} );
             }
             isActivateKeyEvent=false; key=0;
@@ -284,10 +282,10 @@ inline void MODULE_KOREAN_KEYPAD_EVOLUTION()
     
                 KBD_Hijacker.pressandreleaseShortcutKey( {KEY_SHIFT,KEY_LEFT_ARROW} );
             }
-            else if(PRESSED_TIME_UNTIL_RELEASE > 1600){
+            else if(MILLIS_FROM_PRESSED_UNTIL_RELEASE > 1600){
                 KBD_Hijacker.pressandreleaseShortcutKey( {KEY_CTRL,KEY_A} );
             }
-            else if(PRESSED_TIME_UNTIL_RELEASE > 400){
+            else if(MILLIS_FROM_PRESSED_UNTIL_RELEASE > 400){
                 KBD_Hijacker.pressandreleaseShortcutKey( {KEY_CTRL,KEY_Z} );
             }
             isActivateKeyEvent=false; key=0;
@@ -797,7 +795,7 @@ inline void MODULE_KOREAN_KEYPAD_EVOLUTION()
                         Keyboard.write ('g');
                         strcpy(KorSlot0,"g");
 
-                    } else if   (strcmp(KorSlot0,"k")==0||strcmp(KorSlot0,"o")==0){             // convert Hangle Vowel to Alphabet
+                    } else if   (strcmp(KorSlot0,"k")==0 || strcmp(KorSlot0,"o")==0){             // convert Hangle Vowel to Alphabet
                         KORPAD_updateConfirmedInputs(); strcpy(KorSlot2,"");
                         KBD_Hijacker.pressandreleaseKey(KEY_BACKSPACE);
                         KORPAD_writeAlphabet('a');
@@ -811,7 +809,7 @@ inline void MODULE_KOREAN_KEYPAD_EVOLUTION()
                         Keyboard.write ('o');
                         strcpy(KorSlot0,"o");
     
-                    } else if   (strcmp(KorSlot0,"j")==0||strcmp(KorSlot0,"p")==0){
+                    } else if   (strcmp(KorSlot0,"j")==0 || strcmp(KorSlot0,"p")==0){
                         KORPAD_updateConfirmedInputs(); strcpy(KorSlot2,"");
                         KBD_Hijacker.pressandreleaseKey(KEY_BACKSPACE);
                         KORPAD_writeAlphabet('e');
@@ -849,7 +847,7 @@ inline void MODULE_KOREAN_KEYPAD_EVOLUTION()
                         Keyboard.write ('n');
                         strcpy(KorSlot0,"n");
     
-                    } else if   (strcmp(KorSlot0,"u")==0||strcmp(KorSlot0,"i")==0||strcmp(KorSlot0,"y")==0){
+                    } else if   (strcmp(KorSlot0,"u")==0 || strcmp(KorSlot0,"i")==0 || strcmp(KorSlot0,"y")==0){
                         KORPAD_updateConfirmedInputs(); strcpy(KorSlot2,"");
                         KBD_Hijacker.pressandreleaseKey(KEY_BACKSPACE);
                         KORPAD_writeAlphabet('y');
@@ -935,7 +933,7 @@ inline void MODULE_KOREAN_KEYPAD_EVOLUTION()
                     strcpy(KorSlot0,"r");
                 }
             }
-            else if(PRESSED_TIME_UNTIL_RELEASE > 400){
+            else if(MILLIS_FROM_PRESSED_UNTIL_RELEASE > 400){
                 KORPAD_updateConfirmedInputs();
                 KBD_Hijacker.pressandreleaseKey(KEY_BACKSPACE);
                 Keyboard.write ('4');
@@ -962,7 +960,7 @@ inline void MODULE_KOREAN_KEYPAD_EVOLUTION()
                     strcpy(KorSlot0,"s");
                 }
             }
-            else if(PRESSED_TIME_UNTIL_RELEASE > 400){
+            else if(MILLIS_FROM_PRESSED_UNTIL_RELEASE > 400){
                 KORPAD_updateConfirmedInputs();
                 KBD_Hijacker.pressandreleaseKey(KEY_BACKSPACE);
                 Keyboard.write ('5');
@@ -993,7 +991,7 @@ inline void MODULE_KOREAN_KEYPAD_EVOLUTION()
                     strcpy(KorSlot0,"e");
                 }
             }
-            else if(PRESSED_TIME_UNTIL_RELEASE > 400){
+            else if(MILLIS_FROM_PRESSED_UNTIL_RELEASE > 400){
                 KORPAD_updateConfirmedInputs();
                 KBD_Hijacker.pressandreleaseKey(KEY_BACKSPACE);
                 Keyboard.write ('6');
@@ -1025,7 +1023,7 @@ inline void MODULE_KOREAN_KEYPAD_EVOLUTION()
                     strcpy(KorSlot0,"q");
                 }
             }
-            else if(PRESSED_TIME_UNTIL_RELEASE > 400){
+            else if(MILLIS_FROM_PRESSED_UNTIL_RELEASE > 400){
                 KORPAD_updateConfirmedInputs();
                 KBD_Hijacker.pressandreleaseKey(KEY_BACKSPACE);
                 Keyboard.write ('1');
@@ -1056,7 +1054,7 @@ inline void MODULE_KOREAN_KEYPAD_EVOLUTION()
                     strcpy(KorSlot0,"t");
                 }
             }
-            else if(PRESSED_TIME_UNTIL_RELEASE > 400){
+            else if(MILLIS_FROM_PRESSED_UNTIL_RELEASE > 400){
                 KORPAD_updateConfirmedInputs();
                 KBD_Hijacker.pressandreleaseKey(KEY_BACKSPACE);
                 Keyboard.write ('2');
@@ -1088,7 +1086,7 @@ inline void MODULE_KOREAN_KEYPAD_EVOLUTION()
                     strcpy(KorSlot0,"w");
                 }
             }
-            else if(PRESSED_TIME_UNTIL_RELEASE > 400){
+            else if(MILLIS_FROM_PRESSED_UNTIL_RELEASE > 400){
                 KORPAD_updateConfirmedInputs();
                 KBD_Hijacker.pressandreleaseKey(KEY_BACKSPACE);
                 Keyboard.write ('3');
@@ -1115,7 +1113,7 @@ inline void MODULE_KOREAN_KEYPAD_EVOLUTION()
                     strcpy(KorSlot0,"d");
                 }
             }
-            else if(PRESSED_TIME_UNTIL_RELEASE > 400){
+            else if(MILLIS_FROM_PRESSED_UNTIL_RELEASE > 400){
                 KORPAD_updateConfirmedInputs();
                 KBD_Hijacker.pressandreleaseKey(KEY_BACKSPACE);
                 Keyboard.write ('0');
@@ -1180,7 +1178,7 @@ inline void MODULE_KOREAN_KEYPAD_EVOLUTION()
                     strcpy(KorSlot0,"l");
                 }
             }
-            else if(PRESSED_TIME_UNTIL_RELEASE > 400){
+            else if(MILLIS_FROM_PRESSED_UNTIL_RELEASE > 400){
                 KORPAD_updateConfirmedInputs();
                 KBD_Hijacker.pressandreleaseKey(KEY_BACKSPACE);
                 Keyboard.write ('7');
@@ -1227,7 +1225,7 @@ inline void MODULE_KOREAN_KEYPAD_EVOLUTION()
                     strcpy(KorSlot0,"*");
                 }
             }
-            else if(PRESSED_TIME_UNTIL_RELEASE > 400){
+            else if(MILLIS_FROM_PRESSED_UNTIL_RELEASE > 400){
                 KORPAD_updateConfirmedInputs();
                 KBD_Hijacker.pressandreleaseKey(KEY_BACKSPACE);
                 Keyboard.write ('8');
@@ -1254,7 +1252,7 @@ inline void MODULE_KOREAN_KEYPAD_EVOLUTION()
                     strcpy(KorSlot0,"m");
                 }
             }
-            else if(PRESSED_TIME_UNTIL_RELEASE > 400){
+            else if(MILLIS_FROM_PRESSED_UNTIL_RELEASE > 400){
                 KORPAD_updateConfirmedInputs();
                 KBD_Hijacker.pressandreleaseKey(KEY_BACKSPACE);
                 Keyboard.write ('9');
@@ -1268,7 +1266,7 @@ inline void MODULE_KOREAN_KEYPAD_EVOLUTION()
         {
             if(event){
                 
-            } else if(PRESSED_TIME_UNTIL_RELEASE > 400){
+            } else if(MILLIS_FROM_PRESSED_UNTIL_RELEASE > 400){
                 if(!ConvertMode_Alphabet)
                 {
                     KORPAD_resetConfirmedInputs();
@@ -1609,7 +1607,7 @@ inline void MODULE_KOREAN_KEYPAD_EVOLUTION()
                 Keyboard.write ('r');
                 strcpy(KorSlot0,"r");
             }
-            else if(PRESSED_TIME_UNTIL_RELEASE > 400){
+            else if(MILLIS_FROM_PRESSED_UNTIL_RELEASE > 400){
                 KORPAD_updateConfirmedInputs();
                 KBD_Hijacker.pressandreleaseKey(KEY_BACKSPACE);
                 Keyboard.write ('7');
@@ -1626,7 +1624,7 @@ inline void MODULE_KOREAN_KEYPAD_EVOLUTION()
                 Keyboard.write ('s');
                 strcpy(KorSlot0,"s");
             }
-            else if(PRESSED_TIME_UNTIL_RELEASE > 400){
+            else if(MILLIS_FROM_PRESSED_UNTIL_RELEASE > 400){
                 KORPAD_updateConfirmedInputs();
                 KBD_Hijacker.pressandreleaseKey(KEY_BACKSPACE);
                 Keyboard.write ('8');
@@ -1643,7 +1641,7 @@ inline void MODULE_KOREAN_KEYPAD_EVOLUTION()
                 Keyboard.write ('f');
                 strcpy(KorSlot0,"f");
             }
-            else if(PRESSED_TIME_UNTIL_RELEASE > 400){
+            else if(MILLIS_FROM_PRESSED_UNTIL_RELEASE > 400){
                 KORPAD_updateConfirmedInputs();
                 KBD_Hijacker.pressandreleaseKey(KEY_BACKSPACE);
                 Keyboard.write ('4');
@@ -1660,7 +1658,7 @@ inline void MODULE_KOREAN_KEYPAD_EVOLUTION()
                 Keyboard.write ('a');
                 strcpy(KorSlot0,"a");
             }
-            else if(PRESSED_TIME_UNTIL_RELEASE > 400){
+            else if(MILLIS_FROM_PRESSED_UNTIL_RELEASE > 400){
                 KORPAD_updateConfirmedInputs();
                 KBD_Hijacker.pressandreleaseKey(KEY_BACKSPACE);
                 Keyboard.write ('5');
@@ -1677,7 +1675,7 @@ inline void MODULE_KOREAN_KEYPAD_EVOLUTION()
                 Keyboard.write ('t');
                 strcpy(KorSlot0,"t");
             }
-            else if(PRESSED_TIME_UNTIL_RELEASE > 400){
+            else if(MILLIS_FROM_PRESSED_UNTIL_RELEASE > 400){
                 KORPAD_updateConfirmedInputs();
                 KBD_Hijacker.pressandreleaseKey(KEY_BACKSPACE);
                 Keyboard.write ('1');
@@ -1694,7 +1692,7 @@ inline void MODULE_KOREAN_KEYPAD_EVOLUTION()
                 Keyboard.write ('d');
                 strcpy(KorSlot0,"d");
             }
-            else if(PRESSED_TIME_UNTIL_RELEASE > 400){
+            else if(MILLIS_FROM_PRESSED_UNTIL_RELEASE > 400){
                 KORPAD_updateConfirmedInputs();
                 KBD_Hijacker.pressandreleaseKey(KEY_BACKSPACE);
                 Keyboard.write ('2');
@@ -1727,7 +1725,7 @@ inline void MODULE_KOREAN_KEYPAD_EVOLUTION()
                     strcpy(KorSlot0,"k");
                 }
             }
-            else if(PRESSED_TIME_UNTIL_RELEASE > 400){
+            else if(MILLIS_FROM_PRESSED_UNTIL_RELEASE > 400){
                 KORPAD_updateConfirmedInputs();
                 KBD_Hijacker.pressandreleaseKey(KEY_BACKSPACE);
                 Keyboard.write ('9');
@@ -1754,7 +1752,7 @@ inline void MODULE_KOREAN_KEYPAD_EVOLUTION()
                     strcpy(KorSlot0,"h");
                 }
             }
-            else if(PRESSED_TIME_UNTIL_RELEASE > 400){
+            else if(MILLIS_FROM_PRESSED_UNTIL_RELEASE > 400){
                 KORPAD_updateConfirmedInputs();
                 KBD_Hijacker.pressandreleaseKey(KEY_BACKSPACE);
                 Keyboard.write ('6');
@@ -1806,7 +1804,7 @@ inline void MODULE_KOREAN_KEYPAD_EVOLUTION()
                     strcpy(KorSlot0,"l");
                 }
             }
-            else if(PRESSED_TIME_UNTIL_RELEASE > 400){
+            else if(MILLIS_FROM_PRESSED_UNTIL_RELEASE > 400){
                 KORPAD_updateConfirmedInputs();
                 KBD_Hijacker.pressandreleaseKey(KEY_BACKSPACE);
                 Keyboard.write ('3');
@@ -1823,7 +1821,7 @@ inline void MODULE_KOREAN_KEYPAD_EVOLUTION()
                 Keyboard.write ('m');
                 strcpy(KorSlot0,"m");
             }
-            else if(PRESSED_TIME_UNTIL_RELEASE > 400){
+            else if(MILLIS_FROM_PRESSED_UNTIL_RELEASE > 400){
                 KORPAD_updateConfirmedInputs();
                 KBD_Hijacker.pressandreleaseKey(KEY_BACKSPACE);
                 Keyboard.write ('0');
@@ -1923,7 +1921,7 @@ inline void MODULE_KOREAN_KEYPAD_EVOLUTION()
                     KBD_Hijacker.pressandreleaseKey(KEY_BACKSPACE);
                     Keyboard.write ('n');
                     strcpy(KorSlot0,"n");
-                } else if(strcmp(KorSlot0,"")==0||KBD_Parser.KeyLogger.peek_key(1)==KEY_TAB){
+                } else if(strcmp(KorSlot0,"")==0 || KBD_Parser.KeyLogger.peek_key(1)==KEY_TAB){
                         KORPAD_resetConfirmedInputs();
                         KBD_Hijacker.pressandreleaseKey(KEY_TAB);
                 }
@@ -1936,7 +1934,7 @@ inline void MODULE_KOREAN_KEYPAD_EVOLUTION()
         {
             if(event){
                 
-            } else if(PRESSED_TIME_UNTIL_RELEASE > 400){
+            } else if(MILLIS_FROM_PRESSED_UNTIL_RELEASE > 400){
                 if(!ConvertMode_Alphabet)
                 {
                     KORPAD_resetConfirmedInputs();
