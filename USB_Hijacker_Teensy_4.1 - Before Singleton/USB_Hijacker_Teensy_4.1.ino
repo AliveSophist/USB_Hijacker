@@ -175,20 +175,6 @@ USBHub Hub_0(USBHostOnTeensy), Hub_1(USBHostOnTeensy), Hub_2(USBHostOnTeensy), H
 
 class KeyboardParser : public KeyboardController
 {
-/******************************* SINGLETON *******************************/
-// SET Constructor & Destructor
-private: KeyboardParser(USBHost usbhost) : KeyboardController(usbhost)
-{
-    this->attachRawPress(OnRawPress);
-    this->attachRawRelease(OnRawRelease);
-}
-private: ~KeyboardParser() {}
-private: KeyboardParser(const KeyboardParser& ref) = delete; // Delete copy constructor to prevent copying
-private: KeyboardParser& operator=(const KeyboardParser& ref) = delete; // Delete copy assignment operator to prevent copying
-// STATIC SINGLETON INSTANCE !!
-public: static KeyboardParser& getInstance() { static KeyboardParser instance(USBHostOnTeensy); return instance; }
-/******************************* SINGLETON *******************************/
-
 private:
     static void OnRawPress          (uint8_t keycode);
     static void OnRawRelease        (uint8_t keycode);
@@ -196,6 +182,12 @@ private:
     volatile uint8_t rawKeycode;
 
 public:
+    KeyboardParser(USBHost usbhost) : KeyboardController(usbhost)
+    {
+        this->attachRawPress        (OnRawPress);
+        this->attachRawRelease      (OnRawRelease);
+    }
+
     uint8_t getRawKeycode           () { return this->rawKeycode; }
     
     #define KEYLOGGER_LEN_MAX 10
@@ -299,7 +291,7 @@ public:
         }
     } KeyLogger;
 
-}& KBD_Parser = KeyboardParser::getInstance(); // refers to the SINGLETON
+} KBD_Parser(USBHostOnTeensy);
 
 
 
@@ -322,22 +314,12 @@ volatile uint32_t msLatestEventCame = 0, msLatestEventPressed = 0;
 
 class KeyboardHijacker
 {
-/******************************* SINGLETON *******************************/
-// SET private Constructor & Destructor
-private: KeyboardHijacker() {}
-private: ~KeyboardHijacker() {}
-private: KeyboardHijacker(const KeyboardHijacker& ref) = delete; // Delete copy constructor to prevent copying
-private: KeyboardHijacker& operator=(const KeyboardHijacker& ref) = delete; // Delete copy assignment operator to prevent copying
-// STATIC SINGLETON INSTANCE !!
-public: static KeyboardHijacker& getInstance() { static KeyboardHijacker instance; return instance; }
-/******************************* SINGLETON *******************************/
-
 private:
     bool stateCapsLockToggle    = false;
     bool stateScrollLockToggle  = false;
     bool stateNumLockToggle     = false;
     bool stateLogical[255]      = {false};
-
+    
     uint8_t numBeingHoldDownKey = 0;
 
     uint32_t msBasedDelay       = 30;
@@ -379,7 +361,7 @@ public:
         void pressandreleaseKeys_LikeHuman          (std::initializer_list<int32_t> keys);
         void pressandreleaseShortcutKey_LikeHuman   (std::initializer_list<int32_t> keys); // ex) ctrl+c, gui+r, ctrl+shift+esc
 
-}& KBD_Hijacker = KeyboardHijacker::getInstance(); // refers to the SINGLETON
+} KBD_Hijacker;
 
 
 

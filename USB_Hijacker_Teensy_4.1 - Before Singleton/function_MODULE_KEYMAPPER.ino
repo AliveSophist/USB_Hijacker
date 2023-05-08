@@ -215,6 +215,7 @@ void MODULE_KEYMAPPER_INITIALIZE()
                     { 
                         Serial.print("    mappedThings[");Serial.print(i);Serial.print("] : ");
                         print8bitHex( ((uint8_t*)data.mappedThings)[i] ); Serial.println();
+                        // ((uint8_t*)data.mappedThings)[i] is same '(reinterpret_cast<uint8_t*>(data.mappedThings))[i]'
                     }
                     
                     Serial.println();
@@ -314,7 +315,7 @@ void MODULE_KEYMAPPER_HIJACK()
 
             isActivateKeyEvent=false; key=0;
         }
-
+        
         // This key Mapped One KEY to NONE And excute MACRO
         else
         {
