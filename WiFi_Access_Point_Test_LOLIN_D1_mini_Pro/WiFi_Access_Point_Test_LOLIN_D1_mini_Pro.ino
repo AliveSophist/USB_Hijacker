@@ -7,21 +7,38 @@
 */
 
 #include <EEPROM.h>
+
+#define IS_CLEARING 0       // 0:MAIN   1:CLEAR EEPROM
+#if (IS_CLEARING == 1)
+
+void setup(){ EEPROM.begin(4096); for(int i=0;i<4096;i++){ EEPROM.write(i,0); } EEPROM.end(); } void loop(){}
+
+#else
+
+#include <algorithm>
 #include <list>
 
 #include <ESP8266WiFi.h>
 #include <ESP8266LLMNR.h>
 #include <DNSServer.h>
 #include <ESP8266WebServer.h>
+#include <lwip/napt.h>
+#include <lwip/dns.h>
 
-#include "ESP8266TimerInterrupt.h"             //https://github.com/khoih-prog/ESP8266TimerInterrupt
+#include <ESP8266TimerInterrupt.h>  // https://github.com/khoih-prog/ESP8266TimerInterrupt
 
-IPAddress APIP(172, 0, 0, 1); // Gateway
-const byte DNS_PORT = 53;
-const byte HTTP_CODE = 200;
+#include "res_html_INDEX.h"
+#include "res_html_SELECT_WIFI.h"
 
-DNSServer dnsServer;
-ESP8266WebServer webServer(80);
+
+
+
+
+#define STATUS_COMMON           0x00
+#define STATUS_WIFI_PROVIDED    0x01
+
+static byte NOW_MODULE_STATUS = STATUS_COMMON;
+
 
 
 
@@ -30,77 +47,121 @@ namespace WIFI_CONNECTOR
 {
     bool isConnected = false;
     IPAddress NOW_IP;
+    String NOW_WIFI_ID;
+    String NOW_WIFI_PW;
 
     #define SAVED_WIFI_NET_MAX_COUNT 10
-    struct WIFI_NET {
+    struct WIFI_NET
+    {
         char id[33]; // MAX 32 letters + NULL
         char pw[33]; // MAX 32 letters + NULL
 
         WIFI_NET(){}
-        WIFI_NET(String apName, String apPw) {
+        WIFI_NET(String apName, String apPw)
+        {
             strcpy(this->id, apName.c_str());
             strcpy(this->pw, apPw.c_str());
         }
     };
     std::list<WIFI_NET> SAVED_WIFI_NET_LIST;
 
-    void loadWifiList() {
-        int addr = 0;
-        WIFI_NET wifi;
+    void loadWifiList()
+    {
+        cli(); // DISABLE INTERRUPT while using EEPROM
+        {
+            int addr = 0;
+            WIFI_NET wifi;
 
-        for (int i = 0; i < SAVED_WIFI_NET_MAX_COUNT; i++) {
-            EEPROM.get(addr, wifi);
+            for (int i = 0; i < SAVED_WIFI_NET_MAX_COUNT; i++) {
+                EEPROM.get(addr, wifi);
+                SAVED_WIFI_NET_LIST.push_back(wifi);
 
-            // If any BROKEN character EXISTS, IGNORE.
-            for(char c : wifi.id)
-                if(c > 127){ strcpy(wifi.id, ""); break; }
-            for(char c : wifi.pw)
-                if(c > 127){ strcpy(wifi.pw, ""); break; }
-
-            SAVED_WIFI_NET_LIST.push_back(wifi);
-
-            addr += sizeof(WIFI_NET);
+                addr += sizeof(WIFI_NET);
+            }
         }
+        sei(); // DISABLE INTERRUPT while using EEPROM 
     }
 
-    void saveWifiList(String apName, String apPw) {
+    void saveWifiList()
+    {
+        // If already EXISTS, FUCK OFF.
+        bool isAlreadyExist = false;
+        for (WIFI_NET wifi : SAVED_WIFI_NET_LIST) {
+            if(NOW_WIFI_ID.equals(wifi.id) && NOW_WIFI_PW.equals(wifi.pw))
+                isAlreadyExist = true;
+        }
+        if(isAlreadyExist)
+            return;
+
+
         // DEL a most old WIFI_NET
         SAVED_WIFI_NET_LIST.pop_back();
         // ADD a new WIFI_NET
-        SAVED_WIFI_NET_LIST.push_front(WIFI_NET(apName, apPw));
+        SAVED_WIFI_NET_LIST.push_front( WIFI_NET(NOW_WIFI_ID, NOW_WIFI_PW) );
 
-        int addr = 0;
 
-        for (WIFI_NET wifi : SAVED_WIFI_NET_LIST) {
-            EEPROM.put(addr, wifi);
+        cli(); // DISABLE INTERRUPT while using EEPROM 
+        {
+            int addr = 0;
 
-            addr += sizeof(WIFI_NET);
+            for (WIFI_NET wifi : SAVED_WIFI_NET_LIST) {
+                EEPROM.put(addr, wifi);
+
+                addr += sizeof(WIFI_NET);
+            }
+
+            if (EEPROM.commit())
+                Serial.print("SAVE......... COMPLETE!");
+            else
+                Serial.println("SAVE......... ERROR!?");
         }
+        sei(); // DISABLE INTERRUPT while using EEPROM 
     }
 
     std::list<String> scanNetList()
     {
-        std::list<String> scanedNetList;
+        struct SCANNED_NET {
+            String ssid;
+            int32_t rssi;
+            
+            SCANNED_NET(String ssid, int32_t rssi) : ssid(ssid), rssi(rssi) {}
+        };
+
+        std::vector<SCANNED_NET> scanedNetList;
 
         int numNet = WiFi.scanNetworks();
-        for(int i=0; i<numNet; i++)
-        {
+        for(int i=0; i<numNet; i++){
             String ssid = WiFi.SSID(i);
+            int32_t rssi = WiFi.RSSI(i);
 
-            // If any BROKEN character EXISTS, IGNORE.
-            for(char c : ssid){
-                if(c > 127){ ssid=""; break; }
+            // If INVALID
+            if(ssid.length() <= 0)
+                continue;
+
+            // If DUPLICATED
+            bool isDuplicated = false;
+            for(SCANNED_NET net : scanedNetList){
+                if(net.ssid.equals(ssid)){ isDuplicated = true; break; }
             }
-
-            if(ssid.length() <= 0) // valid check
+            if(isDuplicated)
                 continue;
 
-            // Add SSID when NOT DUPLICATED
-            if (std::find(scanedNetList.begin(), scanedNetList.end(), ssid) == scanedNetList.end())
-                scanedNetList.push_back(ssid);
+            scanedNetList.push_back( SCANNED_NET(ssid, rssi) );
         }
 
-        return scanedNetList;
+        // SORT !
+        std::sort   (   scanedNetList.begin(), scanedNetList.end(),
+                        [](const SCANNED_NET& a, const SCANNED_NET& b)
+                        {
+                            return a.rssi > b.rssi; // ORDER BY DESC
+                        }
+                    );
+
+        std::list<String> result;
+        for(SCANNED_NET net : scanedNetList)
+            result.push_back( net.ssid );
+
+        return result;
     }
 }
 
@@ -108,247 +169,131 @@ namespace WIFI_CONNECTOR
 
 
 
-String html;
-
-String htmlIndex = R"(
-<!DOCTYPE HTML>
-<html>
-<head>
-	<title>HACK</title>
-</head>
-<body>
-	<h1>This is HACK</h1>
-</body>
-</html>
-)";
-
-const char rawhtml_SELECT_WIFI[] PROGMEM = R"(
-<!DOCTYPE HTML>
-<html>
-<head>
-    <meta http-equiv="Content-Type" Content="text/html; charset=utf-8">
-    <meta name='viewport' content='width=device-width, initial-scale=1, minimum-scale=1, maximum-scale=1, user-scalable=no'>
-
-    <title>WIFI 목록</title>
-
-    <style>
-    body
-    {font-size:1.2rem;}
-
-    .a:hover
-    {cursor:pointer;}
-
-    #spinner
-    {z-index:9;position:fixed;top:0;left:0;right:0;bottom:0;background-color:rgba(0, 0, 0, 0.7);padding:0 auto;display:none;}
-    #spinner .spinner-around
-    {z-index:99;position:absolute;top:50%;left:50%;margin:-25px 0 0 -25px;width:50px;height:50px;border-radius:50%;border:7px solid rgba(0, 0, 0, 0.1);animation:none;}
-    #spinner .spinner-inner
-    {z-index:999;position:absolute;top:50%;left:50%;margin:-25px 0 0 -25px;width:50px;height:50px;border-radius:50%;border:7px solid transparent;border-top-color:#3498db;}
-    </style>
-</head>
-<body>
-    <h1>WiFi List</h1>
-    인증가능한 WiFi를 선택하세요. <br>
-
-    <div id='wifiList'>#{strWiFiList}</div>
-
-    <div id='divForm'>
-        <form method='post' action='/connectToAP' onsubmit='return whenSubmit();'>
-            SELECTED SSID : <br>
-            <input type='text' name='apName' readonly> <br>
-            PASSWORD(CAN BE NONE) : <br>
-            <input type='password' name='apPw'> <br>
-            <input type='submit' value='CONNECT'>
-        </form>
-    </div>
-
-    <div id='spinner'>
-        <span class='spinner-around'></span>
-        <span class='spinner-inner'></span>
-    </div>
-</body>
-<script>
-    const divForm = document.getElementById('divForm');
-    divForm.style.visibility = 'hidden';
-
-    const arrLiApName = document.querySelectorAll('.liApName');
-    const aSummary = document.querySelector('#aSummary');
-    if(arrLiApName.length > 10)
-    {
-        aSummary.style.display='block';
-        aSummary.addEventListener("click", () => { for (liApName of arrLiApName) liApName.style.display=''; aSummary.style.display='none'; });
-    }
-    let i = 1;
-    for (liApName of arrLiApName) {
-        const aTag = liApName.querySelector('a');
-        aTag.addEventListener("click", () => { select(aTag.name); });
-
-        if(i++>10) liApName.style.display='none';
-    }
-    function select(apName){
-        for (liApName of arrLiApName) {
-            if(liApName.querySelector('a').name === apName)
-                liApName.style.color = 'navy';
-            else
-                liApName.style.color = 'gray';
-        }
-
-        divForm.style.visibility = 'visible';
-        divForm.querySelector('[name="apName"]').value = apName;
-        divForm.querySelector('[name="apPw"]').value = ''
-    }
-</script>
-<script>
-    //spinner by ChatGPT
-    const spinnerInner = spinner.querySelector('.spinner-inner');
-    let degree = 0;
-    
-    const animateSpinner = () => {
-        degree = (degree+5) % 360;
-
-        spinnerInner.style.transform = `rotate(${degree}deg)`;
-        spinnerInner.style.borderLeftColor = '#3498db';
-
-        setTimeout(() => { spinnerInner.style.borderLeftColor = 'transparent'; animateSpinner(); }, 20);
-    };
-    animateSpinner();
-
-    function whenSubmit(){
-        document.querySelector('#spinner').style.display = 'block';
-        return true;
-    }
-</script>
-</html>
-)";
-
-String html_SELECT_WIFI()
-{
-    String result = String(rawhtml_SELECT_WIFI);
-
-
-    // MAKE strWiFiList
-    Serial.println("WIFI SCANNING START...");
-    String strWiFiList ="";
-    {
-        strWiFiList += "<ul>";
-        
-        for (String ssid : WIFI_CONNECTOR::scanNetList())
-        {
-            if(ssid.length() <= 0) // valid check
-                continue;
-
-            strWiFiList += "<li class='liApName'><a name='" + ssid + "'>" + ssid + "</a> </li>";
-        }
-
-        strWiFiList += "<a id='aSummary' style='display:none;text-decoration:underline';>...</a>";
-        strWiFiList += "</ul>";
-    }
-    Serial.println("WIFI SCANNING END!");
-
-
-    // INSERT encoded strWiFiList
-    result.replace("#{strWiFiList}", strWiFiList);
-
-
-    return result;
-}
-
-
-
-
-
-
-
-
+DNSServer dnsServer;
+ESP8266WebServer webServer(80);
 
 ESP8266Timer TimerInterrupt;
+
+
+
+
 
 void setup()
 {
     pinMode(LED_BUILTIN, OUTPUT);
     digitalWrite(LED_BUILTIN, LOW);
 
+
     // Serial begin
     Serial.begin(115200);
+    delay(4444);
     Serial.println("\nSERIAL IS ONLINE\n");
 
 
-
-    // Wifi settings
-    WiFi.mode(WIFI_AP);
-    WiFi.softAPConfig(APIP, APIP, IPAddress(255, 255, 255, 0));
-    WiFi.softAP( F("I AM NOT WIFI") );
-
-    // DNS spoofing (Only for HTTP)
-    // if DNSServer is started with "*" for domain name, it will reply with
-    // provided IP to all DNS request
-    dnsServer.start(DNS_PORT, "*", APIP);
-
-    // Start LLMNR responder
-    LLMNR.begin("esp8266");
+    // EEPROM begin
+    EEPROM.begin(4096);
 
 
-
-
-
-    // Try to Connect from the SAVED_WIFI_NET_LIST
+    // Try to CONNECT from the SAVED_WIFI_NET_LIST
     {
         WIFI_CONNECTOR::loadWifiList();
 
-
-
-        //test!!!!!!!!!!!!!!!!!!!
-        //test!!!!!!!!!!!!!!!!!!!
-        //test!!!!!!!!!!!!!!!!!!!
+        /*
+        // SERIAL scan test
         {
-            // WIFI_CONNECTOR::SAVED_WIFI_NET_LIST.pop_back();
-            // WIFI_CONNECTOR::SAVED_WIFI_NET_LIST.push_front(  WIFI_CONNECTOR::WIFI_NET("Sophist-Router", "sophist1306")  );
-            
-            // SERIAL scan test
             int i=0;
-            for (WIFI_CONNECTOR::WIFI_NET wifi : WIFI_CONNECTOR::SAVED_WIFI_NET_LIST) {
-                Serial.print("Wifi ");
-                Serial.print(i++);
-                Serial.print(" : "); Serial.print(wifi.id);
-                Serial.print(" / "); Serial.println(wifi.pw);
+            for (WIFI_CONNECTOR::WIFI_NET wifi : WIFI_CONNECTOR::SAVED_WIFI_NET_LIST)
+            {
+                Serial.print("Wifi "); Serial.print(i++); Serial.print(" : ");
+                Serial.print(wifi.id); Serial.print(" / "); Serial.println(wifi.pw);
             }
         }
-        //test!!!!!!!!!!!!!!!!!!!
-        //test!!!!!!!!!!!!!!!!!!!
-        //test!!!!!!!!!!!!!!!!!!!
-
-
+        */
 
         for (String ssid : WIFI_CONNECTOR::scanNetList())
         {
-            if(ssid.length() <= 0) // valid check
+            if(WIFI_CONNECTOR::isConnected) // already Connected
+                break;
+
+            if(ssid.length() <= 0) // str validation
                 continue;
 
-            for (const auto& wifiNet : WIFI_CONNECTOR::SAVED_WIFI_NET_LIST)
+            for (WIFI_CONNECTOR::WIFI_NET wifiNet : WIFI_CONNECTOR::SAVED_WIFI_NET_LIST)
             {
                 if (ssid.equals(wifiNet.id))
                 {
-                    // CONNECT TO NET !
+                    // Try to CONNECT TO NET !
                     WiFi.begin(wifiNet.id, wifiNet.pw);
                     Serial.println( "\nTry to connect to. [ " + String(wifiNet.id) + " / " + String(wifiNet.pw) + " ]" );
 
-                    // Try to CONNECT, up to 5 seconds.
+                    // Up to 10 seconds...
                     int i=0;
-                    while (WiFi.status() != WL_CONNECTED) { Serial.print("."); delay(500); if(i++ > 10) break; }
+                    while (WiFi.status() != WL_CONNECTED) { Serial.print("."); delay(500); if(i++ > 20) break; }
+
+                    // CONNECT SUCCEX !
+                    if(WiFi.status() == WL_CONNECTED)
+                    {
+                        WIFI_CONNECTOR::isConnected = true;
+                        WIFI_CONNECTOR::NOW_IP = WiFi.localIP();
+
+                        Serial.println(" SUCCEX!!");
+                        Serial.print("Now Wifi Connected with IP Address : ");
+                        Serial.println(WIFI_CONNECTOR::NOW_IP);
+                        Serial.println();
+
+                        break;
+                    }
+                    // CONNECT DENIED..
+                    else
+                    {
+                        Serial.println(" TIMEOUT..");
+                        Serial.print("Now Wifi Connected with IP Address : ");
+                        Serial.println(WIFI_CONNECTOR::NOW_IP);
+                        Serial.println();
+                    }
                 }
             }
         }
     }
 
-    if(WiFi.status() == WL_CONNECTED)
-    {
-        WIFI_CONNECTOR::isConnected = true;
-        WIFI_CONNECTOR::NOW_IP = WiFi.localIP();
 
-        Serial.println(" SUCCEX!!");
-        Serial.print("Now Wifi Connected with IP Address : ");
-        Serial.println(WIFI_CONNECTOR::NOW_IP);
-        Serial.println();
+    // ABOUT AP MODE
+    {
+        if(WIFI_CONNECTOR::isConnected)
+        {
+            // SET WIFI
+            WiFi.mode(WIFI_AP_STA);
+            WiFi.softAPConfig( IPAddress(192, 168, 69, 1), IPAddress(192, 168, 69, 1), IPAddress(255, 255, 255, 0) );
+            WiFi.softAPDhcpServer().setDns( WiFi.dnsIP(0) );
+            WiFi.softAP( F("I AM WIFI") );
+
+            // Start LLMNR responder
+            LLMNR.begin("accomplice");
+        }
+        else
+        {
+            IPAddress APIP(192, 0, 0, 1); // It doubles as GATEWAY
+            byte DNS_PORT = 53;
+
+            // SET WIFI
+            WiFi.mode(WIFI_AP);
+            WiFi.softAPConfig(APIP, APIP, IPAddress(255, 255, 255, 0));
+            WiFi.softAP( F("I AM NOT WIFI") );
+
+            // DNS spoofing (Only for HTTP)
+            // if DNSServer is started with "*" for domain name, it will reply with
+            // provided IP to all DNS request
+            dnsServer.start(DNS_PORT, "*", APIP);
+        }
+
+        // WiFi INFO will not persist after reboot
+        WiFi.persistent(false);
+
+        // NAPT allows multiple devices in a private network to share a single public IP
+        #define NAPT 1000
+        #define NAPT_PORT 10
+        err_t ret = ip_napt_init(NAPT, NAPT_PORT);
+        if (ret == ERR_OK) { ret = ip_napt_enable_no(SOFTAP_IF, 1); }
     }
 
 
@@ -359,6 +304,11 @@ void setup()
 
 
 
+
+
+
+
+    #define HTTP_CODE 200
 
     // WebServer requests
     // webServer.on("/post",[]() { webServer.send(HTTP_CODE, "text/html", posted()); BLINK(); });
@@ -370,22 +320,21 @@ void setup()
     webServer.on        (   "/test",
                             []
                             {
-                                html = htmlIndex;
+                                String html = String(rawhtml_INDEX);
                                 webServer.send(HTTP_CODE, "text/html", html);
                             }
                         );
-
     webServer.on        (   "/connectToAP",
                             []
                             {
-                                html = htmlIndex;
+                                String html = String(rawhtml_INDEX);
 
 
-                                // args from client
+                                // INIT args from client
                                 String apName;
                                 String apPw;
-
-                                for (uint8_t i=0; i<webServer.args(); i++){
+                                for (uint8_t i=0; i<webServer.args(); i++)
+                                {
                                     if(webServer.argName(i).equals("apName"))
                                         apName = webServer.arg(i);
                                     if(webServer.argName(i).equals("apPw"))
@@ -396,10 +345,10 @@ void setup()
                                 // CONNECT TO NET !
                                 WiFi.begin(apName, apPw);
                                 Serial.println( "\nTry to connect to. [ " + apName + " / " + apPw + " ]" );
-
-                                // Try to CONNECT, up to 5 seconds.
+                                
+                                // Up to 10 seconds...
                                 int i=0;
-                                while (WiFi.status() != WL_CONNECTED) { Serial.print("."); delay(500); if(i++ > 10) break; }
+                                while (WiFi.status() != WL_CONNECTED) { Serial.print("."); delay(500); if(i++ > 20) break; }
 
 
                                 // CONNECT SUCCEX !
@@ -407,45 +356,59 @@ void setup()
                                 {
                                     WIFI_CONNECTOR::isConnected = true;
                                     WIFI_CONNECTOR::NOW_IP = WiFi.localIP();
-
-
-                                    //
-                                    // 리스트에 ID PW 모두 매칭되는게 없을때 <<
-                                    // 세이브 하는거 만들어야함!!!!!
-                                    // WIFI_CONNECTOR::saveWifiList(String apName, String apPw)
-                                    //
-
-
-                                    Serial.println(" SUCCEX!!");
-                                    Serial.print("Now Wifi Connected with IP Address : ");
-                                    Serial.println(WIFI_CONNECTOR::NOW_IP);
-                                    Serial.println();
-
+                                    WIFI_CONNECTOR::NOW_WIFI_ID = apName;
+                                    WIFI_CONNECTOR::NOW_WIFI_PW = apPw;
 
                                     html.replace("<h1>This is HACK</h1>", String("<h1>Connected SUCCEX!!<br>Now IP : " + WIFI_CONNECTOR::NOW_IP.toString() + " </h1>"));
+                                    webServer.send(HTTP_CODE, "text/html", html);
+
+                                    // Serial.println(" SUCCEX!!");
+                                    // Serial.print("Now Wifi Connected with IP Address : ");
+                                    // Serial.println(WIFI_CONNECTOR::NOW_IP);
+                                    // Serial.println();
+
+                                    // SWITCH MODULE_STATUS
+                                    NOW_MODULE_STATUS = STATUS_WIFI_PROVIDED;
                                 }
                                 // CONNECT DENIED..
                                 else
                                 {
-                                    Serial.println(" DENIED..");
-                                    Serial.print("Now Wifi Connected with IP Address : ");
-                                    Serial.println(WIFI_CONNECTOR::NOW_IP);
-                                    Serial.println();
-
-
                                     html.replace("<h1>This is HACK</h1>", "<h1>NOOOOOOOOO</h1>");
+                                    webServer.send(HTTP_CODE, "text/html", html);
+                                    
+                                    // Serial.println(" TIMEOUT..");
+                                    // Serial.print("Now Wifi Connected with IP Address : ");
+                                    // Serial.println(WIFI_CONNECTOR::NOW_IP);
+                                    // Serial.println();
+                                }
+                            }
+                        );
+    webServer.onNotFound(   []
+                            {
+                                String html = String(rawhtml_SELECT_WIFI);
+
+                                // MAKE strWiFiList
+                                String strWiFiList ="";
+                                {
+                                    strWiFiList += "<ul>";
+                                    
+                                    for (String ssid : WIFI_CONNECTOR::scanNetList())
+                                    {
+                                        if(ssid.length() <= 0) // valid check
+                                            continue;
+
+                                        strWiFiList += "<li class='liApName'><a name='" + ssid + "'>" + ssid + "</a> </li>";
+                                    }
+
+                                    strWiFiList += "<a id='aSummary' style='display:none;text-decoration:underline';>...</a>";
+                                    strWiFiList += "</ul>";
                                 }
 
+                                // INSERT encoded strWiFiList
+                                html.replace("#{strWiFiList}", strWiFiList);
 
                                 webServer.send(HTTP_CODE, "text/html", html);
                             }
-                        );
-    webServer.onNotFound(
-                            []
-                            { 
-                                html = html_SELECT_WIFI();
-                                webServer.send(HTTP_CODE, "text/html", html);
-                            } 
                         );
     webServer.begin();
 
@@ -454,20 +417,21 @@ void setup()
     Serial.println("TimerInterrupt START!!");
 
     // ALL READY! LED BLLLLLINK!!
-    TimerInterrupt.attachInterruptInterval  (1000,  [] 
+    TimerInterrupt.attachInterruptInterval  (   1000,
+                                                [] 
+                                                {
+                                                    //per1ms!
                                                     {
-                                                        //per1ms!
-                                                        {
-                                                            
-                                                        }
-
-                                                        //per500ms!
-                                                        if( !(millis()%500) )
-                                                        {
-                                                            static bool stateLED = false;
-                                                            digitalWrite(LED_BUILTIN, stateLED^=1 ? HIGH : LOW);
-                                                        }
+                                                        
                                                     }
+
+                                                    //per500ms!
+                                                    if( !(millis()%500) )
+                                                    {
+                                                        static bool stateLED = false;
+                                                        digitalWrite(LED_BUILTIN, stateLED^=1 ? HIGH : LOW);
+                                                    }
+                                                }
                                             );
 }
 
@@ -475,6 +439,34 @@ void loop()
 {
     delay(1);
 
-    dnsServer.processNextRequest();
-    webServer.handleClient();
+    switch(NOW_MODULE_STATUS)
+    {
+        case STATUS_COMMON:
+        {
+            if(!WIFI_CONNECTOR::isConnected)
+                dnsServer.processNextRequest();
+
+            webServer.handleClient();
+        }
+        break;
+        case STATUS_WIFI_PROVIDED:
+        {
+            delay(8282); dnsServer.stop();
+
+            // MODIFY WIFI
+            WiFi.mode(WIFI_AP_STA);
+            WiFi.softAPConfig( IPAddress(192, 168, 69, 1), IPAddress(192, 168, 69, 1), IPAddress(255, 255, 255, 0) );
+            WiFi.softAPDhcpServer().setDns( WiFi.dnsIP(0) );
+            WiFi.softAP( F("I AM WIFI") );
+
+            // Start LLMNR responder
+            LLMNR.begin("accomplice");
+
+            WIFI_CONNECTOR::saveWifiList();
+
+            NOW_MODULE_STATUS = STATUS_COMMON;
+        }
+    }
 }
+
+#endif
