@@ -16,11 +16,6 @@
 
 
 
-
-
-
-
-
 /**⦓   For, HARDWARE   ⦔**/
 
 // Teensy® 4.1's PIN MAP !
@@ -137,11 +132,6 @@ void REBOOT() { SCB_AIRCR = 0x05FA0004; asm volatile ("dsb"); while(true){} }
 
 
 
-
-
-
-
-
 #include <map>
 #include <list>
 
@@ -149,6 +139,8 @@ void REBOOT() { SCB_AIRCR = 0x05FA0004; asm volatile ("dsb"); while(true){} }
 
 #include <SD.h>
 File textfile;
+
+#include "res_Buzzzzer.h"
 
 #include "res_layouts.h"
 #include "res_utility.h"
@@ -158,12 +150,9 @@ File textfile;
 
 
 
-
-
-
-
-
 /**⦓ For, SLAVE KEYBOARD ⦔**/
+
+volatile uint8_t rawKeycode;
 
 volatile uint8_t numDN = 0;
 
@@ -175,29 +164,26 @@ USBHub Hub_0(USBHostOnTeensy), Hub_1(USBHostOnTeensy), Hub_2(USBHostOnTeensy), H
 
 class KeyboardParser : public KeyboardController
 {
-/******************************* SINGLETON *******************************/
-// SET Constructor & Destructor
-private: KeyboardParser(USBHost usbhost) : KeyboardController(usbhost)
-{
-    this->attachRawPress(OnRawPress);
-    this->attachRawRelease(OnRawRelease);
-}
-private: ~KeyboardParser() {}
-private: KeyboardParser(const KeyboardParser& ref) = delete; // Delete copy constructor to prevent copying
-private: KeyboardParser& operator=(const KeyboardParser& ref) = delete; // Delete copy assignment operator to prevent copying
-// STATIC SINGLETON INSTANCE !!
-public: static KeyboardParser& getInstance() { static KeyboardParser instance(USBHostOnTeensy); return instance; }
-/******************************* SINGLETON *******************************/
-
+/*********************************** SINGLETON ***********************************/
 private:
-    static void OnRawPress          (uint8_t keycode);
-    static void OnRawRelease        (uint8_t keycode);
-
-    volatile uint8_t rawKeycode;
+    // SET private Constructor & Destructor
+    KeyboardParser(USBHost usbhost) : KeyboardController(usbhost) {}
+    ~KeyboardParser() {}
+    // Delete copy constructor to prevent copying
+    KeyboardParser(const KeyboardParser& ref) = delete;
+    // Delete copy assignment operator to prevent copying
+    KeyboardParser& operator=(const KeyboardParser& ref) = delete;
 
 public:
-    uint8_t getRawKeycode           () { return this->rawKeycode; }
-    
+    // STATIC SINGLETON INSTANCE !!
+    static KeyboardParser& getInstance()
+    {
+        static KeyboardParser instance(USBHostOnTeensy);
+        return instance;
+    }
+/*********************************** SINGLETON ***********************************/
+
+public:
     #define KEYLOGGER_LEN_MAX 10
     struct DoublyLinkedStackKeyLogger
     {
@@ -227,7 +213,7 @@ public:
             newNode->keycode = keycode;
             newNode->millis = millis();
             newNode->prev = NULL;
-            
+
             if(isEmpty()){
                 newNode->next = NULL;
                 top = bottom = newNode;
@@ -237,9 +223,9 @@ public:
                 top->prev = newNode;
                 top = newNode;
             }
-            
             len++;
 
+            //if overflowed, delete oldest node
             if(isOverflow()){
                 nodeKeycode* delNode = bottom;
                 bottom = bottom->prev;
@@ -247,6 +233,14 @@ public:
                 free(delNode);
                 len--;
             }
+        }
+        void pop()
+        {
+            nodeKeycode* delNode = top;
+            top = top->next;
+            top->prev = NULL;
+            free(delNode);
+            len--;
         }
         uint8_t peek_keycode(uint32_t num)
         {
@@ -299,12 +293,13 @@ public:
         }
     } KeyLogger;
 
-}& KBD_Parser = KeyboardParser::getInstance(); // refers to the SINGLETON
-
-
-
-
-
+    void begin(auto OnRawPress, auto OnRawRelease)
+    {
+        this->attachRawPress(OnRawPress);
+        this->attachRawRelease(OnRawRelease);
+    }
+}
+&KBD_PARSER = KeyboardParser::getInstance(); // refers to the SINGLETON
 
 
 
@@ -314,7 +309,7 @@ public:
 
 volatile int32_t key;
 volatile bool event;
-volatile bool isActivateKeyEvent;
+volatile bool isActivatedKeyEvent;
 
 volatile uint32_t msLatestEventCame = 0, msLatestEventPressed = 0;
 #define MILLIS_SINCE_LATEST_EVENT           millis()-msLatestEventCame
@@ -322,69 +317,96 @@ volatile uint32_t msLatestEventCame = 0, msLatestEventPressed = 0;
 
 class KeyboardHijacker
 {
-/******************************* SINGLETON *******************************/
-// SET private Constructor & Destructor
-private: KeyboardHijacker() {}
-private: ~KeyboardHijacker() {}
-private: KeyboardHijacker(const KeyboardHijacker& ref) = delete; // Delete copy constructor to prevent copying
-private: KeyboardHijacker& operator=(const KeyboardHijacker& ref) = delete; // Delete copy assignment operator to prevent copying
-// STATIC SINGLETON INSTANCE !!
-public: static KeyboardHijacker& getInstance() { static KeyboardHijacker instance; return instance; }
-/******************************* SINGLETON *******************************/
+/*********************************** SINGLETON ***********************************/
+private:
+    // SET private Constructor & Destructor
+    KeyboardHijacker() {}
+    ~KeyboardHijacker() {}
+    // Delete copy constructor to prevent copying
+    KeyboardHijacker(const KeyboardHijacker& ref) = delete;
+    // Delete copy assignment operator to prevent copying
+    KeyboardHijacker& operator=(const KeyboardHijacker& ref) = delete;
+
+public:
+    // STATIC SINGLETON INSTANCE !!
+    static KeyboardHijacker& getInstance()
+    {
+        static KeyboardHijacker instance;
+        return instance;
+    }
+/*********************************** SINGLETON ***********************************/
 
 private:
     bool stateCapsLockToggle    = false;
     bool stateScrollLockToggle  = false;
     bool stateNumLockToggle     = false;
-    bool stateLogical[255]      = {false};
 
+    bool stateLogical[255]      = {false};
     uint8_t numBeingHoldDownKey = 0;
 
     uint32_t msBasedDelay       = 30;
     uint32_t msExtraDelayMax    = +50;
 
 public:
+    void setLogicalState                        (int32_t key, bool state) { stateLogical[TeensyLayout_To_keycode(key)] = state; }
+    bool getLogicalState                        (int32_t key) { return stateLogical[TeensyLayout_To_keycode(key)]; }
+    void printKeyInfo                           (uint8_t keycode);
+
+    void switchStateCapsLockToggle()            { stateCapsLockToggle=!stateCapsLockToggle; }
+    void switchStateScrollLockToggle()          { stateScrollLockToggle=!stateScrollLockToggle; }
+    void switchStateNumLockToggle()             { stateNumLockToggle=!stateNumLockToggle; }
+    bool getStateCapsLockToggle()               { return stateCapsLockToggle; }
+    bool getStateScrollLockToggle()             { return stateScrollLockToggle; }
+    bool getStateNumLockToggle()                { return stateNumLockToggle; }
+    bool isReservedSyncToggleKeyStates          = false;
+    void reserveSyncToggleKeyStates             (void) { isReservedSyncToggleKeyStates = true; }
+    void syncToggleKeyStates                    (void);
+
+    bool isExistHoldingDownKey                  (void) { return (numBeingHoldDownKey>0); }
+    void releaseAllBeingHoldDownKey             (void);
+
+    void pressandreleaseKey                     (int32_t key);
+    void pressandreleaseKeys                    (String str);
+    void pressandreleaseKeys                    (std::initializer_list<int32_t> keys);
+    void pressandreleaseMultiKey                (std::initializer_list<int32_t> keys); // ex) ctrl+c, gui+r, ctrl+shift+esc
+    void pressandreleaseKeys                    (int32_t* keys, int32_t len);
+    void pressandreleaseMultiKey                (int32_t* keys, int32_t len); // ex) ctrl+c, gui+r, ctrl+shift+esc
+
+    void randomDelayChanger                     (int32_t based, int32_t extraMax) { msBasedDelay = based; msExtraDelayMax = extraMax; }
+    void randomDelayGenerator                   (void) { delay(msBasedDelay); if(msExtraDelayMax > 0) delay(random(msExtraDelayMax+1)); }
+    void randomDelayGenerator_Manually          (int32_t based, int32_t extraMax) { delay(based); if(extraMax > 0) delay(random(extraMax+1)); }
+    void pressandreleaseKey_LikeHuman           (int32_t key);
+    void pressandreleaseKeys_LikeHuman          (String str);
+    void pressandreleaseKeys_LikeHuman          (std::initializer_list<int32_t> keys);
+    void pressandreleaseMultiKey_LikeHuman      (std::initializer_list<int32_t> keys); // ex) ctrl+c, gui+r, ctrl+shift+esc
+
     // THE C.O.R.E. of HIJACKER
-    void TRANSMIT_AFTER_HIJACK          (void);
+    void TRANSMIT_AFTER_HIJACK                  (void);
 
-    void setLogicalState                (int32_t key, bool state) { stateLogical[TeensyLayout_To_keycode(key)] = state; }
-    bool getLogicalState                (int32_t key) { return stateLogical[TeensyLayout_To_keycode(key)]; }
-    void printKeyInfo                   (uint8_t keycode);
+    void MODULE_KOREAN_KEYPAD_EVOLUTION         (void);
 
-    void switchStateCapsLockToggle()    { stateCapsLockToggle=!stateCapsLockToggle; }
-    void switchStateScrollLockToggle()  { stateScrollLockToggle=!stateScrollLockToggle; }
-    void switchStateNumLockToggle()     { stateNumLockToggle=!stateNumLockToggle; }
-    bool getStateCapsLockToggle()       { return stateCapsLockToggle; }
-    bool getStateScrollLockToggle()     { return stateScrollLockToggle; }
-    bool getStateNumLockToggle()        { return stateNumLockToggle; }
-    void syncToggleKeyStates            (void);
-    bool reserveSyncTKS = false;
+    void MODULE_MACRO_START_PLAYER_OR_RECORDER  (const char* fname);
+    void MODULE_MACRO_REC_PRESSED               (uint8_t keycode, uint32_t delayed);
+    void MODULE_MACRO_REC_RELEASED              (uint8_t keycode, uint32_t delayed);
+    void MODULE_MACRO_END_RECORDER              (const char* filename);
+    void MODULE_MACRO_PLAY_ONGOING              (void);
+    void MODULE_MACRO_END_PLAYER                (void);
+    void MODULE_MACRO_BLOCK_EVENTS_WHEN_JUST_STARTED (volatile bool *flag);
+    void MODULE_MACRO_CHECK_FOR_SHUTDOWN_PLAYER (void);
+    void MODULE_MACRO_MANUAL_EVENT_DETECTED     (void);
+    void MODULE_MACRO_PRINT                     (const char* filename);
 
-    bool isExistHoldingDownKey          (void) { return (numBeingHoldDownKey>0); }
-    void releaseAllBeingHoldDownKey     (void);
+    void MODULE_KEYMAPPER_INITIALIZE            (void);
+    void MODULE_KEYMAPPER_HIJACK                (void);
 
-    static void pressandreleaseKey             (int32_t key);
-    static void pressandreleaseKeys            (String str);
-    static void pressandreleaseKeys            (std::initializer_list<int32_t> keys);
-    static void pressandreleaseShortcutKey     (std::initializer_list<int32_t> keys); // ex) ctrl+c, gui+r, ctrl+shift+esc
-    static void pressandreleaseKeys            (int32_t* keys, int32_t len);
-    static void pressandreleaseShortcutKey     (int32_t* keys, int32_t len); // ex) ctrl+c, gui+r, ctrl+shift+esc
+    void begin()
+    {
+        MODULE_KEYMAPPER_INITIALIZE();
 
-        // About Auto Delay functions
-        void randomDelayChanger                     (int32_t based, int32_t extraMax) { msBasedDelay = based; msExtraDelayMax = extraMax; }
-        void randomDelayGenerator                   (void) { delay(msBasedDelay); if(msExtraDelayMax > 0) delay(random(msExtraDelayMax+1)); }
-        void randomDelayGenerator_Manually          (int32_t based, int32_t extraMax) { delay(based); if(extraMax > 0) delay(random(extraMax+1)); }
-        void pressandreleaseKey_LikeHuman           (int32_t key);
-        void pressandreleaseKeys_LikeHuman          (String str);
-        void pressandreleaseKeys_LikeHuman          (std::initializer_list<int32_t> keys);
-        void pressandreleaseShortcutKey_LikeHuman   (std::initializer_list<int32_t> keys); // ex) ctrl+c, gui+r, ctrl+shift+esc
-
-}& KBD_Hijacker = KeyboardHijacker::getInstance(); // refers to the SINGLETON
-
-
-
-
-
+        reserveSyncToggleKeyStates();
+    }
+}
+&KBD_HIJACKER = KeyboardHijacker::getInstance(); // refers to the SINGLETON
 
 
 
@@ -396,72 +418,14 @@ bool isSerial = true, isExistSD = true;  // false : if you DO NOT WANT TO USE an
 
 IntervalTimer IntervalTimer_per1ms;
 
-namespace Buzzzzer
-{
-    uint16_t melody[128] = {0};
-    uint16_t rhythm[128] = {0};
-    uint16_t len = 0;
-    uint16_t m_proc,r_proc;
-
-    /*
-        reserveBuzz Example)
-
-        Buzzzzer::reserveBuzz(   { NOTE_DS7,0, NOTE_DS6,0, NOTE_B6,0,  NOTE_A6,0,  NOTE_DS6,0, NOTE_DS7,0, NOTE_B6 }
-                            ,   { 220,20,     130,20,     270,30,     230,20,     170,20,     270,20,     400     }   );
-
-        It works! PO『std::initializer_list』WER
-    */
-    void reserveBuzz(std::initializer_list<uint16_t> m, std::initializer_list<uint16_t> r)
-    {
-        len = m.size();
-
-        auto iteratorM = m.begin();
-        auto iteratorR = r.begin();
-
-        for (uint16_t i=0; i<len; i++) {
-            melody[i] = *iteratorM++;
-            rhythm[i] = *iteratorR++;
-        }
-
-        m_proc=r_proc=0;
-    }
-    void playBuzz()
-    {
-        if(len==0)
-            return;
-        
-        if(m_proc<len)
-            if(r_proc<rhythm[m_proc]){
-                if(r_proc==0){
-                    if(melody[m_proc]!=0)
-                        tone(PIN_BUZZER,melody[m_proc],rhythm[m_proc]);
-                    else
-                        noTone(PIN_BUZZER);
-                }
-                r_proc++;
-            }
-            else{
-                m_proc++;
-                r_proc=0;
-            }
-        else
-            len = 0;
-    }
-    void replayBuzz()
-    {
-        len = m_proc+1;
-
-        m_proc=r_proc=0;
-    }
-}
-
 void setup()
 {
-    /* ------------------------------------------------ Initializing of Teensy® 4.1 ------------------------------------------------ */
+    /* -------------------------------------- Initializing of Teensy® 4.1's Physical Modules -------------------------------------- */
     {
         pinMode(PIN_LED_BUILTIN, OUTPUT);
         randomSeed(analogRead(PIN_RANDOMSEED));
-        
+
+        // SERIAL CHECK
         if(isSerial)
         {
             Serial.begin(115200);
@@ -470,9 +434,101 @@ void setup()
             if(!Serial) { isSerial = false; Serial.end(); }
         }
         if(isSerial) Serial.println(F("SERIAL IS ONLINE\n"));
-        
-        // INTERRUPT TIMER on Teensy® 4.1     // by C++ Lambda!
-        IntervalTimer_per1ms.begin  (   []
+
+        // USB HOST on Teensy® 4.1
+        USBHostOnTeensy.begin();
+        if(isSerial) Serial.println(F("USB HOST IS ONLINE\n"));
+
+        // SD CARD
+        if(isExistSD)
+        {
+            if (SD.begin(BUILTIN_SDCARD))
+            { isExistSD = true; if(isSerial) Serial.println(F("SD CARD IS AVAILABLE :)\n")); }
+            else
+            { isExistSD = false; if(isSerial) Serial.println(F("SD CARD IS NOT AVAILABLE :(\n")); }
+        }
+
+        // PIEZO BUZZER
+        Buzzzzer::reserveBuzz   ( { NOTE_B6,0,  NOTE_E7,0   }
+                                , { 111,11,     444,111     } );
+        if(isSerial) Serial.println(F("BUZZER PLAYS STARTUP SOUND ♬\n"));
+
+        if(isSerial) Serial.println(F("ALL PHYSICAL MODULES ARE INITIALIZED !!\n\n\n"));
+    }
+    /* -------------------------------------- Initializing of Teensy® 4.1's Physical Modules -------------------------------------- */
+
+
+
+    /* -------------------------------------- Initializing of Objects for Keyboard Hijacking -------------------------------------- */
+    {
+        // ATTACH Lamda Functions that calls when PRESS / RELEASE interrupt occurs
+        KBD_PARSER.begin(
+                            [](uint8_t keycode)
+                            {
+                                KBD_PARSER.KeyLogger.push(keycode);
+
+                                rawKeycode = keycode;
+
+                                isExistWaitingEvent_Press = true;
+                                numDN++;
+
+                                //MODULE_MACRO
+                                {
+                                    //if MACRO is PLAYING
+                                    KBD_HIJACKER.MODULE_MACRO_MANUAL_EVENT_DETECTED();
+
+                                    //if MACRO is RECORDING
+                                    KBD_HIJACKER.MODULE_MACRO_REC_PRESSED(keycode, MILLIS_SINCE_LATEST_EVENT);
+
+                                    //BLOCK several events when MACRO JUST STARTED
+                                    KBD_HIJACKER.MODULE_MACRO_BLOCK_EVENTS_WHEN_JUST_STARTED(&isExistWaitingEvent_Press);
+                                }
+
+                                if(isSerial)
+                                {
+                                    MEASURE_FREE_MEMORY();
+                                    
+                                    Serial.print(F("\n(Before Hijack) DN ")); KBD_HIJACKER.printKeyInfo(keycode);
+                                    Serial.println();
+                                }
+                            },
+                            [](uint8_t keycode)
+                            {
+                                rawKeycode = keycode;
+
+                                isExistWaitingEvent_Release = true;
+                                numDN--; //if(numDN) numDN-=1;
+
+                                //MODULE_MACRO
+                                {
+                                    //if MACRO is PLAYING
+                                    KBD_HIJACKER.MODULE_MACRO_MANUAL_EVENT_DETECTED();
+
+                                    //if MACRO is RECORDING
+                                    KBD_HIJACKER.MODULE_MACRO_REC_RELEASED(keycode, MILLIS_SINCE_LATEST_EVENT);
+
+                                    //BLOCK several events when MACRO JUST STARTED
+                                    KBD_HIJACKER.MODULE_MACRO_BLOCK_EVENTS_WHEN_JUST_STARTED(&isExistWaitingEvent_Release);
+                                }
+
+                                if(isSerial)
+                                {
+                                    MEASURE_FREE_MEMORY();
+                                    
+                                    Serial.print(F("\n(Before Hijack) UP ")); KBD_HIJACKER.printKeyInfo(keycode);
+                                    Serial.print(F("         Pressed Time : ")); Serial.println(MILLIS_FROM_PRESSED_UNTIL_RELEASE);
+                                }
+                            }
+                        );
+        if(isSerial) Serial.println(F("KEYBOARD PARSER's INTERRUPTS HAVE BEEN CONFIGURED\n"));
+
+        // GET READY FOR HIJACKING
+        KBD_HIJACKER.begin();
+        if(isSerial) Serial.println(F("KEYBOARD HIJACKER IS ON STANDBY\n"));
+
+        // CONFIGURE 1ms INTERVAL TIMER INTERRUPT
+        IntervalTimer_per1ms.begin  (
+                                        []
                                         {
                                             static bool isDormancy = false;
                                             
@@ -480,18 +536,18 @@ void setup()
                                             {
                                                 Buzzzzer::playBuzz();
                                                 
-                                                MODULE_MACRO_PLAYER_ONGOING();
+                                                KBD_HIJACKER.MODULE_MACRO_PLAY_ONGOING();
 
                                                 static int8_t countdownSyncTKS = -1;
                                                 if(countdownSyncTKS>-1)
                                                 {
                                                     countdownSyncTKS--;
-                                                    if(countdownSyncTKS==0) KBD_Hijacker.syncToggleKeyStates();
+                                                    if(countdownSyncTKS==0) KBD_HIJACKER.syncToggleKeyStates();
                                                 }
-                                                if(KBD_Hijacker.reserveSyncTKS)
+                                                if(KBD_HIJACKER.isReservedSyncToggleKeyStates)
                                                 {
                                                     countdownSyncTKS=77;
-                                                    KBD_Hijacker.reserveSyncTKS=false;
+                                                    KBD_HIJACKER.isReservedSyncToggleKeyStates = false;
                                                 }
                                             }
 
@@ -507,56 +563,20 @@ void setup()
                                             {
                                                 isDormancy = (MILLIS_SINCE_LATEST_EVENT)>33333 ? true : false;
 
-                                                if(isDormancy) KBD_Hijacker.syncToggleKeyStates();
+                                                if(isDormancy) KBD_HIJACKER.syncToggleKeyStates();
                                             }
-                                        }
-                                        , 1000   );
+                                        },
+                                        1000
+                                    );
+        if(isSerial) Serial.println(F("1ms INTERVAL TIMER INTERRUPT HAS BEEN CONFIGURED\n"));
 
-        if(isSerial) Serial.println(F("TIMER INTERRUPT STARTED\n"));
+        if(isSerial) Serial.println(F("ALL OBJECTS ARE INITIALIZED !!\n\n\n"));
     }
-    /* ------------------------------------------------ Initializing of Teensy® 4.1 ------------------------------------------------ */
+    /* -------------------------------------- Initializing of Objects for Keyboard Hijacking -------------------------------------- */
 
 
 
-    /* ------------------------------------------ Initializing of USB Host on Teensy® 4.1 ------------------------------------------ */
-    {
-        USBHostOnTeensy.begin();
-        delay(100);
-        
-        KBD_Hijacker.syncToggleKeyStates();
-        delay(100);
-        
-        if(isSerial) Serial.println(F("SLAVE KEYBOARD IS ATTACHED\n"));
-    }
-    /* ------------------------------------------ Initializing of USB Host on Teensy® 4.1 ------------------------------------------ */
-
-
-
-    /* ------------------------------------------ Initializing of miscellaneous modules ------------------------------------------ */
-    {
-        // PIEZO BUZZER
-        Buzzzzer::reserveBuzz(   { NOTE_B6,0,  NOTE_E7,    0   }
-                            ,   { 111,11,     444,        111 }   );
-        if(isSerial) Serial.println(F("BUZZER PLAYS STARTUP SOUND ♬"));
-
-        // SD CARD
-        if(isExistSD)
-        {
-            if (SD.begin(BUILTIN_SDCARD))
-            { isExistSD = true; if(isSerial) Serial.println(F("SD CARD IS AVAILABLE :)")); }
-            else
-            { isExistSD = false; if(isSerial) Serial.println(F("SD CARD IS NOT AVAILABLE :(")); }
-        }
-        
-        if(isSerial) Serial.println(F("ALL MODULES ARE INITIALIZED\n"));
-    }
-    /* ------------------------------------------ Initializing of miscellaneous modules ------------------------------------------ */
-
-
-
-    if(isSerial) Serial.println(F("OPERATION COMPLETE, SIR! XD"));
-
-    MODULE_KEYMAPPER_INITIALIZE();
+    if(isSerial) Serial.println(F("OPERATION COMPLETE, SIR ! XD\n\n\n\n"));
 }
 
 void loop()
@@ -565,22 +585,22 @@ void loop()
 
     if(isExistWaitingEvent_Press)
     {
-        key   = keycode_To_TeensyLayout( KBD_Parser.getRawKeycode() );
+        key   = keycode_To_TeensyLayout( rawKeycode );
         event = true;
         msLatestEventCame = msLatestEventPressed = millis();
 
-        KBD_Hijacker.TRANSMIT_AFTER_HIJACK();
+        KBD_HIJACKER.TRANSMIT_AFTER_HIJACK();
         
         isExistWaitingEvent_Press   = false;
     }
 
     if(isExistWaitingEvent_Release)
     {
-        key   = keycode_To_TeensyLayout( KBD_Parser.getRawKeycode() );
+        key   = keycode_To_TeensyLayout( rawKeycode );
         event = false;
         msLatestEventCame = millis();
 
-        KBD_Hijacker.TRANSMIT_AFTER_HIJACK();
+        KBD_HIJACKER.TRANSMIT_AFTER_HIJACK();
         
         isExistWaitingEvent_Release = false;
     }

@@ -1,27 +1,34 @@
 
-#define MASK_NL     0b10000000
-#define MASK_CL     0b01000000
-#define MASK_SL     0b00100000
-
-#define MASK_IsLock 0b00010000
-
-#define MASK_CTRL   0b00001000
-#define MASK_SHIFT  0b00000100
-#define MASK_ALT    0b00000010
-#define MASK_GUI    0b00000001
-
 struct MappedData
 {
+    bool isRequiredCleanse;
     uint32_t* millisPressedTime;
+
     uint8_t stateNCS_CSAG;
+    /*  stateNCS_CSAG's each bits represents...
+     *  0b 0000 0000  =>  0b NCS_ CSAG
+     */
+    #define MASK_NL     0b10000000
+    #define MASK_CL     0b01000000
+    #define MASK_SL     0b00100000
+    #define MASK_IsLock 0b00010000
+    #define MASK_CTRL   0b00001000
+    #define MASK_SHIFT  0b00000100
+    #define MASK_ALT    0b00000010
+    #define MASK_GUI    0b00000001
 
     uint8_t mappedLen;
     void* mappedThings;
 };
+bool isReservedCleanse = false;
 
 static std::map<uint8_t, std::list<MappedData>> MAP_KEYMAPPER;
 
-void MODULE_KEYMAPPER_INITIALIZE()
+
+
+
+
+void KeyboardHijacker::MODULE_KEYMAPPER_INITIALIZE()
 {
     if(!isExistSD)
         return;
@@ -34,7 +41,7 @@ void MODULE_KEYMAPPER_INITIALIZE()
     }
 
 
-    if(isSerial){ Serial.println("\n\nMODULE_KEYMAPPER_INITIALIZE START\n"); }
+    if(isSerial){ Serial.println("MODULE_KEYMAPPER_INITIALIZE START\n"); }
     
     textfile = SD.open("MAPPER.TXT");
     String readline;
@@ -43,34 +50,42 @@ void MODULE_KEYMAPPER_INITIALIZE()
     {
         readline = textfile.readStringUntil('\n').toUpperCase();
 
+
         // Exclude COMMENT
         if(readline.indexOf('/') > -1)
             readline = readline.substring(0, readline.indexOf('/'));
 
-        uint8_t mapKey = String_To_keycode(readline);
 
-        bool isExistPTIME = false;
-        uint32_t millisPressedTime = 0;
-        
+        // Get mapKey that is both 'a key of MAP_KEYMAPPER' and 'the keycode'
+        uint8_t mapKey
+         = (readline.indexOf('[') > -1 && readline.indexOf('[') < readline.indexOf(']'))
+            ? String_To_keycode(readline.substring(0, readline.indexOf('[')))
+            : 0;
+
+        // mapKey NOT FOUNDED, maybe comment line
+        if(mapKey == 0)
+            continue;
+
+
+        // Reflect CLEANSE event
+        bool isRequiredCleanse
+         = (readline.indexOf("CLEANSE") > -1) ? true : false;
+
+
         // Reflect PTIME event
-        if(readline.indexOf("PTIME") > -1)
-        {
-            isExistPTIME = true;
-            millisPressedTime = StringDec_To_uint32_t( trimming_num(readline.substring(readline.indexOf("PTIME"))) );                
-        }
-        
-        uint8_t stateNCS_CSAG = 0;
-        
+        bool isExistPTIME          
+         = (readline.indexOf("PTIME") > -1) ? true : false;
+        uint32_t millisPressedTime
+         = (readline.indexOf("PTIME") > -1) ? StringDec_To_uint32_t( trimming_num( readline.substring(readline.indexOf("PTIME")) ) ) : 0;
+
+
         // Reflect NLCLSL states & CSAG states
-        if(readline.indexOf('<') < readline.indexOf('>'))
+        uint8_t stateNCS_CSAG = 0;
+        if(readline.indexOf('<') > -1 && readline.indexOf('<') < readline.indexOf('>'))
         {
             String strNCS_CSAG = readline.substring(readline.indexOf('<')+1, readline.indexOf('>'));
-            // 0b 0000 0000
-            //  = NCS_ CSAG
-            
             int8_t index_CSAG = (strNCS_CSAG.lastIndexOf('T')>strNCS_CSAG.lastIndexOf('F') ? strNCS_CSAG.lastIndexOf('T') : strNCS_CSAG.lastIndexOf('F')) + 1;
 
-            
             // Reflect NumCapsScroll states
             if(strNCS_CSAG.lastIndexOf('L') > -1)
             {
@@ -83,9 +98,8 @@ void MODULE_KEYMAPPER_INITIALIZE()
                 stateNCS_CSAG |= (strNLCLSL.lastIndexOf('T') > -1) ? MASK_IsLock : 0;
             }
 
-
             // Reflect CtrlShiftAltGui states
-            // Shortcut(CtrlShiftAltGui) event and PTIME event CANNOT COEXIST
+            // Shortcut(CtrlShiftAltGui) TRIGGER EVENT and PTIME CANNOT COEXIST
             if(!isExistPTIME)
             {
                 String strCSAG = strNCS_CSAG.substring(index_CSAG);
@@ -97,14 +111,14 @@ void MODULE_KEYMAPPER_INITIALIZE()
             }
         }
 
+
         // Map!
-        if(readline.indexOf('[') < readline.indexOf(']') && mapKey != 0)
         {
             MappedData data;
             
             String strMapThings = readline.substring(readline.indexOf('[')+1,readline.indexOf(']'));
 
-            // Mapping MACRO
+            // Mapping MACRO event
             if(strMapThings.indexOf("\"") > -1)
             {
                 int8_t index_Start = readline.indexOf("\"")+1;
@@ -114,11 +128,11 @@ void MODULE_KEYMAPPER_INITIALIZE()
                 else
                     index_End = (readline.lastIndexOf("_R") > -1) ? readline.lastIndexOf("_R") : readline.lastIndexOf("\"");
 
-                // When SYNTAX ERROR occured, Go to 'while'
-                if(index_Start<0||index_Start>=index_End)
+                // When SYNTAX ERROR occured, Go back to 'while'
+                if(index_Start < 0 || index_Start >= index_End)
                 { 
                     if(isSerial) Serial.println("\n!!! SYNTAX ERROR !!!");
-                    
+
                     continue;
                 }
 
@@ -129,7 +143,6 @@ void MODULE_KEYMAPPER_INITIALIZE()
                 strFilename.toCharArray(mappedFilename,strLength+1);
 
                 // Create a MappedData object and assign values
-                data.millisPressedTime = NULL;
                 data.stateNCS_CSAG = stateNCS_CSAG;
                 data.mappedLen = 0;
                 data.mappedThings = mappedFilename;
@@ -151,29 +164,30 @@ void MODULE_KEYMAPPER_INITIALIZE()
                     Serial.println();
                 }
             }
-            // Mapping keycodes
+            // Mapping One KEY / Multi KEY event
             else
             {
                 uint8_t mappedLen = 1;
                 {
                     char buf[strMapThings.length()+1];
                     strMapThings.toCharArray(buf,strMapThings.length()+1);
-        
+
                     char* s = buf;
                     while(*s!='\0'){ if(*s=='+')mappedLen++; s++; }
                 }
 
                 if(mappedLen == 1 && isExistPTIME)
                 {
-                    mappedLen = 2;
-                    strMapThings = String( trimming_keycodeStr(strMapThings) + " + KEY_NONE" );
+                    strMapThings = String( trimming_keycodeStr(strMapThings) + "+KEY_NONE" );
+                    mappedLen+=1;
                 }
-                
+
                 uint8_t* mappedKeycodes = (uint8_t*)malloc(mappedLen * sizeof(uint8_t));
                 for(uint8_t i=0; i<mappedLen; i++)
                 {
                     mappedKeycodes[i] = String_To_keycode(strMapThings);
     
+                    // When invalid keycode detected, SYNTAX ERROR occurs
                     if(mappedKeycodes[i] == 0 && !(trimming_keycodeStr(strMapThings).equals("KEY_NONE")))
                     {
                         free(mappedKeycodes);
@@ -189,13 +203,13 @@ void MODULE_KEYMAPPER_INITIALIZE()
                 if(mappedKeycodes==NULL)
                 {
                     if(isSerial) Serial.println("\n!!! SYNTAX ERROR !!!"); 
-                    
+
                     continue;
                 }
         
                 // Create a MappedData object and assign values
-                data.millisPressedTime = (uint32_t*)malloc(sizeof(uint32_t));
-                data.millisPressedTime[0] = millisPressedTime;
+                data.isRequiredCleanse = isRequiredCleanse;
+                data.millisPressedTime = new uint32_t(millisPressedTime);
                 data.stateNCS_CSAG = stateNCS_CSAG;
                 data.mappedLen = mappedLen;
                 data.mappedThings = mappedKeycodes;
@@ -221,6 +235,7 @@ void MODULE_KEYMAPPER_INITIALIZE()
                 }
             }
 
+            // Shortcut(CtrlShiftAltGui) TRIGGER EVENT's priority is higher than One key to One key event's
             if((data.stateNCS_CSAG & 0b00001111) == 0)
                 MAP_KEYMAPPER[mapKey].push_back(data);
             else
@@ -233,28 +248,28 @@ void MODULE_KEYMAPPER_INITIALIZE()
     if(isSerial){ Serial.println("MODULE_KEYMAPPER_INITIALIZE END\n"); }
 }
 
-void MODULE_KEYMAPPER_HIJACK()
+void KeyboardHijacker::MODULE_KEYMAPPER_HIJACK()
 {
     // Hmmm.. ALREADY DEAD KeyEvent
-    if(key == 0 || !isActivateKeyEvent)
+    if(key == 0 || !isActivatedKeyEvent)
         return;
 
-    // THIS KEY IS NOT MAPPED
+    // THIS KEY IS NisActivatedKeyEvent
     if(MAP_KEYMAPPER.find( TeensyLayout_To_keycode(key) ) == MAP_KEYMAPPER.end())
         return;
 
 
     uint8_t keycode = TeensyLayout_To_keycode(key);
 
-    bool nowStateNumLock    = KBD_Hijacker.getStateNumLockToggle();
-    bool nowStateCapsLock   = KBD_Hijacker.getStateCapsLockToggle();
-    bool nowStateScrollLock = KBD_Hijacker.getStateScrollLockToggle();
+    bool nowStateNumLock    = KBD_HIJACKER.getStateNumLockToggle();
+    bool nowStateCapsLock   = KBD_HIJACKER.getStateCapsLockToggle();
+    bool nowStateScrollLock = KBD_HIJACKER.getStateScrollLockToggle();
     
     uint8_t nowStateCSAG = 0;
-    nowStateCSAG |= (KBD_Hijacker.getLogicalState(KEY_LEFT_CTRL) || KBD_Hijacker.getLogicalState(KEY_RIGHT_CTRL)) ? MASK_CTRL : 0;
-    nowStateCSAG |= (KBD_Hijacker.getLogicalState(KEY_LEFT_SHIFT)|| KBD_Hijacker.getLogicalState(KEY_RIGHT_SHIFT))? MASK_SHIFT: 0;
-    nowStateCSAG |= (KBD_Hijacker.getLogicalState(KEY_LEFT_ALT)  || KBD_Hijacker.getLogicalState(KEY_RIGHT_ALT))  ? MASK_ALT  : 0;
-    nowStateCSAG |= (KBD_Hijacker.getLogicalState(KEY_LEFT_GUI)  || KBD_Hijacker.getLogicalState(KEY_RIGHT_GUI))  ? MASK_GUI  : 0;
+    nowStateCSAG |= (KBD_HIJACKER.getLogicalState(KEY_LEFT_CTRL) || KBD_HIJACKER.getLogicalState(KEY_RIGHT_CTRL)) ? MASK_CTRL : 0;
+    nowStateCSAG |= (KBD_HIJACKER.getLogicalState(KEY_LEFT_SHIFT)|| KBD_HIJACKER.getLogicalState(KEY_RIGHT_SHIFT))? MASK_SHIFT: 0;
+    nowStateCSAG |= (KBD_HIJACKER.getLogicalState(KEY_LEFT_ALT)  || KBD_HIJACKER.getLogicalState(KEY_RIGHT_ALT))  ? MASK_ALT  : 0;
+    nowStateCSAG |= (KBD_HIJACKER.getLogicalState(KEY_LEFT_GUI)  || KBD_HIJACKER.getLogicalState(KEY_RIGHT_GUI))  ? MASK_GUI  : 0;
 
 
     for (auto& data : MAP_KEYMAPPER[keycode])
@@ -275,59 +290,65 @@ void MODULE_KEYMAPPER_HIJACK()
             continue;
 
 
-        // This key Mapped One key to One key
+        // This key Mapped One KEY to One KEY
         if      (data.mappedLen == 1)
         {
+            if(event)
+            {
+                if(data.isRequiredCleanse)
+                    isReservedCleanse = true;
+
+                if((data.stateNCS_CSAG & 0b00001111) != 0){
+                    isReservedCleanse = true;
+                    KBD_HIJACKER.releaseAllBeingHoldDownKey(); delay(10);
+                }
+            }
+
             key = keycode_To_TeensyLayout( ((uint8_t*)data.mappedThings)[0] );
         }
         
-        // This key Mapped One KEY to NONE And press Shortcut KEY
+        // This key Mapped One KEY to NONE And press MultiKey
         else if (data.mappedLen > 1)
         {
-            if  (   event &&
-                    data.millisPressedTime[0]==0
+            if  (   *(data.millisPressedTime)==0 &&
+                    event
                 )
             {
-                KBD_Hijacker.releaseAllBeingHoldDownKey(); delay(10);
+                KBD_HIJACKER.releaseAllBeingHoldDownKey(); delay(10);
                 
                 int32_t keys[data.mappedLen];
                 for(uint8_t i=0; i<data.mappedLen; i++)
                     keys[i] = keycode_To_TeensyLayout( ((uint8_t*)data.mappedThings)[i] );
                 
-                KBD_Hijacker.pressandreleaseShortcutKey(keys, data.mappedLen);
+                KBD_HIJACKER.pressandreleaseMultiKey(keys, data.mappedLen);
             }
-            else if (   !event &&
-                        data.millisPressedTime[0]!=0 &&
-                        data.millisPressedTime[0]<MILLIS_FROM_PRESSED_UNTIL_RELEASE
+            else if (   *(data.millisPressedTime)!=0 &&
+                        *(data.millisPressedTime)<MILLIS_FROM_PRESSED_UNTIL_RELEASE &&
+                        !event
                     )
             {
-                KBD_Hijacker.releaseAllBeingHoldDownKey(); delay(10);
+                KBD_HIJACKER.releaseAllBeingHoldDownKey(); delay(10);
                 
                 int32_t keys[data.mappedLen];
                 for(uint8_t i=0; i<data.mappedLen; i++)
                     keys[i] = keycode_To_TeensyLayout( ((uint8_t*)data.mappedThings)[i] );
                 
-                KBD_Hijacker.pressandreleaseShortcutKey(keys, data.mappedLen);
+                KBD_HIJACKER.pressandreleaseMultiKey(keys, data.mappedLen);
             }
             else
                 continue;
 
-            isActivateKeyEvent=false; key=0;
+            isActivatedKeyEvent=false; key=0;
         }
 
-        // This key Mapped One KEY to NONE And excute MACRO
+        // TisActivatedKeyEvent KEY to NONE And excute MACRO
         else
         {
             if(event)
-            {
-                KBD_Hijacker.releaseAllBeingHoldDownKey(); delay(10);
-                
-                MODULE_MACRO_PLAYER_OR_RECORDER_START( ((char*)data.mappedThings) );
-            }
+                MODULE_MACRO_START_PLAYER_OR_RECORDER( ((char*)data.mappedThings) );
             
-            isActivateKeyEvent=false; key=0;
+            isActivatedKeyEvent=false; key=0;
         }
-
 
         if(isSerial)
         {
@@ -363,4 +384,17 @@ void MODULE_KEYMAPPER_HIJACK()
         
         break;
     }
+}
+
+void MODULE_KEYMAPPER_CLEANSE_IF_RESERVED()
+{
+    if(event)
+        return;
+    if(!isReservedCleanse)
+        return;
+
+
+    KBD_HIJACKER.releaseAllBeingHoldDownKey(); delay(10);
+
+    isReservedCleanse = false;
 }

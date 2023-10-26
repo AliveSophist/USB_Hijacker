@@ -1,244 +1,758 @@
 
-#define KEYPAD_KOREAN_LAYOUT 2      // 0:None   1:CheonJiIn   2:NaRatGle
+#define KEYPAD_KOREAN_LAYOUT 2      // 0:None   1:CheonJiIn   2:NaRatGeul
 
-
-
+void KeyboardHijacker::MODULE_KOREAN_KEYPAD_EVOLUTION()
+{
+/* ------------------------------------------------------ KEYPAD_KOREAN_LAYOUT COMMON ------------------------------------------------------ */
 #if (KEYPAD_KOREAN_LAYOUT > 0)
 
-#define KORPAD_isExistVowel(KorSlotX)       strcmp(KorSlotX,"k")==0||strcmp(KorSlotX,"o")==0||strcmp(KorSlotX,"i")==0||strcmp(KorSlotX,"O")==0||strcmp(KorSlotX,"j")==0||strcmp(KorSlotX,"p")==0||strcmp(KorSlotX,"u")==0||strcmp(KorSlotX,"P")==0||strcmp(KorSlotX,"h")==0||strcmp(KorSlotX,"y")==0||strcmp(KorSlotX,"n")==0||strcmp(KorSlotX,"b")==0||strcmp(KorSlotX,"m")==0||strcmp(KorSlotX,"l")==0||strcmp(KorSlotX,"hk")==0||strcmp(KorSlotX,"ho")==0||strcmp(KorSlotX,"hl")==0||strcmp(KorSlotX,"nj")==0||strcmp(KorSlotX,"np")==0||strcmp(KorSlotX,"nl")==0||strcmp(KorSlotX,"ml")==0
-#define KORPAD_isExistConsonant(KorSlotX)   strcmp(KorSlotX,"r")==0||strcmp(KorSlotX,"z")==0||strcmp(KorSlotX,"R")==0||strcmp(KorSlotX,"s")==0||strcmp(KorSlotX,"f")==0||strcmp(KorSlotX,"e")==0||strcmp(KorSlotX,"x")==0||strcmp(KorSlotX,"E")==0||strcmp(KorSlotX,"q")==0||strcmp(KorSlotX,"b")==0||strcmp(KorSlotX,"Q")==0||strcmp(KorSlotX,"t")==0||strcmp(KorSlotX,"g")==0||strcmp(KorSlotX,"T")==0||strcmp(KorSlotX,"w" )==0||strcmp(KorSlotX,"c")==0||strcmp(KorSlotX,"W")==0||strcmp(KorSlotX,"d")==0||strcmp(KorSlotX,"a")==0
-
-#define KORPAD_updateConfirmedInputs()      updateConfirmedInputs(&KorSlot0,&KorSlot1,&KorSlot2,&KorSlot3,&KorSlot4);
-#define KORPAD_undoConfirmedInputs()        undoConfirmedInputs(&KorSlot0,&KorSlot1,&KorSlot2,&KorSlot3,&KorSlot4);
-#define KORPAD_resetConfirmedInputs()       resetConfirmedInputs(KorSlot0,KorSlot1,KorSlot2,KorSlot3,KorSlot4);
-
-void updateConfirmedInputs(char** ptrKorSlot0,char** ptrKorSlot1,char** ptrKorSlot2,char** ptrKorSlot3,char** ptrKorSlot4)
-{
-    // THIS IS 'CALL BY REF' FUNCTION FOR SWAP ARRAY POINTERS!!
-    // https://stackoverflow.com/questions/13246615/swap-two-pointers-to-exchange-arrays
-    
-    strcpy(*ptrKorSlot4,"");
-    char* ptr = *ptrKorSlot4;
-
-    *ptrKorSlot4 = *ptrKorSlot3;
-    *ptrKorSlot3 = *ptrKorSlot2;
-    *ptrKorSlot2 = *ptrKorSlot1;
-    *ptrKorSlot1 = *ptrKorSlot0;
-
-    *ptrKorSlot0 = ptr;
-}
-void undoConfirmedInputs(char** ptrKorSlot0,char** ptrKorSlot1,char** ptrKorSlot2,char** ptrKorSlot3,char** ptrKorSlot4)
-{
-    strcpy(*ptrKorSlot0,"");
-    char* ptr = *ptrKorSlot0;
-
-    *ptrKorSlot0 = *ptrKorSlot1;
-    *ptrKorSlot1 = *ptrKorSlot2;
-    *ptrKorSlot2 = *ptrKorSlot3;
-    *ptrKorSlot3 = *ptrKorSlot4;
-
-    *ptrKorSlot4 = ptr;
-}   
-void resetConfirmedInputs(char* KorSlot0,char* KorSlot1,char* KorSlot2,char* KorSlot3,char* KorSlot4)
-{
-    strcpy(KorSlot4,"");
-    strcpy(KorSlot3,"");
-    strcpy(KorSlot2,"");
-    strcpy(KorSlot1,"");
-    strcpy(KorSlot0,"");
-}
-
-#define KORPAD_correctBottomDualConsonantError()    correctBottomDualConsonantError(KorSlot1,KorSlot2,KorSlot3);
-#define KORPAD_correctBottomSingleConsonantError()  correctBottomSingleConsonantError(KorSlot1,KorSlot2);
-        
-void correctBottomDualConsonantError(char* KorSlot1,char* KorSlot2,char* KorSlot3)
-{
-    if(KORPAD_isExistVowel(KorSlot2))
-    {
-        if(KORPAD_isExistConsonant(KorSlot3))
-        {
-            delay(11); KBD_Hijacker.pressandreleaseKey(KEY_BACKSPACE);
-            delay(11); KBD_Hijacker.pressandreleaseKeys(KorSlot3);
-            delay(11); KBD_Hijacker.pressandreleaseKeys(KorSlot2);
-            delay(11); KBD_Hijacker.pressandreleaseKeys(KorSlot1);
-            delay(11);
-            return;
-        }
-    }
-}
-void correctBottomSingleConsonantError(char* KorSlot1,char* KorSlot2)
-{
-    if(KORPAD_isExistVowel(KorSlot1))
-    {
-        if(KORPAD_isExistConsonant(KorSlot2))
-        {
-            delay(11); KBD_Hijacker.pressandreleaseKey(KEY_BACKSPACE);
-            delay(11); KBD_Hijacker.pressandreleaseKeys(KorSlot2);
-            delay(11); KBD_Hijacker.pressandreleaseKeys(KorSlot1);
-            delay(11); 
-            return;
-        }
-    }
-}
-
-#define KORPAD_isAlphabetPronounce(STR3,STR2,STR1,STR0)     ( (strcmp(KorSlot0,STR0)==0||strcmp("",STR0)==0) && (strcmp(KorSlot1,STR1)==0||strcmp("",STR1)==0) && (strcmp(KorSlot2,STR2)==0||strcmp("",STR2)==0) && (strcmp(KorSlot3,STR3)==0||strcmp("",STR3)==0) )
-
-void KORPAD_writeAlphabet(char ch)
-{
-    delay(11); KBD_Hijacker.pressandreleaseKey(KEY_KORENG);
-    delay(11); Keyboard.write(ch);
-    delay(11); KBD_Hijacker.pressandreleaseKey(KEY_KORENG);
-    delay(11);
-}
-void KORPAD_switchCapsLockToggleIfBattered3()
-{
-    if  (   KBD_Parser.KeyLogger.peek_key(1)==KEYPAD_PERIOD &&
-            KBD_Parser.KeyLogger.peek_key(2)==KEYPAD_PERIOD
-        )
-        KBD_Hijacker.pressandreleaseKey(KEY_CAPS_LOCK);
-}
-void KORPAD_switchCapsLockToggleIfBattered4()
-{
-    if  (   KBD_Parser.KeyLogger.peek_key(1)==KEYPAD_PERIOD &&
-            KBD_Parser.KeyLogger.peek_key(2)==KEYPAD_PERIOD &&
-            KBD_Parser.KeyLogger.peek_key(3)==KEYPAD_PERIOD
-        )
-        KBD_Hijacker.pressandreleaseKey(KEY_CAPS_LOCK);
-}
-
-#endif
-
-
-#if (KEYPAD_KOREAN_LAYOUT == 1)     // LAYOUT1:CheonJiIn Only
-
-#define KORPAD_correctAraeAVowelError() correctAraeAVowelError(KorSlot1,KorSlot2,KorSlot3,KorSlot4);
-        
-void correctAraeAVowelError(char* KorSlot1,char* KorSlot2,char* KorSlot3,char* KorSlot4)
-{
-    if(KORPAD_isExistConsonant(KorSlot1))
-    {
-        if(KORPAD_isExistVowel(KorSlot2))
-        {
-            if(KORPAD_isExistConsonant(KorSlot3))
-            {
-                delay(11); KBD_Hijacker.pressandreleaseKey(KEY_BACKSPACE);
-                delay(11); KBD_Hijacker.pressandreleaseKeys(KorSlot3);
-                delay(11); KBD_Hijacker.pressandreleaseKeys(KorSlot2);
-                delay(11); KBD_Hijacker.pressandreleaseKeys(KorSlot1);
-                delay(11);
-                return;
-            }
-        }
-        else if(KORPAD_isExistConsonant(KorSlot2))
-        {
-            if( (strcmp(KorSlot2,"r")==0&&strcmp(KorSlot1,"t")==0) ||
-                (strcmp(KorSlot2,"s")==0&&strcmp(KorSlot1,"w")==0) ||
-                (strcmp(KorSlot2,"s")==0&&strcmp(KorSlot1,"g")==0) ||
-                (strcmp(KorSlot2,"f")==0&&strcmp(KorSlot1,"r")==0) ||
-                (strcmp(KorSlot2,"f")==0&&strcmp(KorSlot1,"a")==0) ||
-                (strcmp(KorSlot2,"f")==0&&strcmp(KorSlot1,"q")==0) ||
-                (strcmp(KorSlot2,"f")==0&&strcmp(KorSlot1,"t")==0) ||
-                (strcmp(KorSlot2,"f")==0&&strcmp(KorSlot1,"x")==0) ||
-                (strcmp(KorSlot2,"f")==0&&strcmp(KorSlot1,"v")==0) ||
-                (strcmp(KorSlot2,"f")==0&&strcmp(KorSlot1,"g")==0) ||
-                (strcmp(KorSlot2,"q")==0&&strcmp(KorSlot1,"t")==0) )
-            {
-                if(KORPAD_isExistVowel(KorSlot3))
-                {
-                    if(KORPAD_isExistConsonant(KorSlot4))
-                    {
-                        delay(11); KBD_Hijacker.pressandreleaseKey(KEY_BACKSPACE);
-                        delay(11); KBD_Hijacker.pressandreleaseKeys(KorSlot4);
-                        delay(11); KBD_Hijacker.pressandreleaseKeys(KorSlot3);
-                        delay(11); KBD_Hijacker.pressandreleaseKeys(KorSlot2);
-                        delay(11); KBD_Hijacker.pressandreleaseKeys(KorSlot1);
-                        delay(11);
-                        return;
-                    }
-                }
-            }
-        }
-        delay(11); KBD_Hijacker.pressandreleaseKey(KEY_BACKSPACE);
-        delay(11); KBD_Hijacker.pressandreleaseKeys(KorSlot1);
-        return;
-    }
-}
-
-#endif
-
-
-
-
-
-inline void MODULE_KOREAN_KEYPAD_EVOLUTION()
-{
-    /* ------------------------------------------------------ KEYPAD_KOREAN_LAYOUT COMMON ------------------------------------------------------ */
-    #if (KEYPAD_KOREAN_LAYOUT > 0)
-
     static bool KoreanKeypadToggle = false;
+
     static char* KorSlot0 = (char*) malloc( sizeof(char) * 3 );
     static char* KorSlot1 = (char*) malloc( sizeof(char) * 3 );
     static char* KorSlot2 = (char*) malloc( sizeof(char) * 3 );
     static char* KorSlot3 = (char*) malloc( sizeof(char) * 3 );
     static char* KorSlot4 = (char*) malloc( sizeof(char) * 3 );
-    
-    static bool ConvertMode_Alphabet = false;
+
+    static bool isKorSlotUpdated, isKorSlotUnderflowed, isKorSlotReset;
+    isKorSlotUpdated = isKorSlotUnderflowed = isKorSlotReset = false; //always reset false
+
+    // Now!! Lambda no longer require double pointers!!  (↓ Old Code, using double pointers. fxxking dirty :p ↓)
+    // https://github.com/AliveSophist/USB_Hijacker/blob/e83d5220efb0088f9565fd778ef1e0cd9ec290f2/USB_Hijacker_Teensy_4.1/function_MODULE_KORPAD.ino
+    auto KORPAD_updateConfirmedInputs = [&]() -> void
+                                        {
+                                            strcpy(KorSlot4,"");
+
+                                            char* temp = KorSlot4;
+                                            KorSlot4 = KorSlot3;
+                                            KorSlot3 = KorSlot2;
+                                            KorSlot2 = KorSlot1;
+                                            KorSlot1 = KorSlot0;
+                                            KorSlot0 = temp;
+                                            
+                                            isKorSlotUpdated = true;
+                                        };
+    auto KORPAD_undoConfirmedInputs =   [&]() -> void
+                                        {
+                                            if(strcmp(KorSlot0,"")==0){
+                                                isKorSlotUnderflowed = true;
+                                                return;
+                                            }
+
+                                            strcpy(KorSlot0,"");
+
+                                            char* temp = KorSlot0;
+                                            KorSlot0 = KorSlot1;
+                                            KorSlot1 = KorSlot2;
+                                            KorSlot2 = KorSlot3;
+                                            KorSlot3 = KorSlot4;
+                                            KorSlot4 = temp;
+                                        };
+    auto KORPAD_resetConfirmedInputs =  [&]() -> void
+                                        {
+                                            strcpy(KorSlot4,"");
+                                            strcpy(KorSlot3,"");
+                                            strcpy(KorSlot2,"");
+                                            strcpy(KorSlot1,"");
+                                            strcpy(KorSlot0,"");
+
+                                            isKorSlotReset = true;
+                                        };
+
+
+
+    /**⦓   KORPAD_MODE   ⦔**/
+
+    #define MODE_HANGEUL    0
+    #define MODE_ALPHABET   1
+    #define MODE_KANA       2
+    static uint8_t KORPAD_MODE = MODE_HANGEUL;
+
+
+
+    /**⦓   About, MODE_HANGEUL   ⦔**/
+
+    #define isEquals(KorSlotX,STR)      (strcmp(KorSlotX,STR)==0)
+    #define fillWith(KorSlotX,STR)      strcpy(KorSlotX,STR)
+
+    auto isExistConsonant =             [](char* KorSlotX) -> bool
+                                        {
+                                            return (strcmp(KorSlotX,"r")==0||strcmp(KorSlotX,"z")==0||strcmp(KorSlotX,"R")==0||strcmp(KorSlotX,"s")==0||strcmp(KorSlotX,"f")==0||strcmp(KorSlotX,"e")==0||strcmp(KorSlotX,"x")==0||strcmp(KorSlotX,"E")==0||strcmp(KorSlotX,"q")==0||strcmp(KorSlotX,"v")==0||strcmp(KorSlotX,"Q")==0||strcmp(KorSlotX,"t")==0||strcmp(KorSlotX,"g")==0||strcmp(KorSlotX,"T")==0||strcmp(KorSlotX,"w")==0||strcmp(KorSlotX,"c")==0||strcmp(KorSlotX,"W")==0||strcmp(KorSlotX,"d")==0||strcmp(KorSlotX,"a")==0);
+                                        };
+    auto isExistVowel =                 [](char* KorSlotX) -> bool
+                                        {
+                                            return (strcmp(KorSlotX,"k")==0||strcmp(KorSlotX,"o")==0||strcmp(KorSlotX,"i")==0||strcmp(KorSlotX,"O")==0||strcmp(KorSlotX,"j")==0||strcmp(KorSlotX,"p")==0||strcmp(KorSlotX,"u")==0||strcmp(KorSlotX,"P")==0||strcmp(KorSlotX,"h")==0||strcmp(KorSlotX,"y")==0||strcmp(KorSlotX,"n")==0||strcmp(KorSlotX,"b")==0||strcmp(KorSlotX,"m")==0||strcmp(KorSlotX,"l")==0||strcmp(KorSlotX,"hk")==0||strcmp(KorSlotX,"ho")==0||strcmp(KorSlotX,"hl")==0||strcmp(KorSlotX,"nj")==0||strcmp(KorSlotX,"np")==0||strcmp(KorSlotX,"nl")==0||strcmp(KorSlotX,"ml")==0);
+                                        };
+    auto KORPAD_isHeldDualConsonant =   [](char* KorSlotX, char* KorSlotY) -> bool
+                                        {
+                                            if(isEquals(KorSlotX,"r") || isEquals(KorSlotX,"q"))
+                                            {
+                                                if(isEquals(KorSlotY,"t"))
+                                                    return true;
+                                            }
+                                            else if(isEquals(KorSlotX,"s"))
+                                            {
+                                                if(isEquals(KorSlotY,"w") || isEquals(KorSlotY,"g"))
+                                                    return true;
+                                            }
+                                            else if(isEquals(KorSlotX,"f"))
+                                            {
+                                                if(isEquals(KorSlotY,"r") || isEquals(KorSlotY,"a") || isEquals(KorSlotY,"q") || isEquals(KorSlotY,"t") || isEquals(KorSlotY,"x") || isEquals(KorSlotY,"v") || isEquals(KorSlotY,"g"))
+                                                    return true;
+                                            }
+
+                                            return false;
+                                        };
+
+    auto KORPAD_correctBottomDualConsonantError =   [&]() -> void
+                                                    {
+                                                        if(!KORPAD_isHeldDualConsonant(KorSlot1,KorSlot0))
+                                                            return;
+
+                                                        if(isExistVowel(KorSlot2))
+                                                        {
+                                                            if(isExistConsonant(KorSlot3))
+                                                            {
+                                                                delay(11); KBD_HIJACKER.pressandreleaseKey(KEY_BACKSPACE);
+                                                                delay(11); KBD_HIJACKER.pressandreleaseKeys(KorSlot3);
+                                                                delay(11); KBD_HIJACKER.pressandreleaseKeys(KorSlot2);
+                                                                delay(11); KBD_HIJACKER.pressandreleaseKeys(KorSlot1);
+                                                                delay(11);
+                                                            }
+                                                        }
+                                                    };
+    auto KORPAD_correctBottomSingleConsonantError = [&]() -> void
+                                                    {
+                                                        if(isExistVowel(KorSlot1))
+                                                        {
+                                                            if(isExistConsonant(KorSlot2))
+                                                            {
+                                                                delay(11); KBD_HIJACKER.pressandreleaseKey(KEY_BACKSPACE);
+                                                                delay(11); KBD_HIJACKER.pressandreleaseKeys(KorSlot2);
+                                                                delay(11); KBD_HIJACKER.pressandreleaseKeys(KorSlot1);
+                                                                delay(11);
+                                                            }
+                                                        }
+                                                    };
+
+    #if (KEYPAD_KOREAN_LAYOUT == 1) // CheonJiIn Only
+
+    auto KORPAD_correctAraeAVowelError =    [&]() -> void
+                                            {
+                                                if(isExistConsonant(KorSlot1))
+                                                {
+                                                    if
+                                                    (   isExistVowel(KorSlot2) &&
+                                                        isExistConsonant(KorSlot3)
+                                                    )
+                                                    {
+                                                        delay(11); KBD_HIJACKER.pressandreleaseKey(KEY_BACKSPACE);
+                                                        delay(11); KBD_HIJACKER.pressandreleaseKeys(KorSlot3);
+                                                        delay(11); KBD_HIJACKER.pressandreleaseKeys(KorSlot2);
+                                                        delay(11); KBD_HIJACKER.pressandreleaseKeys(KorSlot1);
+                                                        delay(11);
+                                                    }
+                                                    else if
+                                                    (   /*isExistConsonant(KorSlot2) &&*/
+                                                        KORPAD_isHeldDualConsonant(KorSlot2,KorSlot1) &&
+                                                        isExistVowel(KorSlot3) &&
+                                                        isExistConsonant(KorSlot4)
+                                                    )
+                                                    {
+                                                        delay(11); KBD_HIJACKER.pressandreleaseKey(KEY_BACKSPACE);
+                                                        delay(11); KBD_HIJACKER.pressandreleaseKeys(KorSlot4);
+                                                        delay(11); KBD_HIJACKER.pressandreleaseKeys(KorSlot3);
+                                                        delay(11); KBD_HIJACKER.pressandreleaseKeys(KorSlot2);
+                                                        delay(11); KBD_HIJACKER.pressandreleaseKeys(KorSlot1);
+                                                        delay(11);
+                                                    }
+                                                    else
+                                                    {
+                                                        delay(11); KBD_HIJACKER.pressandreleaseKey(KEY_BACKSPACE);
+                                                        delay(11); KBD_HIJACKER.pressandreleaseKeys(KorSlot1);
+                                                        delay(11);
+                                                    }
+                                                    
+                                                    isKorSlotUpdated = true;
+                                                }
+                                            };
+
+    #endif
+
+    #define COMPLETE_THE_IN_PROGRESS_HANGEUL_IMMEDIATELY    KBD_HIJACKER.pressandreleaseKey(KEY_SPACE); KBD_HIJACKER.pressandreleaseKey(KEY_BACKSPACE);
+
+
+
+    /**⦓   About, MODE_ALPHABET   ⦔**/
+
+    #define KORPAD_writeAlphabet(CHSTR)     KBD_HIJACKER.pressandreleaseKey(KEY_KORENG); delay(11); Keyboard.write(CHSTR); delay(11); KBD_HIJACKER.pressandreleaseKey(KEY_KORENG); delay(11);
+
+    auto KORPAD_tryToTypeAlphabetByHangeulPronounce =   [&]() -> bool
+                                                        {
+                                                            if(KORPAD_MODE != MODE_ALPHABET)
+                                                                return false;
+
+
+                                                            COMPLETE_THE_IN_PROGRESS_HANGEUL_IMMEDIATELY;
+
+
+                                                            #define KORPAD_isAlphabetPronounce(STR3,STR2,STR1,STR0)     ( (strcmp("",STR0)==0||strcmp(KorSlot0,STR0)==0) && (strcmp("",STR1)==0||strcmp(KorSlot1,STR1)==0) && (strcmp(KorSlot2,STR2)==0||strcmp("",STR2)==0) && (strcmp(KorSlot3,STR3)==0||strcmp("",STR3)==0) )
+
+                                                            char alphabet = 0;
+                                                            uint8_t numNeededBackspace = 1;
+
+                                                            alphabet =
+                                                            KORPAD_isAlphabetPronounce("d","l","c","l") ? 'h' :
+                                                            KORPAD_isAlphabetPronounce("m","f","d","b") ? 'w' :
+                                                            KORPAD_isAlphabetPronounce("m","f","f","b") ? 'w' : 0;
+
+                                                            if(alphabet!=0) numNeededBackspace++;
+
+                                                            alphabet = (alphabet!=0) ? alphabet :
+                                                            KORPAD_isAlphabetPronounce("d","o","d","l") ? 'a' :
+                                                            KORPAD_isAlphabetPronounce("d","p","d","l") ? 'a' :
+                                                            KORPAD_isAlphabetPronounce("d","p","v","m") ? 'f' :
+                                                            KORPAD_isAlphabetPronounce("d","p","c","l") ? 'h' :
+                                                            KORPAD_isAlphabetPronounce("d","k","d","l") ? 'i' :
+                                                            KORPAD_isAlphabetPronounce("w","p","d","l") ? 'j' :
+                                                            KORPAD_isAlphabetPronounce("z","p","d","l") ? 'k' :
+                                                            KORPAD_isAlphabetPronounce("d","p","t","m") ? 's' :
+                                                            KORPAD_isAlphabetPronounce("q","m","d","l") ? 'v' :
+                                                            KORPAD_isAlphabetPronounce("e","j","q","b") ? 'w' :
+                                                            KORPAD_isAlphabetPronounce("E","j","q","b") ? 'w' :
+                                                            KORPAD_isAlphabetPronounce("o","r","t","m") ? 'x' :
+                                                            KORPAD_isAlphabetPronounce("p","r","t","m") ? 'x' :
+                                                            KORPAD_isAlphabetPronounce("d","hk","d","l")? 'y' :
+                                                            KORPAD_isAlphabetPronounce("w","","x","m")  ? 'z' :
+                                                            KORPAD_isAlphabetPronounce("W","","x","m")  ? 'z' : 0;
+
+                                                            if(alphabet!=0) numNeededBackspace++;
+
+                                                            char isExCase_dl_ = 0;
+                                                            alphabet = (alphabet!=0) ? alphabet :
+                                                            KORPAD_isAlphabetPronounce("","","d","k")   ? 'a' :
+                                                            KORPAD_isAlphabetPronounce("","","d","o")   ? 'a' :
+                                                            KORPAD_isAlphabetPronounce("","","q","l")   ? 'b' :
+                                                            KORPAD_isAlphabetPronounce("","","Q","l")   ? 'b' :
+                                                            KORPAD_isAlphabetPronounce("","","t","l")   ? 'c' :
+                                                            KORPAD_isAlphabetPronounce("","","T","l")   ? 'c' :
+                                                            KORPAD_isAlphabetPronounce("","","z","m")   ? 'c' :
+                                                            KORPAD_isAlphabetPronounce("","","e","l")   ? 'd' :
+                                                            KORPAD_isAlphabetPronounce("","","e","m")   ? 'd' :
+                                                            KORPAD_isAlphabetPronounce("","","d","l")   ? (isExCase_dl_='e') :
+                                                            KORPAD_isAlphabetPronounce("","","d","p")   ? 'e' :
+                                                            KORPAD_isAlphabetPronounce("","","d","m")   ? 'e' :
+                                                            KORPAD_isAlphabetPronounce("","d","p","v")  ? 'f' :
+                                                            KORPAD_isAlphabetPronounce("","","v","m")   ? 'f' :
+                                                            KORPAD_isAlphabetPronounce("","","Q","m")   ? 'f' :
+                                                            KORPAD_isAlphabetPronounce("","","w","nl")  ? 'g' :
+                                                            KORPAD_isAlphabetPronounce("","","w","l")   ? 'g' :
+                                                            KORPAD_isAlphabetPronounce("","","r","m")   ? 'g' :
+                                                            KORPAD_isAlphabetPronounce("","","g","l")   ? 'h' :
+                                                            KORPAD_isAlphabetPronounce("","","g","m")   ? 'h' :
+                                                            KORPAD_isAlphabetPronounce("","","w","p")   ? 'j' :
+                                                            KORPAD_isAlphabetPronounce("","","z","p")   ? 'k' :
+                                                            KORPAD_isAlphabetPronounce("","","z","l")   ? 'k' :
+                                                            KORPAD_isAlphabetPronounce("","","r","l")   ? 'k' :
+                                                            KORPAD_isAlphabetPronounce("","d","p","f")  ? 'l' :
+                                                            KORPAD_isAlphabetPronounce("","","f","m")   ? 'l' :
+                                                            KORPAD_isAlphabetPronounce("","d","o","a")  ? 'm' :
+                                                            KORPAD_isAlphabetPronounce("","d","p","a")  ? 'm' :
+                                                            KORPAD_isAlphabetPronounce("","","a","m")   ? 'm' :
+                                                            KORPAD_isAlphabetPronounce("","","a","l")   ? 'm' :
+                                                            KORPAD_isAlphabetPronounce("","d","o","s")  ? 'n' :
+                                                            KORPAD_isAlphabetPronounce("","d","p","s")  ? 'n' :
+                                                            KORPAD_isAlphabetPronounce("","","s","m")   ? 'n' :
+                                                            KORPAD_isAlphabetPronounce("","","s","l")   ? 'n' :
+                                                            KORPAD_isAlphabetPronounce("","","d","h")   ? 'o' :
+                                                            KORPAD_isAlphabetPronounce("","","v","l")   ? 'p' :
+                                                            KORPAD_isAlphabetPronounce("","","z","b")   ? 'q' :
+                                                            KORPAD_isAlphabetPronounce("","","z","n")   ? 'q' :
+                                                            KORPAD_isAlphabetPronounce("","d","k","f")  ? 'r' :
+                                                            KORPAD_isAlphabetPronounce("","d","j","f")  ? 'r' :
+                                                            KORPAD_isAlphabetPronounce("","","f","l")   ? 'r' :
+                                                            KORPAD_isAlphabetPronounce("","","t","m")   ? 's' :
+                                                            KORPAD_isAlphabetPronounce("","","x","l")   ? 't' :
+                                                            KORPAD_isAlphabetPronounce("","","x","m")   ? 't' :
+                                                            KORPAD_isAlphabetPronounce("","","d","b")   ? 'u' :
+                                                            KORPAD_isAlphabetPronounce("","","d","n")   ? 'u' :
+                                                            KORPAD_isAlphabetPronounce("","","d","j")   ? 'u' :
+                                                            KORPAD_isAlphabetPronounce("","","q","ml")  ? 'v' :
+                                                            KORPAD_isAlphabetPronounce("","","q","m")   ? 'v' :
+                                                            KORPAD_isAlphabetPronounce("","E","j","q")  ? 'w' :
+                                                            KORPAD_isAlphabetPronounce("","d","o","r")  ? 'x' :
+                                                            KORPAD_isAlphabetPronounce("","d","p","r")  ? 'x' :
+                                                            KORPAD_isAlphabetPronounce("","","T","m")   ? 'x' :
+                                                            KORPAD_isAlphabetPronounce("","","d","i")   ? 'y' :
+                                                            KORPAD_isAlphabetPronounce("","","d","u")   ? 'y' :
+                                                            KORPAD_isAlphabetPronounce("","","d","y")   ? 'y' :
+                                                            KORPAD_isAlphabetPronounce("","","d","hk")  ? 'y' :
+                                                            KORPAD_isAlphabetPronounce("","w","","t")   ? 'z' :
+                                                            KORPAD_isAlphabetPronounce("","","w","ml")  ? 'z' :
+                                                            KORPAD_isAlphabetPronounce("","","w","m")   ? 'z' :
+                                                            KORPAD_isAlphabetPronounce("","","W","m")   ? 'z' : 0;
+
+                                                            if(alphabet!=0)
+                                                            {
+                                                                // Tune KorSlots
+                                                                KORPAD_resetConfirmedInputs(); if(isExCase_dl_!=0)fillWith(KorSlot1,"l");
+                                                                KorSlot0[0]='@'; KorSlot0[1]=alphabet;
+
+                                                                // Type!
+                                                                for(uint8_t i=0; i<numNeededBackspace; i++){ KBD_HIJACKER.pressandreleaseKey(KEY_BACKSPACE); delay(11); }
+                                                                KORPAD_writeAlphabet( alphabet );
+
+                                                                return true;
+                                                            }
+
+                                                            alphabet =
+                                                            //Hangeul Consonent to Alphabet
+                                                            isEquals(KorSlot0, "r") ? 'g' :
+                                                            isEquals(KorSlot1, "r") 
+                                                                                    ? ( isEquals(KorSlot0,"@g") ? 'g' : 0 ) :
+                                                            isEquals(KorSlot0, "s") ? 'n' :
+                                                            isEquals(KorSlot1, "s") 
+                                                                                    ? ( isEquals(KorSlot0,"@n") ? 'n' : 0 ) :
+                                                            isEquals(KorSlot0, "e") ? 'd' :
+                                                            isEquals(KorSlot1, "e")
+                                                                                    ? ( isEquals(KorSlot0,"@d") ? 'd' : 0 ) :
+                                                            isEquals(KorSlot0, "f") ? 'l' :
+                                                            isEquals(KorSlot1, "f")
+                                                                                    ? ( isEquals(KorSlot0,"@l") ? 'r' :
+                                                                                        isEquals(KorSlot0,"@r") ? 'l' : 0 ) :
+                                                            isEquals(KorSlot0, "a") ? 'm' :
+                                                            isEquals(KorSlot1, "a")
+                                                                                    ? ( isEquals(KorSlot0,"@m") ? 'm' : 0 ) :
+                                                            isEquals(KorSlot0, "q") ? 'b' :
+                                                            isEquals(KorSlot1, "q")
+                                                                                    ? ( isEquals(KorSlot0,"@b") ? 'v' :
+                                                                                        isEquals(KorSlot0,"@v") ? 'b' : 0 ) :
+                                                            isEquals(KorSlot0, "t") ? 's' :
+                                                            isEquals(KorSlot1, "t")
+                                                                                    ? ( isEquals(KorSlot0,"@s") ? 'c' :
+                                                                                        isEquals(KorSlot0,"@c") ? 'x' :
+                                                                                        isEquals(KorSlot0,"@x") ? 's' : 0 ) :
+                                                            isEquals(KorSlot0, "T") ? 'c' :
+                                                            isEquals(KorSlot1, "T")
+                                                                                    ? ( isEquals(KorSlot0,"@c") ? 'x' :
+                                                                                        isEquals(KorSlot0,"@x") ? 'c' : 0 ) :
+                                                            isEquals(KorSlot0, "d") ? '~' :
+                                                            isEquals(KorSlot1, "d")
+                                                                                    ? ( isEquals(KorSlot0,"@~") ? '~' : 0 ) : // '~' is ng
+                                                            isEquals(KorSlot0, "w") ? 'j' :
+                                                            isEquals(KorSlot1, "w")
+                                                                                    ? ( isEquals(KorSlot0,"@j") ? 'g' :
+                                                                                        isEquals(KorSlot0,"@g") ? 'z' :
+                                                                                        isEquals(KorSlot0,"@z") ? 'j' : 0 ) :
+                                                            isEquals(KorSlot0, "c") ? '*' :
+                                                            isEquals(KorSlot1, "c")
+                                                                                    ? ( isEquals(KorSlot0,"@*") ? '*' : 0 ) : // '*' is ch
+                                                            isEquals(KorSlot0, "z") ? 'c' :
+                                                            isEquals(KorSlot1, "z")
+                                                                                    ? ( isEquals(KorSlot0,"@c") ? 'k' :
+                                                                                        isEquals(KorSlot0,"@k") ? 'q' :
+                                                                                        isEquals(KorSlot0,"@q") ? 'x' :
+                                                                                        isEquals(KorSlot0,"@x") ? 'c' : 0 ) :
+                                                            isEquals(KorSlot0, "x") ? 't' :
+                                                            isEquals(KorSlot1, "x")
+                                                                                    ? ( isEquals(KorSlot0,"@t") ? 't' : 0 ) :
+                                                            isEquals(KorSlot0, "v") ? 'f' :
+                                                            isEquals(KorSlot1, "v")
+                                                                                    ? ( isEquals(KorSlot0,"@f") ? 'p' :
+                                                                                        isEquals(KorSlot0,"@p") ? 'f' : 0 ) :
+                                                            isEquals(KorSlot0, "g") ? 'h' :
+                                                            isEquals(KorSlot1, "g")
+                                                                                    ? ( isEquals(KorSlot0,"@h") ? 'h' : 0 ) :
+                                                            //Hangeul Vowel to Alphabet
+                                                            isEquals(KorSlot0, "k") ? 'a' :
+                                                            isEquals(KorSlot1, "k")
+                                                                                    ? ( isEquals(KorSlot0,"@a") ? 'a' : 0 ) :
+                                                            isEquals(KorSlot0, "o") ? 'a' :
+                                                            isEquals(KorSlot1, "o")
+                                                                                    ? ( isEquals(KorSlot0,"@a") ? 'a' : 0 ) :
+                                                            isEquals(KorSlot0, "j") ? 'e' :
+                                                            isEquals(KorSlot1, "j")
+                                                                                    ? ( isEquals(KorSlot0,"@e") ? 'e' : 0 ) :
+                                                            isEquals(KorSlot0, "p") ? 'e' :
+                                                            isEquals(KorSlot1, "p")
+                                                                                    ? ( isEquals(KorSlot0,"@e") ? 'e' : 0 ) :
+                                                            isEquals(KorSlot0, "h") ? 'o' :
+                                                            isEquals(KorSlot1, "h")
+                                                                                    ? ( isEquals(KorSlot0,"@o") ? 'o' : 0 ) :
+                                                            isEquals(KorSlot0, "n") ? 'u' :
+                                                            isEquals(KorSlot1, "n")
+                                                                                    ? ( isEquals(KorSlot0,"@u") ? 'u' : 0 ) :
+                                                            isEquals(KorSlot0, "i") ? 'y' :
+                                                            isEquals(KorSlot1, "i")
+                                                                                    ? ( isEquals(KorSlot0,"@y") ? 'y' : 0 ) :
+                                                            isEquals(KorSlot0, "u") ? 'y' :
+                                                            isEquals(KorSlot1, "u")
+                                                                                    ? ( isEquals(KorSlot0,"@y") ? 'y' : 0 ) :
+                                                            isEquals(KorSlot0, "y") ? 'y' :
+                                                            isEquals(KorSlot1, "y")
+                                                                                    ? ( isEquals(KorSlot0,"@y") ? 'y' : 0 ) :
+                                                            isEquals(KorSlot0, "b") ? 'w' :
+                                                            isEquals(KorSlot1, "b")
+                                                                                    ? ( isEquals(KorSlot0,"@w") ? 'w' : 0 ) :
+                                                            isEquals(KorSlot0, "m") ? 'e' :
+                                                            isEquals(KorSlot1, "m")
+                                                                                    ? ( isEquals(KorSlot0,"@e") ? 'e' : 0 ) :
+                                                            isEquals(KorSlot0, "l") ? 'i' :
+                                                            isEquals(KorSlot1, "l")
+                                                                                    ? ( isEquals(KorSlot0,"@i") ? 'e' :
+                                                                                        isEquals(KorSlot0,"@e") ? 'i' : 0 ) : 0;
+
+                                                            if(alphabet==KorSlot0[1]) // DO NOT NEED TO RETYPE
+                                                                return true;
+
+                                                            if(alphabet!=0)
+                                                            {
+                                                                // Tune KorSlots
+                                                                if(KorSlot0[0]!='@'){ String temp(KorSlot0); KORPAD_resetConfirmedInputs(); fillWith(KorSlot1,temp.c_str()); }
+                                                                KorSlot0[0]='@'; KorSlot0[1]=alphabet;
+
+                                                                // Type!
+                                                                KBD_HIJACKER.pressandreleaseKey(KEY_BACKSPACE); delay(11);
+                                                                KORPAD_writeAlphabet( alphabet=='~' ? "ng" : alphabet=='*' ? "ch" : String(alphabet).c_str() );
+
+                                                                return true;
+                                                            }
+
+                                                            return false;
+                                                        };
+
+    auto KORPAD_tryToDoAlphabetCaseConversion =         [&]() -> bool
+                                                        {
+                                                            if(KORPAD_MODE != MODE_ALPHABET)
+                                                                return false;
+
+                                                            if(KorSlot0[0] != '@')
+                                                                return false;
+
+                                                            if(!(('A'<=KorSlot0[1] && KorSlot0[1]<='Z') || ('a'<=KorSlot0[1] && KorSlot0[1]<='z')))
+                                                                return false;
+
+
+                                                            if('A'<=KorSlot0[1] && KorSlot0[1]<='Z')
+                                                            {
+                                                                KorSlot0[1] += 32;
+
+                                                                // switch CapsLockToggle, If Case Conversion Battered 4 times
+                                                                if(KBD_PARSER.KeyLogger.peek_key(1)==KEYPAD_PERIOD && KBD_PARSER.KeyLogger.peek_key(2)==KEYPAD_PERIOD && KBD_PARSER.KeyLogger.peek_key(3)==KEYPAD_PERIOD) KBD_HIJACKER.pressandreleaseKey(KEY_CAPS_LOCK);
+
+                                                                KBD_HIJACKER.pressandreleaseKey(KEY_BACKSPACE); delay(11);
+                                                                KORPAD_writeAlphabet( KorSlot0[1] );
+                                                            }
+                                                            else
+                                                            {
+                                                                KorSlot0[1] -= 32;
+
+                                                                KBD_HIJACKER.pressandreleaseKey(KEY_BACKSPACE); delay(11);
+                                                                KORPAD_writeAlphabet( KorSlot0[1] );
+
+                                                                // switch CapsLockToggle, If Case Conversion Battered 3 times
+                                                                if(KBD_PARSER.KeyLogger.peek_key(1)==KEYPAD_PERIOD && KBD_PARSER.KeyLogger.peek_key(2)==KEYPAD_PERIOD) KBD_HIJACKER.pressandreleaseKey(KEY_CAPS_LOCK);
+                                                            }
+
+                                                            return true;
+                                                        };
+
+
+
+    /**⦓   About, MODE_KANA   ⦔**/
+
+    static std::list<String> queueKana;
+    static std::list<uint8_t> logBeQueued;
+
+    auto KORPAD_doQueueingKana =                [&](int8_t indexExcludeSlot) -> void
+                                                {
+                                                    char* KorSlots[] = {KorSlot0, KorSlot1, KorSlot2, KorSlot3, KorSlot4};
+                                                    uint8_t lenBeQueued = 0;
+                                                    String queueThing;
+
+                                                    for(int8_t i=4; i>indexExcludeSlot; i--)
+                                                    {
+                                                        if(!isExistConsonant(KorSlots[i]))
+                                                            continue;
+
+                                                        if(i-1>indexExcludeSlot && isExistVowel(KorSlots[i-1]))
+                                                        {
+                                                            // Hangeul to Kana (exclude nn, cc Kana)
+                                                            fillWith(KorSlots[i],   isEquals(KorSlots[i],"z") ? "k" :
+                                                                                    isEquals(KorSlots[i],"t") ? "s" :
+                                                                                    isEquals(KorSlots[i],"c") ? "t" :
+                                                                                    isEquals(KorSlots[i],"x") ? "t" :
+                                                                                    isEquals(KorSlots[i],"s") ? "n" :
+                                                                                    isEquals(KorSlots[i],"g") ? "h" :
+                                                                                    isEquals(KorSlots[i],"a") ? "m" :
+                                                                                    isEquals(KorSlots[i],"f") ? "r" :
+                                                                                    isEquals(KorSlots[i],"r") ? "g" :
+                                                                                    isEquals(KorSlots[i],"w") ? "z" :
+                                                                                    isEquals(KorSlots[i],"e") ? "d" :
+                                                                                    isEquals(KorSlots[i],"q") ? "b" :
+                                                                                    isEquals(KorSlots[i],"v") ? "p" : "" );
+                                                            fillWith(KorSlots[i-1], isEquals(KorSlots[i-1],"k") ? "a" :
+                                                                                    isEquals(KorSlots[i-1],"o") ? "a" :
+                                                                                    isEquals(KorSlots[i-1],"l") ? "i" :
+                                                                                    isEquals(KorSlots[i-1],"n") ? "u" :
+                                                                                    isEquals(KorSlots[i-1],"m") ? "u" :
+                                                                                    isEquals(KorSlots[i-1],"p") ? "e" :
+                                                                                    isEquals(KorSlots[i-1],"h") ? "o" :
+                                                                                    isEquals(KorSlots[i-1],"i") ? "ya" :
+                                                                                    isEquals(KorSlots[i-1],"u") ? "ya" :
+                                                                                    isEquals(KorSlots[i-1],"b") ? "yu" :
+                                                                                    isEquals(KorSlots[i-1],"y") ? "yo" :
+                                                                                    isEquals(KorSlots[i-1],"hk")? "wa" :
+                                                                                    isEquals(KorSlots[i-1],"j") ? "wo" : "wo");
+                                                            queueThing = String("") + KorSlots[i] + KorSlots[i-1];
+
+                                                            // Clear KorSlots
+                                                            fillWith(KorSlots[i],"");
+                                                            fillWith(KorSlots[i-1],"");
+                                                        }
+                                                        else
+                                                        {
+                                                            // Hangeul to Kana (nn, cc Kana)
+                                                            fillWith(KorSlots[i],   isEquals(KorSlots[i],"s") ? "nn" :
+                                                                                    isEquals(KorSlots[i],"d") ? "nn" :
+                                                                                    isEquals(KorSlots[i],"a") ? "nn" :
+                                                                                    isEquals(KorSlots[i],"t") ? "cc" : "cc");
+                                                            queueThing = String("") + KorSlots[i];
+
+                                                            // Clear KorSlots
+                                                            fillWith(KorSlots[i],"");
+                                                        }
+                                                        queueKana.push_back( queueThing );
+                                                        lenBeQueued++;
+                                                    }
+
+                                                    if(lenBeQueued > 0)
+                                                        logBeQueued.push_back( lenBeQueued );
+                                                };
+    auto KORPAD_undoQueueingKana =              [&]() -> void
+                                                {
+                                                    if(queueKana.empty())
+                                                        return;
+
+                                                    for(int i=0; i<logBeQueued.back(); i++)
+                                                        queueKana.pop_back();
+                                                    
+                                                    logBeQueued.pop_back();
+                                                };
+    auto KORPAD_clearQueuedKana =               [&]() -> void
+                                                {
+                                                    queueKana.clear();
+                                                    logBeQueued.clear();
+                                                };
+
+    auto KORPAD_surveillanceKorSlotsForKana =   [&]() -> void
+                                                {
+                                                    if(KORPAD_MODE != MODE_KANA)
+                                                        return;
+
+
+                                                    if(isKorSlotUpdated)
+                                                    {
+                                                        if(isExistConsonant(KorSlot0))
+                                                        {
+                                                            if(!isExistVowel(KorSlot1) && !KORPAD_isHeldDualConsonant(KorSlot1,KorSlot0))
+                                                            {
+                                                                KORPAD_doQueueingKana(0);
+                                                            }
+                                                        }
+                                                        else if(isExistVowel(KorSlot0))
+                                                        {
+                                                            if(isExistConsonant(KorSlot1) && isExistVowel(KorSlot2))
+                                                            {
+                                                                KORPAD_doQueueingKana(1);
+                                                            }
+                                                        }
+                                                    }
+                                                    if(isKorSlotUnderflowed)
+                                                    {
+                                                        KORPAD_undoQueueingKana();
+                                                    }
+                                                    if(isKorSlotReset)
+                                                    {
+                                                        KORPAD_clearQueuedKana();
+                                                    }
+                                                };
+
+    auto KORPAD_tryToTypeKanaByHangeulPronounce =   [&]() -> bool
+                                                    {
+                                                        if(KORPAD_MODE != MODE_KANA)
+                                                            return false;
+
+
+                                                        COMPLETE_THE_IN_PROGRESS_HANGEUL_IMMEDIATELY;
+
+
+                                                        KORPAD_doQueueingKana(-1);
+                                                        if(logBeQueued.size()==0)
+                                                            return false;
+
+
+                                                        // Clear Outputs
+                                                        for(uint8_t i=0; i<logBeQueued.size(); i++){
+                                                            KBD_HIJACKER.pressandreleaseKey(KEY_BACKSPACE); delay(11);
+                                                        }
+
+                                                        // Change to GJI IME
+                                                        KBD_HIJACKER.pressandreleaseMultiKey( {KEY_ALT,KEY_SHIFT,KEY_2} ); delay(11);
+
+                                                        // ReType Outputs
+                                                        for(String strKana : queueKana){
+                                                            KBD_HIJACKER.pressandreleaseKeys(strKana);
+                                                            if( strcmp(strKana.c_str(),"cc")==0 ) KBD_HIJACKER.pressandreleaseKey(KEY_BACKSPACE);
+                                                        }
+
+                                                        // Open GJI IME's Kana Selector
+                                                        KBD_HIJACKER.pressandreleaseKey(KEY_TAB); delay(11);
+
+                                                        // Now... Select Kana
+                                                        int32_t keyJustLatestPressed;
+                                                        while(numDN)
+                                                        {
+                                                            delay(1);
+                                                            if((keyJustLatestPressed=KBD_PARSER.KeyLogger.peek_key(0)) == KEYPAD_ENTER)
+                                                                continue;
+
+                                                            switch(keyJustLatestPressed)
+                                                            {
+                                                                case KEYPAD_8:
+                                                                {
+                                                                    KBD_HIJACKER.pressandreleaseKey(KEY_UP_ARROW);
+                                                                }
+                                                                break;
+                                                                case KEYPAD_2:
+                                                                {
+                                                                    KBD_HIJACKER.pressandreleaseKey(KEY_DOWN_ARROW);
+                                                                }
+                                                                break;
+                                                                case KEYPAD_9:
+                                                                {
+                                                                    KBD_HIJACKER.pressandreleaseKey(KEY_PAGE_UP);
+                                                                }
+                                                                break;
+                                                                case KEYPAD_3:
+                                                                {
+                                                                    KBD_HIJACKER.pressandreleaseKey(KEY_PAGE_DOWN);
+                                                                }
+                                                                break;
+                                                                case KEY_TAB:
+                                                                {
+                                                                    KBD_HIJACKER.pressandreleaseKey(KEY_TAB);
+                                                                }
+                                                                break;
+                                                            }
+                                                            KBD_PARSER.KeyLogger.pop();
+                                                        }
+
+                                                        // Close GJI IME's Kana Selector
+                                                        KBD_HIJACKER.pressandreleaseKey(KEY_ENTER); delay(11);
+
+                                                        // Change Back Kor IME
+                                                        KBD_HIJACKER.pressandreleaseMultiKey( {KEY_ALT,KEY_SHIFT,KEY_1} );
+
+                                                        // Serial.println("###################");
+                                                        // Serial.println("###################");
+                                                        // Serial.println("HANGEUL LEN   : " + String(logBeQueued.size()));
+                                                        // for(uint8_t num : logBeQueued){
+                                                        //     Serial.print("_");
+                                                        //     Serial.print(num);
+                                                        // } Serial.println("");
+                                                        // Serial.println("NOW QUEUE HAS : " + String(queueKana.size()));
+                                                        // for(String str : queueKana){
+                                                        //     Serial.print("_");
+                                                        //     Serial.print(str);
+                                                        // } Serial.println("");
+
+                                                        KORPAD_clearQueuedKana();
+
+                                                        return true;
+                                                    };
+
+
+
+
+
+
+
+
+
 
     if (key == KEY_NUM_LOCK)
     {
-        if(KoreanKeypadToggle){
-            
+        if(KoreanKeypadToggle)
+        {
             //Turn Off KoreanKeypadToggle
             KoreanKeypadToggle = false;
-            ConvertMode_Alphabet = false;
             
-            Buzzzzer::reserveBuzz(   { NOTE_D3 }
-                                ,   { 181     }   );
+            Buzzzzer::reserveBuzz   ( { NOTE_D3 }
+                                    , { 181     } );
         }
-        else if(MILLIS_FROM_PRESSED_UNTIL_RELEASE > 400){
+        else if(MILLIS_FROM_PRESSED_UNTIL_RELEASE > 400)
+        {
+            KBD_HIJACKER.releaseAllBeingHoldDownKey(); // KEY_NUM_LOCK release needed
 
-            KBD_Hijacker.releaseAllBeingHoldDownKey();   // KEY_NUM_LOCK release needed
 
-            //Turn On  KoreanKeypadToggle
+            // Turn On  KoreanKeypadToggle
             KoreanKeypadToggle = true;
 
-            Buzzzzer::reserveBuzz(   { NOTE_G5 }
-                                ,   { 333     }   );
+            // Reset ConvertMode
+            KORPAD_MODE = MODE_HANGEUL;
 
-            //While KoreanKeypadToggle is on, Numlock is always on
-            if(!KBD_Hijacker.getStateNumLockToggle()){
-                KBD_Hijacker.pressandreleaseKey(KEY_NUM_LOCK);
-            }
-
-            //Reverse KorEng status, when ScrollLock off
-            //Support by KorEngStatus.exe (Maker's Blog:https://blog.naver.com/breeze4me/140056743544)
-            if(!KBD_Hijacker.getStateScrollLockToggle()){
-                bool stateBeforeReverse = KBD_Hijacker.getStateScrollLockToggle();
-
-                KBD_Hijacker.pressandreleaseKey(KEY_KORENG);
-                KBD_Hijacker.reserveSyncTKS=true; delay(100);
-
-                //Rollback KorEng status, if system is not using KorEngStatus.exe
-                if(stateBeforeReverse == KBD_Hijacker.getStateScrollLockToggle()){
-                    KBD_Hijacker.pressandreleaseKey(KEY_KORENG);
-                }
-            }
-
-            //Reverse KorEng status, NumLock pressed more than 1200 millis, no matter the ScrollLock on/off
-            if(MILLIS_FROM_PRESSED_UNTIL_RELEASE > 1200){
-                KBD_Hijacker.pressandreleaseKey(KEY_KORENG);
-            }
-            //syncToggleKeyStates() in a few ms
-            KBD_Hijacker.reserveSyncTKS=true; delay(100);
             KORPAD_resetConfirmedInputs();
 
-            isActivateKeyEvent=false; key=0;
+            if(!KBD_HIJACKER.getStateNumLockToggle()) // While KoreanKeypadToggle is on, Numlock is always on
+                KBD_HIJACKER.pressandreleaseKey(KEY_NUM_LOCK);
+
+            Buzzzzer::reserveBuzz   ( { NOTE_G5 }
+                                    , { 333     } );
+
+
+            // Reverse KorEng state IMMEDIATELY, if NumLock pressed more than 1200 millis
+            if(MILLIS_FROM_PRESSED_UNTIL_RELEASE > 1000)
+                KBD_HIJACKER.pressandreleaseKey(KEY_KORENG);
+            // Otherwise,
+            // In order to reverse KorEng state, Dependent on KorEngStatus.exe...
+            // If your system supports KorEngStatus.exe (Maker's Blog:https://blog.naver.com/breeze4me/140056743544)
+            else
+            {
+                KBD_HIJACKER.pressandreleaseKey(KEY_SCROLL_LOCK); // For, Update ScrollLock state with THE LATEST
+                delay(77); KBD_HIJACKER.syncToggleKeyStates();
+
+                if(!KBD_HIJACKER.getStateScrollLockToggle())
+                {
+                    bool stateBeforeReverse = KBD_HIJACKER.getStateScrollLockToggle();
+
+                    KBD_HIJACKER.pressandreleaseKey(KEY_SCROLL_LOCK); // For, Monitor the changes in the ScrollLock state
+                    delay(77); KBD_HIJACKER.syncToggleKeyStates();
+
+                    bool stateAfterReverse  = KBD_HIJACKER.getStateScrollLockToggle();
+
+                    // Switch KorEng state, If the KorEngStatus.exe's feature that reflects the KORENG state on the ScrollLock state is running
+                    if(stateBeforeReverse == stateAfterReverse)
+                        KBD_HIJACKER.pressandreleaseKey(KEY_KORENG);
+                }
+                // rollback ScrollLock state
+                else
+                    KBD_HIJACKER.pressandreleaseKey(KEY_SCROLL_LOCK); // For, Rollback ScrollLock's state
+            }
+
+
+            KBD_HIJACKER.reserveSyncToggleKeyStates();
+            isActivatedKeyEvent=false; key=0;
         }
+
+        return;
     }
+
 
 
     if(!KoreanKeypadToggle)
         return;
+
 
 
     switch(key)
@@ -248,14 +762,13 @@ inline void MODULE_KOREAN_KEYPAD_EVOLUTION()
             if(event){
                 KORPAD_resetConfirmedInputs();
     
-                KBD_Hijacker.pressandreleaseKey(KEY_F2);
-                delay(11);
-                KBD_Hijacker.pressandreleaseShortcutKey( {KEY_CTRL,KEY_C} );
+                KBD_HIJACKER.pressandreleaseKey(KEY_F2); delay(11);
+                KBD_HIJACKER.pressandreleaseMultiKey( {KEY_CTRL,KEY_C} );
             }
             else if(MILLIS_FROM_PRESSED_UNTIL_RELEASE > 400){
-                KBD_Hijacker.pressandreleaseShortcutKey( {KEY_CTRL,KEY_F} );
+                KBD_HIJACKER.pressandreleaseMultiKey( {KEY_CTRL,KEY_F} );
             }
-            isActivateKeyEvent=false; key=0;
+            isActivatedKeyEvent=false; key=0;
         }
         break;
 
@@ -264,14 +777,13 @@ inline void MODULE_KOREAN_KEYPAD_EVOLUTION()
             if(event){
                 KORPAD_resetConfirmedInputs();
     
-                KBD_Hijacker.pressandreleaseKey(KEY_F2);
-                delay(11);
-                KBD_Hijacker.pressandreleaseShortcutKey( {KEY_CTRL,KEY_V} );
+                KBD_HIJACKER.pressandreleaseKey(KEY_F2); delay(11);
+                KBD_HIJACKER.pressandreleaseMultiKey( {KEY_CTRL,KEY_V} );
             }
             else if(MILLIS_FROM_PRESSED_UNTIL_RELEASE > 400){
-                KBD_Hijacker.pressandreleaseShortcutKey( {KEY_CTRL,KEY_H} );
+                KBD_HIJACKER.pressandreleaseMultiKey( {KEY_CTRL,KEY_H} );
             }
-            isActivateKeyEvent=false; key=0;
+            isActivatedKeyEvent=false; key=0;
         }
         break;
 
@@ -280,15 +792,15 @@ inline void MODULE_KOREAN_KEYPAD_EVOLUTION()
             if(event){
                 KORPAD_resetConfirmedInputs();
     
-                KBD_Hijacker.pressandreleaseShortcutKey( {KEY_SHIFT,KEY_LEFT_ARROW} );
+                KBD_HIJACKER.pressandreleaseMultiKey( {KEY_SHIFT,KEY_LEFT_ARROW} );
             }
-            else if(MILLIS_FROM_PRESSED_UNTIL_RELEASE > 1600){
-                KBD_Hijacker.pressandreleaseShortcutKey( {KEY_CTRL,KEY_A} );
+            else if(MILLIS_FROM_PRESSED_UNTIL_RELEASE > 1000){
+                KBD_HIJACKER.pressandreleaseMultiKey( {KEY_CTRL,KEY_A} );
             }
             else if(MILLIS_FROM_PRESSED_UNTIL_RELEASE > 400){
-                KBD_Hijacker.pressandreleaseShortcutKey( {KEY_CTRL,KEY_Z} );
+                KBD_HIJACKER.pressandreleaseMultiKey( {KEY_CTRL,KEY_Z} );
             }
-            isActivateKeyEvent=false; key=0;
+            isActivatedKeyEvent=false; key=0;
         }
         break;
 
@@ -297,6 +809,9 @@ inline void MODULE_KOREAN_KEYPAD_EVOLUTION()
             if(event){
                 KORPAD_undoConfirmedInputs();
             }
+            else if(MILLIS_FROM_PRESSED_UNTIL_RELEASE > 400){
+                KORPAD_resetConfirmedInputs();
+            }
             key = KEY_BACKSPACE;
         }
         break;
@@ -304,606 +819,10 @@ inline void MODULE_KOREAN_KEYPAD_EVOLUTION()
         case KEYPAD_PLUS:
         {
             if(event){
-                KORPAD_resetConfirmedInputs(); strcpy(KorSlot0," ");
+                KORPAD_resetConfirmedInputs();
+                fillWith(KorSlot0," ");
             }
             key = KEY_SPACE;
-        }
-        break;
-        
-        case KEYPAD_ENTER:
-        {
-            if(event){
-                // whether ConvertMode_Alphabet ON or OFF
-                if(strcmp(KorSlot0," ")==0){
-                    KBD_Hijacker.pressandreleaseKey(KEY_BACKSPACE);
-                    KBD_Hijacker.pressandreleaseShortcutKey( {KEY_SHIFT,KEY_ENTER} );
-                    KORPAD_resetConfirmedInputs();
-                }
-
-                // ConvertMode_Alphabet OFF only
-                else if(!ConvertMode_Alphabet){
-                    KBD_Hijacker.pressandreleaseKey(KEY_ENTER);
-                    KORPAD_resetConfirmedInputs();
-                }
-                
-                // ConvertMode_Alphabet ON only
-                else{
-                    if          (KORPAD_isAlphabetPronounce("d","o","d","l")||                  // convert Alphabet's Hangle pronounce to Alphabet
-                                 KORPAD_isAlphabetPronounce("d","p","d","l")){
-                        KBD_Hijacker.pressandreleaseKey(KEY_SPACE); KBD_Hijacker.pressandreleaseKey(KEY_BACKSPACE);
-                        KBD_Hijacker.pressandreleaseKey(KEY_BACKSPACE); KBD_Hijacker.pressandreleaseKey(KEY_BACKSPACE);
-                        KORPAD_writeAlphabet('a');
-                        KORPAD_resetConfirmedInputs();
-                        strcpy(KorSlot0,"*a");
-                    } else if   (KORPAD_isAlphabetPronounce("d","p","v","m")){
-                        KBD_Hijacker.pressandreleaseKey(KEY_SPACE); KBD_Hijacker.pressandreleaseKey(KEY_BACKSPACE);
-                        KBD_Hijacker.pressandreleaseKey(KEY_BACKSPACE); KBD_Hijacker.pressandreleaseKey(KEY_BACKSPACE);
-                        KORPAD_writeAlphabet('f');
-                        KORPAD_resetConfirmedInputs();
-                        strcpy(KorSlot0,"*f");
-                    } else if   (KORPAD_isAlphabetPronounce("d","l","c","l")){
-                        KBD_Hijacker.pressandreleaseKey(KEY_SPACE); KBD_Hijacker.pressandreleaseKey(KEY_BACKSPACE);
-                        KBD_Hijacker.pressandreleaseKey(KEY_BACKSPACE); KBD_Hijacker.pressandreleaseKey(KEY_BACKSPACE); KBD_Hijacker.pressandreleaseKey(KEY_BACKSPACE);
-                        KORPAD_writeAlphabet('h');
-                        KORPAD_resetConfirmedInputs();
-                        strcpy(KorSlot0,"*h");
-                    } else if   (KORPAD_isAlphabetPronounce("d","p","c","l")){
-                        KBD_Hijacker.pressandreleaseKey(KEY_SPACE); KBD_Hijacker.pressandreleaseKey(KEY_BACKSPACE);
-                        KBD_Hijacker.pressandreleaseKey(KEY_BACKSPACE); KBD_Hijacker.pressandreleaseKey(KEY_BACKSPACE);
-                        KORPAD_writeAlphabet('h');
-                        KORPAD_resetConfirmedInputs();
-                        strcpy(KorSlot0,"*h");
-                    } else if   (KORPAD_isAlphabetPronounce("d","k","d","l")){
-                        KBD_Hijacker.pressandreleaseKey(KEY_SPACE); KBD_Hijacker.pressandreleaseKey(KEY_BACKSPACE);
-                        KBD_Hijacker.pressandreleaseKey(KEY_BACKSPACE); KBD_Hijacker.pressandreleaseKey(KEY_BACKSPACE);
-                        KORPAD_writeAlphabet('i');
-                        KORPAD_resetConfirmedInputs();
-                        strcpy(KorSlot0,"*i");
-                    } else if   (KORPAD_isAlphabetPronounce("w","p","d","l")){
-                        KBD_Hijacker.pressandreleaseKey(KEY_SPACE); KBD_Hijacker.pressandreleaseKey(KEY_BACKSPACE);
-                        KBD_Hijacker.pressandreleaseKey(KEY_BACKSPACE); KBD_Hijacker.pressandreleaseKey(KEY_BACKSPACE);
-                        KORPAD_writeAlphabet('j');
-                        KORPAD_resetConfirmedInputs();
-                        strcpy(KorSlot0,"*j");
-                    } else if   (KORPAD_isAlphabetPronounce("z","p","d","l")){
-                        KBD_Hijacker.pressandreleaseKey(KEY_SPACE); KBD_Hijacker.pressandreleaseKey(KEY_BACKSPACE);
-                        KBD_Hijacker.pressandreleaseKey(KEY_BACKSPACE); KBD_Hijacker.pressandreleaseKey(KEY_BACKSPACE);
-                        KORPAD_writeAlphabet('k');
-                        KORPAD_resetConfirmedInputs();
-                        strcpy(KorSlot0,"*k");
-                    } else if   (KORPAD_isAlphabetPronounce("d","p","t","m")){
-                        KBD_Hijacker.pressandreleaseKey(KEY_SPACE); KBD_Hijacker.pressandreleaseKey(KEY_BACKSPACE);
-                        KBD_Hijacker.pressandreleaseKey(KEY_BACKSPACE); KBD_Hijacker.pressandreleaseKey(KEY_BACKSPACE);
-                        KORPAD_writeAlphabet('s');
-                        KORPAD_resetConfirmedInputs();
-                        strcpy(KorSlot0,"*s");
-                    } else if   (KORPAD_isAlphabetPronounce("q","m","d","l")){
-                        KBD_Hijacker.pressandreleaseKey(KEY_SPACE); KBD_Hijacker.pressandreleaseKey(KEY_BACKSPACE);
-                        KBD_Hijacker.pressandreleaseKey(KEY_BACKSPACE); KBD_Hijacker.pressandreleaseKey(KEY_BACKSPACE);
-                        KORPAD_writeAlphabet('v');
-                        KORPAD_resetConfirmedInputs();
-                        strcpy(KorSlot0,"*v");
-                    } else if   (KORPAD_isAlphabetPronounce("m","f","d","b")||
-                                 KORPAD_isAlphabetPronounce("m","f","f","b")){
-                        KBD_Hijacker.pressandreleaseKey(KEY_SPACE); KBD_Hijacker.pressandreleaseKey(KEY_BACKSPACE);
-                        KBD_Hijacker.pressandreleaseKey(KEY_BACKSPACE); KBD_Hijacker.pressandreleaseKey(KEY_BACKSPACE); KBD_Hijacker.pressandreleaseKey(KEY_BACKSPACE);
-                        KORPAD_writeAlphabet('w');
-                        KORPAD_resetConfirmedInputs();
-                        strcpy(KorSlot0,"*w");
-                    } else if   (KORPAD_isAlphabetPronounce("e","j","q","b")||
-                                 KORPAD_isAlphabetPronounce("E","j","q","b")){
-                        KBD_Hijacker.pressandreleaseKey(KEY_SPACE); KBD_Hijacker.pressandreleaseKey(KEY_BACKSPACE);
-                        KBD_Hijacker.pressandreleaseKey(KEY_BACKSPACE); KBD_Hijacker.pressandreleaseKey(KEY_BACKSPACE);
-                        KORPAD_writeAlphabet('w');
-                        KORPAD_resetConfirmedInputs();
-                        strcpy(KorSlot0,"*w");
-                    } else if   (KORPAD_isAlphabetPronounce("o","r","t","m")||
-                                 KORPAD_isAlphabetPronounce("p","r","t","m")){
-                        KBD_Hijacker.pressandreleaseKey(KEY_SPACE); KBD_Hijacker.pressandreleaseKey(KEY_BACKSPACE);
-                        KBD_Hijacker.pressandreleaseKey(KEY_BACKSPACE); KBD_Hijacker.pressandreleaseKey(KEY_BACKSPACE);
-                        KORPAD_writeAlphabet('x');
-                        KORPAD_resetConfirmedInputs();
-                        strcpy(KorSlot0,"*x");
-                    } else if   (KORPAD_isAlphabetPronounce("d","hk","d","l")){
-                        KBD_Hijacker.pressandreleaseKey(KEY_SPACE); KBD_Hijacker.pressandreleaseKey(KEY_BACKSPACE);
-                        KBD_Hijacker.pressandreleaseKey(KEY_BACKSPACE); KBD_Hijacker.pressandreleaseKey(KEY_BACKSPACE);
-                        KORPAD_writeAlphabet('y');
-                        KORPAD_resetConfirmedInputs();
-                        strcpy(KorSlot0,"*y");
-                    } else if   (KORPAD_isAlphabetPronounce("w","p","x","m")||
-                                 KORPAD_isAlphabetPronounce("W","p","x","m")){
-                        KBD_Hijacker.pressandreleaseKey(KEY_SPACE); KBD_Hijacker.pressandreleaseKey(KEY_BACKSPACE);
-                        KBD_Hijacker.pressandreleaseKey(KEY_BACKSPACE); KBD_Hijacker.pressandreleaseKey(KEY_BACKSPACE);
-                        KORPAD_writeAlphabet('z');
-                        KORPAD_resetConfirmedInputs();
-                        strcpy(KorSlot0,"*z");
-                        
-                    } else if   (KORPAD_isAlphabetPronounce("","","d","k")||
-                                 KORPAD_isAlphabetPronounce("","","d","o")){
-                        KBD_Hijacker.pressandreleaseKey(KEY_SPACE); KBD_Hijacker.pressandreleaseKey(KEY_BACKSPACE);
-                        KBD_Hijacker.pressandreleaseKey(KEY_BACKSPACE);
-                        KORPAD_writeAlphabet('a');
-                        KORPAD_resetConfirmedInputs();
-                        strcpy(KorSlot0,"*a");
-                    } else if   (KORPAD_isAlphabetPronounce("","","q","l")||
-                                 KORPAD_isAlphabetPronounce("","","Q","l")){
-                        KBD_Hijacker.pressandreleaseKey(KEY_SPACE); KBD_Hijacker.pressandreleaseKey(KEY_BACKSPACE);
-                        KBD_Hijacker.pressandreleaseKey(KEY_BACKSPACE);
-                        KORPAD_writeAlphabet('b');
-                        KORPAD_resetConfirmedInputs();
-                        strcpy(KorSlot0,"*b");
-                    } else if   (KORPAD_isAlphabetPronounce("","","t","l")||
-                                 KORPAD_isAlphabetPronounce("","","T","l")||
-                                 KORPAD_isAlphabetPronounce("","","z","m")){
-                        KBD_Hijacker.pressandreleaseKey(KEY_SPACE); KBD_Hijacker.pressandreleaseKey(KEY_BACKSPACE);
-                        KBD_Hijacker.pressandreleaseKey(KEY_BACKSPACE);
-                        KORPAD_writeAlphabet('c');
-                        KORPAD_resetConfirmedInputs();
-                        strcpy(KorSlot0,"*c");
-                    } else if   (KORPAD_isAlphabetPronounce("","","e","l")||
-                                 KORPAD_isAlphabetPronounce("","","e","m")){
-                        KBD_Hijacker.pressandreleaseKey(KEY_SPACE); KBD_Hijacker.pressandreleaseKey(KEY_BACKSPACE);
-                        KBD_Hijacker.pressandreleaseKey(KEY_BACKSPACE);
-                        KORPAD_writeAlphabet('d');
-                        KORPAD_resetConfirmedInputs();
-                        strcpy(KorSlot0,"*d");
-                    } else if   (KORPAD_isAlphabetPronounce("","","d","l")||
-                                 KORPAD_isAlphabetPronounce("","","d","p")||
-                                 KORPAD_isAlphabetPronounce("","","d","m")){
-                        KBD_Hijacker.pressandreleaseKey(KEY_SPACE); KBD_Hijacker.pressandreleaseKey(KEY_BACKSPACE);
-                        KBD_Hijacker.pressandreleaseKey(KEY_BACKSPACE);
-                        KORPAD_writeAlphabet('e');
-                        KORPAD_resetConfirmedInputs();
-                        strcpy(KorSlot0,"*e");
-                    } else if   (KORPAD_isAlphabetPronounce("","d","p","v")||
-                                 KORPAD_isAlphabetPronounce("","","v","m")||
-                                 KORPAD_isAlphabetPronounce("","","Q","m")){
-                        KBD_Hijacker.pressandreleaseKey(KEY_SPACE); KBD_Hijacker.pressandreleaseKey(KEY_BACKSPACE);
-                        KBD_Hijacker.pressandreleaseKey(KEY_BACKSPACE);
-                        KORPAD_writeAlphabet('f');
-                        KORPAD_resetConfirmedInputs();
-                        strcpy(KorSlot0,"*f");
-                    } else if   (KORPAD_isAlphabetPronounce("","","w","nl")||
-                                 KORPAD_isAlphabetPronounce("","","w","l")){
-                        KBD_Hijacker.pressandreleaseKey(KEY_SPACE); KBD_Hijacker.pressandreleaseKey(KEY_BACKSPACE);
-                        KBD_Hijacker.pressandreleaseKey(KEY_BACKSPACE);
-                        KORPAD_writeAlphabet('g');
-                        KORPAD_resetConfirmedInputs();
-                        strcpy(KorSlot0,"*g");
-                    } else if   (KORPAD_isAlphabetPronounce("","","g","l")||
-                                 KORPAD_isAlphabetPronounce("","","g","m")){
-                        KBD_Hijacker.pressandreleaseKey(KEY_SPACE); KBD_Hijacker.pressandreleaseKey(KEY_BACKSPACE);
-                        KBD_Hijacker.pressandreleaseKey(KEY_BACKSPACE);
-                        KORPAD_writeAlphabet('h');
-                        KORPAD_resetConfirmedInputs();
-                        strcpy(KorSlot0,"*h");
-                    } else if   (KORPAD_isAlphabetPronounce("","","w","p")){
-                        KBD_Hijacker.pressandreleaseKey(KEY_SPACE); KBD_Hijacker.pressandreleaseKey(KEY_BACKSPACE);
-                        KBD_Hijacker.pressandreleaseKey(KEY_BACKSPACE);
-                        KORPAD_writeAlphabet('j');
-                        KORPAD_resetConfirmedInputs();
-                        strcpy(KorSlot0,"*j");
-                    } else if   (KORPAD_isAlphabetPronounce("","","z","p")||
-                                 KORPAD_isAlphabetPronounce("","","z","l")){
-                        KBD_Hijacker.pressandreleaseKey(KEY_SPACE); KBD_Hijacker.pressandreleaseKey(KEY_BACKSPACE);
-                        KBD_Hijacker.pressandreleaseKey(KEY_BACKSPACE);
-                        KORPAD_writeAlphabet('k');
-                        KORPAD_resetConfirmedInputs();
-                        strcpy(KorSlot0,"*k");
-                    } else if   (KORPAD_isAlphabetPronounce("","d","p","f")||
-                                 KORPAD_isAlphabetPronounce("","","f","m")){
-                        KBD_Hijacker.pressandreleaseKey(KEY_SPACE); KBD_Hijacker.pressandreleaseKey(KEY_BACKSPACE);
-                        KBD_Hijacker.pressandreleaseKey(KEY_BACKSPACE);
-                        KORPAD_writeAlphabet('l');
-                        KORPAD_resetConfirmedInputs();
-                        strcpy(KorSlot0,"*l");
-                    } else if   (KORPAD_isAlphabetPronounce("","d","o","a")||
-                                 KORPAD_isAlphabetPronounce("","d","p","a")||
-                                 KORPAD_isAlphabetPronounce("","","a","m")){
-                        KBD_Hijacker.pressandreleaseKey(KEY_SPACE); KBD_Hijacker.pressandreleaseKey(KEY_BACKSPACE);
-                        KBD_Hijacker.pressandreleaseKey(KEY_BACKSPACE);
-                        KORPAD_writeAlphabet('m');
-                        KORPAD_resetConfirmedInputs();
-                        strcpy(KorSlot0,"*m");
-                    } else if   (KORPAD_isAlphabetPronounce("","d","o","s")||
-                                 KORPAD_isAlphabetPronounce("","d","p","s")||
-                                 KORPAD_isAlphabetPronounce("","","s","m")){
-                        KBD_Hijacker.pressandreleaseKey(KEY_SPACE); KBD_Hijacker.pressandreleaseKey(KEY_BACKSPACE);
-                        KBD_Hijacker.pressandreleaseKey(KEY_BACKSPACE);
-                        KORPAD_writeAlphabet('n');
-                        KORPAD_resetConfirmedInputs();
-                        strcpy(KorSlot0,"*n");
-                    } else if   (KORPAD_isAlphabetPronounce("","","d","h")){
-                        KBD_Hijacker.pressandreleaseKey(KEY_SPACE); KBD_Hijacker.pressandreleaseKey(KEY_BACKSPACE);
-                        KBD_Hijacker.pressandreleaseKey(KEY_BACKSPACE);
-                        KORPAD_writeAlphabet('o');
-                        KORPAD_resetConfirmedInputs();
-                        strcpy(KorSlot0,"*o");
-                    } else if   (KORPAD_isAlphabetPronounce("","","v","l")){
-                        KBD_Hijacker.pressandreleaseKey(KEY_SPACE); KBD_Hijacker.pressandreleaseKey(KEY_BACKSPACE);
-                        KBD_Hijacker.pressandreleaseKey(KEY_BACKSPACE);
-                        KORPAD_writeAlphabet('p');
-                        KORPAD_resetConfirmedInputs();
-                        strcpy(KorSlot0,"*p");
-                    } else if   (KORPAD_isAlphabetPronounce("","","z","b")||
-                                 KORPAD_isAlphabetPronounce("","","z","n")){
-                        KBD_Hijacker.pressandreleaseKey(KEY_SPACE); KBD_Hijacker.pressandreleaseKey(KEY_BACKSPACE);
-                        KBD_Hijacker.pressandreleaseKey(KEY_BACKSPACE);
-                        KORPAD_writeAlphabet('q');
-                        KORPAD_resetConfirmedInputs();
-                        strcpy(KorSlot0,"*q");
-                    } else if   (KORPAD_isAlphabetPronounce("","d","k","f")||
-                                 KORPAD_isAlphabetPronounce("","d","j","f")||
-                                 KORPAD_isAlphabetPronounce("","","f","l")){
-                        KBD_Hijacker.pressandreleaseKey(KEY_SPACE); KBD_Hijacker.pressandreleaseKey(KEY_BACKSPACE);
-                        KBD_Hijacker.pressandreleaseKey(KEY_BACKSPACE);
-                        KORPAD_writeAlphabet('r');
-                        KORPAD_resetConfirmedInputs();
-                        strcpy(KorSlot0,"*r");
-                    } else if   (KORPAD_isAlphabetPronounce("","","t","m")){
-                        KBD_Hijacker.pressandreleaseKey(KEY_SPACE); KBD_Hijacker.pressandreleaseKey(KEY_BACKSPACE);
-                        KBD_Hijacker.pressandreleaseKey(KEY_BACKSPACE);
-                        KORPAD_writeAlphabet('s');
-                        KORPAD_resetConfirmedInputs();
-                        strcpy(KorSlot0,"*s");
-                    } else if   (KORPAD_isAlphabetPronounce("","","x","l")||
-                                 KORPAD_isAlphabetPronounce("","","x","m")){
-                        KBD_Hijacker.pressandreleaseKey(KEY_SPACE); KBD_Hijacker.pressandreleaseKey(KEY_BACKSPACE);
-                        KBD_Hijacker.pressandreleaseKey(KEY_BACKSPACE);
-                        KORPAD_writeAlphabet('t');
-                        KORPAD_resetConfirmedInputs();
-                        strcpy(KorSlot0,"*t");
-                    } else if   (KORPAD_isAlphabetPronounce("","","d","b")||
-                                 KORPAD_isAlphabetPronounce("","","d","n")||
-                                 KORPAD_isAlphabetPronounce("","","d","j")){
-                        KBD_Hijacker.pressandreleaseKey(KEY_SPACE); KBD_Hijacker.pressandreleaseKey(KEY_BACKSPACE);
-                        KBD_Hijacker.pressandreleaseKey(KEY_BACKSPACE);
-                        KORPAD_writeAlphabet('u');
-                        KORPAD_resetConfirmedInputs();
-                        strcpy(KorSlot0,"*u");
-                    } else if   (KORPAD_isAlphabetPronounce("","","q","ml")||
-                                 KORPAD_isAlphabetPronounce("","","q","m")){
-                        KBD_Hijacker.pressandreleaseKey(KEY_SPACE); KBD_Hijacker.pressandreleaseKey(KEY_BACKSPACE);
-                        KBD_Hijacker.pressandreleaseKey(KEY_BACKSPACE);
-                        KORPAD_writeAlphabet('v');
-                        KORPAD_resetConfirmedInputs();
-                        strcpy(KorSlot0,"*v");
-                    } else if   (KORPAD_isAlphabetPronounce("","E","j","q")){
-                        KBD_Hijacker.pressandreleaseKey(KEY_SPACE); KBD_Hijacker.pressandreleaseKey(KEY_BACKSPACE);
-                        KBD_Hijacker.pressandreleaseKey(KEY_BACKSPACE);
-                        KORPAD_writeAlphabet('w');
-                        KORPAD_resetConfirmedInputs();
-                        strcpy(KorSlot0,"*w");
-                    } else if   (KORPAD_isAlphabetPronounce("","d","o","r")||
-                                 KORPAD_isAlphabetPronounce("","d","p","r")||
-                                 KORPAD_isAlphabetPronounce("","","T","m")){
-                        KBD_Hijacker.pressandreleaseKey(KEY_SPACE); KBD_Hijacker.pressandreleaseKey(KEY_BACKSPACE);
-                        KBD_Hijacker.pressandreleaseKey(KEY_BACKSPACE);
-                        KORPAD_writeAlphabet('x');
-                        KORPAD_resetConfirmedInputs();
-                        strcpy(KorSlot0,"*x");
-                    } else if   (KORPAD_isAlphabetPronounce("","","d","i")||
-                                 KORPAD_isAlphabetPronounce("","","d","u")||
-                                 KORPAD_isAlphabetPronounce("","","d","y")||
-                                 KORPAD_isAlphabetPronounce("","","d","hk")){
-                        KBD_Hijacker.pressandreleaseKey(KEY_SPACE); KBD_Hijacker.pressandreleaseKey(KEY_BACKSPACE);
-                        KBD_Hijacker.pressandreleaseKey(KEY_BACKSPACE);
-                        KORPAD_writeAlphabet('y');
-                        KORPAD_resetConfirmedInputs();
-                        strcpy(KorSlot0,"*y");
-                    } else if   (KORPAD_isAlphabetPronounce("","w","p","t")||
-                                 KORPAD_isAlphabetPronounce("","","w","ml")||
-                                 KORPAD_isAlphabetPronounce("","","w","m")||
-                                 KORPAD_isAlphabetPronounce("","","W","m")){
-                        KBD_Hijacker.pressandreleaseKey(KEY_SPACE); KBD_Hijacker.pressandreleaseKey(KEY_BACKSPACE);
-                        KBD_Hijacker.pressandreleaseKey(KEY_BACKSPACE);
-                        KORPAD_writeAlphabet('z');
-                        KORPAD_resetConfirmedInputs();
-                        strcpy(KorSlot0,"*z");
-                        
-                    } else if   (strcmp(KorSlot0,"r")==0){                                      // convert Hangle Consonant to Alphabet
-                        KORPAD_updateConfirmedInputs(); strcpy(KorSlot2,"");
-                        KBD_Hijacker.pressandreleaseKey(KEY_BACKSPACE);
-                        KORPAD_writeAlphabet('g');
-                        strcpy(KorSlot0,"*g");
-                    } else if   (strcmp(KorSlot1,"r")==0 && strcmp(KorSlot0,"*g")==0){
-                        KBD_Hijacker.pressandreleaseKey(KEY_BACKSPACE);
-                        Keyboard.write ('r');
-                        strcpy(KorSlot0,"r");
-    
-                    } else if   (strcmp(KorSlot0,"s")==0){
-                        KORPAD_updateConfirmedInputs(); strcpy(KorSlot2,"");
-                        KBD_Hijacker.pressandreleaseKey(KEY_BACKSPACE);
-                        KORPAD_writeAlphabet('n');
-                        strcpy(KorSlot0,"*n");
-                    } else if   (strcmp(KorSlot1,"s")==0 && strcmp(KorSlot0,"*n")==0){
-                        KBD_Hijacker.pressandreleaseKey(KEY_BACKSPACE);
-                        Keyboard.write ('s');
-                        strcpy(KorSlot0,"s");
-    
-                    } else if   (strcmp(KorSlot0,"e")==0){
-                        KORPAD_updateConfirmedInputs(); strcpy(KorSlot2,"");
-                        KBD_Hijacker.pressandreleaseKey(KEY_BACKSPACE);
-                        KORPAD_writeAlphabet('d');
-                        strcpy(KorSlot0,"*d");
-                    } else if   (strcmp(KorSlot1,"e")==0 && strcmp(KorSlot0,"*d")==0){
-                        KBD_Hijacker.pressandreleaseKey(KEY_BACKSPACE);
-                        Keyboard.write ('e');
-                        strcpy(KorSlot0,"e");
-    
-                    } else if   (strcmp(KorSlot0,"f")==0){
-                        KORPAD_updateConfirmedInputs(); strcpy(KorSlot2,"");
-                        KBD_Hijacker.pressandreleaseKey(KEY_BACKSPACE);
-                        KORPAD_writeAlphabet('l');
-                        strcpy(KorSlot0,"*l");
-                    } else if   (strcmp(KorSlot1,"f")==0 && strcmp(KorSlot0,"*l")==0){
-                        KBD_Hijacker.pressandreleaseKey(KEY_BACKSPACE);
-                        KORPAD_writeAlphabet('r');
-                        strcpy(KorSlot0,"*r");
-                    } else if   (strcmp(KorSlot1,"f")==0 && strcmp(KorSlot0,"*r")==0){
-                        KBD_Hijacker.pressandreleaseKey(KEY_BACKSPACE);
-                        Keyboard.write ('f');
-                        strcpy(KorSlot0,"f");
-    
-                    } else if   (strcmp(KorSlot0,"a")==0){
-                        KORPAD_updateConfirmedInputs(); strcpy(KorSlot2,"");
-                        KBD_Hijacker.pressandreleaseKey(KEY_BACKSPACE);
-                        KORPAD_writeAlphabet('m');
-                        strcpy(KorSlot0,"*m");
-                    } else if   (strcmp(KorSlot1,"a")==0 && strcmp(KorSlot0,"*m")==0){
-                        KBD_Hijacker.pressandreleaseKey(KEY_BACKSPACE);
-                        Keyboard.write ('a');
-                        strcpy(KorSlot0,"a");
-    
-                    } else if   (strcmp(KorSlot0,"q")==0){
-                        KORPAD_updateConfirmedInputs(); strcpy(KorSlot2,"");
-                        KBD_Hijacker.pressandreleaseKey(KEY_BACKSPACE);
-                        KORPAD_writeAlphabet('b');
-                        strcpy(KorSlot0,"*b");
-                    } else if   (strcmp(KorSlot1,"q")==0 && strcmp(KorSlot0,"*b")==0){
-                        KBD_Hijacker.pressandreleaseKey(KEY_BACKSPACE);
-                        KORPAD_writeAlphabet('v');
-                        strcpy(KorSlot0,"*v");
-                    } else if   (strcmp(KorSlot1,"q")==0 && strcmp(KorSlot0,"*v")==0){
-                        KBD_Hijacker.pressandreleaseKey(KEY_BACKSPACE);
-                        Keyboard.write ('q');
-                        strcpy(KorSlot0,"q");
-    
-                    } else if   (strcmp(KorSlot0,"t")==0){
-                        KORPAD_updateConfirmedInputs(); strcpy(KorSlot2,"");
-                        KBD_Hijacker.pressandreleaseKey(KEY_BACKSPACE);
-                        KORPAD_writeAlphabet('s');
-                        strcpy(KorSlot0,"*s");
-                    } else if   (strcmp(KorSlot1,"t")==0 && strcmp(KorSlot0,"*s")==0){
-                        KBD_Hijacker.pressandreleaseKey(KEY_BACKSPACE);
-                        KORPAD_writeAlphabet('c');
-                        strcpy(KorSlot0,"*c");
-                    } else if   (strcmp(KorSlot1,"t")==0 && strcmp(KorSlot0,"*c")==0){
-                        KBD_Hijacker.pressandreleaseKey(KEY_BACKSPACE);
-                        KORPAD_writeAlphabet('x');
-                        strcpy(KorSlot0,"*x");
-                    } else if   (strcmp(KorSlot1,"t")==0 && strcmp(KorSlot0,"*x")==0){
-                        KBD_Hijacker.pressandreleaseKey(KEY_BACKSPACE);
-                        Keyboard.write ('t');
-                        strcpy(KorSlot0,"t");
-    
-                    } else if   (strcmp(KorSlot0,"T")==0){
-                        KORPAD_updateConfirmedInputs(); strcpy(KorSlot2,"");
-                        KBD_Hijacker.pressandreleaseKey(KEY_BACKSPACE);
-                        KORPAD_writeAlphabet('c');
-                        strcpy(KorSlot0,"*c");
-                    } else if   (strcmp(KorSlot1,"T")==0 && strcmp(KorSlot0,"*c")==0){
-                        KBD_Hijacker.pressandreleaseKey(KEY_BACKSPACE);
-                        KORPAD_writeAlphabet('x');
-                        strcpy(KorSlot0,"*x");
-                    } else if   (strcmp(KorSlot1,"T")==0 && strcmp(KorSlot0,"*x")==0){
-                        KBD_Hijacker.pressandreleaseKey(KEY_BACKSPACE);
-                        Keyboard.write ('T');
-                        strcpy(KorSlot0,"T");
-    
-                    } else if   (strcmp(KorSlot0,"d")==0){
-                        KORPAD_updateConfirmedInputs(); strcpy(KorSlot2,"");
-                        KBD_Hijacker.pressandreleaseKey(KEY_BACKSPACE);
-                        KORPAD_writeAlphabet('n'); KORPAD_writeAlphabet('g');
-                        strcpy(KorSlot0,"*~");
-                    } else if   (strcmp(KorSlot1,"d")==0 && strcmp(KorSlot0,"*~")==0){
-                        KBD_Hijacker.pressandreleaseKey(KEY_BACKSPACE); KBD_Hijacker.pressandreleaseKey(KEY_BACKSPACE);
-                        Keyboard.write ('d');
-                        strcpy(KorSlot0,"d");
-    
-                    } else if   (strcmp(KorSlot0,"w")==0){
-                        KORPAD_updateConfirmedInputs(); strcpy(KorSlot2,"");
-                        KBD_Hijacker.pressandreleaseKey(KEY_BACKSPACE);
-                        KORPAD_writeAlphabet('j');
-                        strcpy(KorSlot0,"*j");
-                    } else if   (strcmp(KorSlot1,"w")==0 && strcmp(KorSlot0,"*j")==0){
-                        KBD_Hijacker.pressandreleaseKey(KEY_BACKSPACE);
-                        KORPAD_writeAlphabet('g');
-                        strcpy(KorSlot0,"*g");
-                    } else if   (strcmp(KorSlot1,"w")==0 && strcmp(KorSlot0,"*g")==0){
-                        KBD_Hijacker.pressandreleaseKey(KEY_BACKSPACE);
-                        KORPAD_writeAlphabet('z');
-                        strcpy(KorSlot0,"*z");
-                    } else if   (strcmp(KorSlot1,"w")==0 && strcmp(KorSlot0,"*z")==0){
-                        KBD_Hijacker.pressandreleaseKey(KEY_BACKSPACE);
-                        Keyboard.write ('w');
-                        strcpy(KorSlot0,"w");
-    
-                    } else if   (strcmp(KorSlot0,"c")==0){
-                        KORPAD_updateConfirmedInputs(); strcpy(KorSlot2,"");
-                        KBD_Hijacker.pressandreleaseKey(KEY_BACKSPACE);
-                        KORPAD_writeAlphabet('c'); KORPAD_writeAlphabet('h');
-                        strcpy(KorSlot0,"*!");
-                    } else if   (strcmp(KorSlot1,"c")==0 && strcmp(KorSlot0,"*!")==0){
-                        KBD_Hijacker.pressandreleaseKey(KEY_BACKSPACE); KBD_Hijacker.pressandreleaseKey(KEY_BACKSPACE);
-                        Keyboard.write ('c');
-                        strcpy(KorSlot0,"c");
-    
-                    } else if   (strcmp(KorSlot0,"z")==0){
-                        KORPAD_updateConfirmedInputs(); strcpy(KorSlot2,"");
-                        KBD_Hijacker.pressandreleaseKey(KEY_BACKSPACE);
-                        KORPAD_writeAlphabet('c');
-                        strcpy(KorSlot0,"*c");
-                    } else if   (strcmp(KorSlot1,"z")==0 && strcmp(KorSlot0,"*c")==0){
-                        KBD_Hijacker.pressandreleaseKey(KEY_BACKSPACE);
-                        KORPAD_writeAlphabet('k');
-                        strcpy(KorSlot0,"*k");
-                    } else if   (strcmp(KorSlot1,"z")==0 && strcmp(KorSlot0,"*k")==0){
-                        KBD_Hijacker.pressandreleaseKey(KEY_BACKSPACE);
-                        KORPAD_writeAlphabet('q');
-                        strcpy(KorSlot0,"*q");
-                    } else if   (strcmp(KorSlot1,"z")==0 && strcmp(KorSlot0,"*q")==0){
-                        KBD_Hijacker.pressandreleaseKey(KEY_BACKSPACE);
-                        KORPAD_writeAlphabet('x');
-                        strcpy(KorSlot0,"*x");
-                    } else if   (strcmp(KorSlot1,"z")==0 && strcmp(KorSlot0,"*x")==0){
-                        KBD_Hijacker.pressandreleaseKey(KEY_BACKSPACE);
-                        Keyboard.write ('z');
-                        strcpy(KorSlot0,"z");
-    
-                    } else if   (strcmp(KorSlot0,"x")==0){
-                        KORPAD_updateConfirmedInputs(); strcpy(KorSlot2,"");
-                        KBD_Hijacker.pressandreleaseKey(KEY_BACKSPACE);
-                        KORPAD_writeAlphabet('t');
-                        strcpy(KorSlot0,"*t");
-                    } else if   (strcmp(KorSlot1,"x")==0 && strcmp(KorSlot0,"*t")==0){
-                        KBD_Hijacker.pressandreleaseKey(KEY_BACKSPACE);
-                        Keyboard.write ('x');
-                        strcpy(KorSlot0,"x");
-    
-                    } else if   (strcmp(KorSlot0,"v")==0){
-                        KORPAD_updateConfirmedInputs(); strcpy(KorSlot2,"");
-                        KBD_Hijacker.pressandreleaseKey(KEY_BACKSPACE);
-                        KORPAD_writeAlphabet('f');
-                        strcpy(KorSlot0,"*f");
-                    } else if   (strcmp(KorSlot1,"v")==0 && strcmp(KorSlot0,"*f")==0){
-                        KBD_Hijacker.pressandreleaseKey(KEY_BACKSPACE);
-                        KORPAD_writeAlphabet('p');
-                        strcpy(KorSlot0,"*p");
-                    } else if   (strcmp(KorSlot1,"v")==0 && strcmp(KorSlot0,"*p")==0){
-                        KBD_Hijacker.pressandreleaseKey(KEY_BACKSPACE);
-                        Keyboard.write ('v');
-                        strcpy(KorSlot0,"v");
-    
-                    } else if   (strcmp(KorSlot0,"g")==0){
-                        KORPAD_updateConfirmedInputs(); strcpy(KorSlot2,"");
-                        KBD_Hijacker.pressandreleaseKey(KEY_BACKSPACE);
-                        KORPAD_writeAlphabet('h');
-                        strcpy(KorSlot0,"*h");
-                    } else if   (strcmp(KorSlot1,"g")==0 && strcmp(KorSlot0,"*h")==0){
-                        KBD_Hijacker.pressandreleaseKey(KEY_BACKSPACE);
-                        Keyboard.write ('g');
-                        strcpy(KorSlot0,"g");
-
-                    } else if   (strcmp(KorSlot0,"k")==0 || strcmp(KorSlot0,"o")==0){             // convert Hangle Vowel to Alphabet
-                        KORPAD_updateConfirmedInputs(); strcpy(KorSlot2,"");
-                        KBD_Hijacker.pressandreleaseKey(KEY_BACKSPACE);
-                        KORPAD_writeAlphabet('a');
-                        strcpy(KorSlot0,"*a");
-                    } else if   (strcmp(KorSlot1,"k")==0 && strcmp(KorSlot0,"*a")==0){
-                        KBD_Hijacker.pressandreleaseKey(KEY_BACKSPACE);
-                        Keyboard.write ('k');
-                        strcpy(KorSlot0,"k");
-                    } else if   (strcmp(KorSlot1,"o")==0 && strcmp(KorSlot0,"*a")==0){
-                        KBD_Hijacker.pressandreleaseKey(KEY_BACKSPACE);
-                        Keyboard.write ('o');
-                        strcpy(KorSlot0,"o");
-    
-                    } else if   (strcmp(KorSlot0,"j")==0 || strcmp(KorSlot0,"p")==0){
-                        KORPAD_updateConfirmedInputs(); strcpy(KorSlot2,"");
-                        KBD_Hijacker.pressandreleaseKey(KEY_BACKSPACE);
-                        KORPAD_writeAlphabet('e');
-                        strcpy(KorSlot0,"*e");
-                    } else if   (strcmp(KorSlot1,"j")==0 && strcmp(KorSlot0,"*e")==0){
-                        KBD_Hijacker.pressandreleaseKey(KEY_BACKSPACE);
-                        Keyboard.write ('j');
-                        strcpy(KorSlot0,"j");
-                    } else if   (strcmp(KorSlot1,"p")==0 && strcmp(KorSlot0,"*e")==0){
-                        KBD_Hijacker.pressandreleaseKey(KEY_BACKSPACE);
-                        Keyboard.write ('p');
-                        strcpy(KorSlot0,"p");
-    
-                    } else if   (strcmp(KorSlot0,"h")==0){
-                        KORPAD_updateConfirmedInputs(); strcpy(KorSlot2,"");
-                        KBD_Hijacker.pressandreleaseKey(KEY_BACKSPACE);
-                        KORPAD_writeAlphabet('o');
-                        strcpy(KorSlot0,"*o");
-                    } else if   (strcmp(KorSlot1,"h")==0 && strcmp(KorSlot0,"*o")==0){
-                        KBD_Hijacker.pressandreleaseKey(KEY_BACKSPACE);
-                        Keyboard.write ('h');
-                        strcpy(KorSlot0,"h");
-    
-                    } else if   (strcmp(KorSlot0,"n")==0){
-                        KORPAD_updateConfirmedInputs(); strcpy(KorSlot2,"");
-                        KBD_Hijacker.pressandreleaseKey(KEY_BACKSPACE);
-                        KORPAD_writeAlphabet('u');
-                        strcpy(KorSlot0,"*u");
-                    } else if   (strcmp(KorSlot1,"n")==0 && strcmp(KorSlot0,"*u")==0){
-                        KBD_Hijacker.pressandreleaseKey(KEY_BACKSPACE);
-                        KORPAD_writeAlphabet('o'); KORPAD_writeAlphabet('o');
-                        strcpy(KorSlot0,"*@");
-                    } else if   (strcmp(KorSlot1,"n")==0 && strcmp(KorSlot0,"*@")==0){
-                        KBD_Hijacker.pressandreleaseKey(KEY_BACKSPACE); KBD_Hijacker.pressandreleaseKey(KEY_BACKSPACE);
-                        Keyboard.write ('n');
-                        strcpy(KorSlot0,"n");
-    
-                    } else if   (strcmp(KorSlot0,"u")==0 || strcmp(KorSlot0,"i")==0 || strcmp(KorSlot0,"y")==0){
-                        KORPAD_updateConfirmedInputs(); strcpy(KorSlot2,"");
-                        KBD_Hijacker.pressandreleaseKey(KEY_BACKSPACE);
-                        KORPAD_writeAlphabet('y');
-                        strcpy(KorSlot0,"*y");
-                    } else if   (strcmp(KorSlot1,"u")==0 && strcmp(KorSlot0,"*y")==0){
-                        KBD_Hijacker.pressandreleaseKey(KEY_BACKSPACE);
-                        Keyboard.write ('u');
-                        strcpy(KorSlot0,"u");
-                    } else if   (strcmp(KorSlot1,"i")==0 && strcmp(KorSlot0,"*y")==0){
-                        KBD_Hijacker.pressandreleaseKey(KEY_BACKSPACE);
-                        Keyboard.write ('i');
-                        strcpy(KorSlot0,"i");
-                    } else if   (strcmp(KorSlot1,"y")==0 && strcmp(KorSlot0,"*y")==0){
-                        KBD_Hijacker.pressandreleaseKey(KEY_BACKSPACE);
-                        Keyboard.write ('y');
-                        strcpy(KorSlot0,"y");
-    
-                    } else if   (strcmp(KorSlot0,"b")==0){
-                        KORPAD_updateConfirmedInputs(); strcpy(KorSlot2,"");
-                        KBD_Hijacker.pressandreleaseKey(KEY_BACKSPACE);
-                        KORPAD_writeAlphabet('w');
-                        strcpy(KorSlot0,"*w");
-                    } else if   (strcmp(KorSlot1,"b")==0 && strcmp(KorSlot0,"*w")==0){
-                        KBD_Hijacker.pressandreleaseKey(KEY_BACKSPACE);
-                        Keyboard.write ('b');
-                        strcpy(KorSlot0,"b");
-    
-                    } else if   (strcmp(KorSlot0,"l")==0){
-                        KORPAD_updateConfirmedInputs(); strcpy(KorSlot2,"");
-                        KBD_Hijacker.pressandreleaseKey(KEY_BACKSPACE);
-                        KORPAD_writeAlphabet('i');
-                        strcpy(KorSlot0,"*i");
-                    } else if   (strcmp(KorSlot1,"l")==0 && strcmp(KorSlot0,"*i")==0){
-                        KBD_Hijacker.pressandreleaseKey(KEY_BACKSPACE);
-                        KORPAD_writeAlphabet('e');
-                        strcpy(KorSlot0,"*e");
-                    } else if   (strcmp(KorSlot1,"l")==0 && strcmp(KorSlot0,"*e")==0){
-                        KBD_Hijacker.pressandreleaseKey(KEY_BACKSPACE);
-                        Keyboard.write ('l');
-                        strcpy(KorSlot0,"l");
-    
-                    } else if   (strcmp(KorSlot0,"hk")==0){
-                        KORPAD_updateConfirmedInputs(); strcpy(KorSlot2,"");
-                        KBD_Hijacker.pressandreleaseKey(KEY_BACKSPACE);
-                        KBD_Hijacker.pressandreleaseKey(KEY_BACKSPACE);
-                        KORPAD_writeAlphabet('w');
-                        KORPAD_writeAlphabet('a');
-                        strcpy(KorSlot0,"*#");
-                    } else if   (strcmp(KorSlot1,"hk")==0 && strcmp(KorSlot0,"*#")==0){
-                        KBD_Hijacker.pressandreleaseKey(KEY_BACKSPACE); KBD_Hijacker.pressandreleaseKey(KEY_BACKSPACE);
-                        Keyboard.write ('h'); Keyboard.write ('k');
-                        strcpy(KorSlot0,"hk");
-                    }
-                }
-            }
-            isActivateKeyEvent=false; key=0;
         }
         break;
 
@@ -912,1413 +831,1269 @@ inline void MODULE_KOREAN_KEYPAD_EVOLUTION()
         /* ------------------------------------------------ KEYPAD_KOREAN_LAYOUT1 CheonJiIn ------------------------------------------------ */
         #if (KEYPAD_KOREAN_LAYOUT == 1)
 
-        case KEYPAD_4:
-        {
-            if(event){
-                if       (strcmp(KorSlot0,"r")==0){
-                    KBD_Hijacker.pressandreleaseKey(KEY_BACKSPACE);
-                    Keyboard.write ('z');
-                    strcpy(KorSlot0,"z");
-                } else if(strcmp(KorSlot0,"z")==0){
-                    KBD_Hijacker.pressandreleaseKey(KEY_BACKSPACE);
-                    Keyboard.write ('R');
-                    strcpy(KorSlot0,"R");
-                } else if(strcmp(KorSlot0,"R")==0){
-                    KBD_Hijacker.pressandreleaseKey(KEY_BACKSPACE);  if(strcmp(KorSlot1,"f")==0){ KORPAD_correctBottomDualConsonantError(); }
-                    Keyboard.write ('r');
-                    strcpy(KorSlot0,"r");
-                } else{
-                    KORPAD_updateConfirmedInputs();
-                    Keyboard.write ('r');
-                    strcpy(KorSlot0,"r");
-                }
-            }
-            else if(MILLIS_FROM_PRESSED_UNTIL_RELEASE > 400){
-                KORPAD_updateConfirmedInputs();
-                KBD_Hijacker.pressandreleaseKey(KEY_BACKSPACE);
-                Keyboard.write ('4');
-                strcpy(KorSlot0,"4");
-            }
-            isActivateKeyEvent=false; key=0;
-        }
-        break;
-
-        case KEYPAD_5:
-        {
-            if(event){
-                if       (strcmp(KorSlot0,"s")==0){
-                    KBD_Hijacker.pressandreleaseKey(KEY_BACKSPACE);
-                    Keyboard.write ('f');
-                    strcpy(KorSlot0,"f");
-                } else if(strcmp(KorSlot0,"f")==0){
-                    KBD_Hijacker.pressandreleaseKey(KEY_BACKSPACE);
-                    Keyboard.write ('s');
-                    strcpy(KorSlot0,"s");
-                } else{
-                    KORPAD_updateConfirmedInputs();
-                    Keyboard.write ('s');
-                    strcpy(KorSlot0,"s");
-                }
-            }
-            else if(MILLIS_FROM_PRESSED_UNTIL_RELEASE > 400){
-                KORPAD_updateConfirmedInputs();
-                KBD_Hijacker.pressandreleaseKey(KEY_BACKSPACE);
-                Keyboard.write ('5');
-                strcpy(KorSlot0,"5");
-            }
-            isActivateKeyEvent=false; key=0;
-        }
-        break;
-
-        case KEYPAD_6:
-        {
-            if(event){
-                if       (strcmp(KorSlot0,"e")==0){
-                    KBD_Hijacker.pressandreleaseKey(KEY_BACKSPACE);  if(strcmp(KorSlot1,"f")==0){ KORPAD_correctBottomDualConsonantError(); }
-                    Keyboard.write ('x');
-                    strcpy(KorSlot0,"x");
-                } else if(strcmp(KorSlot0,"x")==0){
-                    KBD_Hijacker.pressandreleaseKey(KEY_BACKSPACE);
-                    Keyboard.write ('E');
-                    strcpy(KorSlot0,"E");
-                } else if(strcmp(KorSlot0,"E")==0){
-                    KBD_Hijacker.pressandreleaseKey(KEY_BACKSPACE);  KORPAD_correctBottomSingleConsonantError();
-                    Keyboard.write ('e');
-                    strcpy(KorSlot0,"e");
-                } else{
-                    KORPAD_updateConfirmedInputs();
-                    Keyboard.write ('e');
-                    strcpy(KorSlot0,"e");
-                }
-            }
-            else if(MILLIS_FROM_PRESSED_UNTIL_RELEASE > 400){
-                KORPAD_updateConfirmedInputs();
-                KBD_Hijacker.pressandreleaseKey(KEY_BACKSPACE);
-                Keyboard.write ('6');
-                strcpy(KorSlot0,"6");
-            }
-            isActivateKeyEvent=false; key=0;
-        }
-        break;
-
-        case KEYPAD_1:
-        {
-            if(event){
-                if       (strcmp(KorSlot0,"q")==0){
-                    KBD_Hijacker.pressandreleaseKey(KEY_BACKSPACE);
-                    Keyboard.write ('v');
-                    strcpy(KorSlot0,"v");
-                } else if(strcmp(KorSlot0,"v")==0){
-                    KBD_Hijacker.pressandreleaseKey(KEY_BACKSPACE);
-                    Keyboard.write ('Q');
-                    strcpy(KorSlot0,"Q");
-                } else if(strcmp(KorSlot0,"Q")==0){
-                    KBD_Hijacker.pressandreleaseKey(KEY_BACKSPACE);  KORPAD_correctBottomSingleConsonantError();
-                                                        if(strcmp(KorSlot1,"f")==0){ KORPAD_correctBottomDualConsonantError(); }
-                    Keyboard.write ('q');
-                    strcpy(KorSlot0,"q");
-                } else{
-                    KORPAD_updateConfirmedInputs();
-                    Keyboard.write ('q');
-                    strcpy(KorSlot0,"q");
-                }
-            }
-            else if(MILLIS_FROM_PRESSED_UNTIL_RELEASE > 400){
-                KORPAD_updateConfirmedInputs();
-                KBD_Hijacker.pressandreleaseKey(KEY_BACKSPACE);
-                Keyboard.write ('1');
-                strcpy(KorSlot0,"1");
-            }
-            isActivateKeyEvent=false; key=0;
-        }
-        break;
-
-        case KEYPAD_2:
-        {
-            if(event){
-                if       (strcmp(KorSlot0,"t")==0){
-                    KBD_Hijacker.pressandreleaseKey(KEY_BACKSPACE);  if(strcmp(KorSlot1,"s")==0){ KORPAD_correctBottomDualConsonantError(); }
-                    Keyboard.write ('g');
-                    strcpy(KorSlot0,"g");
-                } else if(strcmp(KorSlot0,"g")==0){
-                    KBD_Hijacker.pressandreleaseKey(KEY_BACKSPACE);
-                    Keyboard.write ('T');
-                    strcpy(KorSlot0,"T");
-                } else if(strcmp(KorSlot0,"T")==0){
-                    KBD_Hijacker.pressandreleaseKey(KEY_BACKSPACE);  if(strcmp(KorSlot1,"r")==0){ KORPAD_correctBottomDualConsonantError(); }
-                    Keyboard.write ('t');
-                    strcpy(KorSlot0,"t");
-                } else{
-                    KORPAD_updateConfirmedInputs();
-                    Keyboard.write ('t');
-                    strcpy(KorSlot0,"t");
-                }
-            }
-            else if(MILLIS_FROM_PRESSED_UNTIL_RELEASE > 400){
-                KORPAD_updateConfirmedInputs();
-                KBD_Hijacker.pressandreleaseKey(KEY_BACKSPACE);
-                Keyboard.write ('2');
-                strcpy(KorSlot0,"2");
-            }
-            isActivateKeyEvent=false; key=0;
-        }
-        break;
-
-        case KEYPAD_3:
-        {
-            if(event){
-                if       (strcmp(KorSlot0,"w")==0){
-                    KBD_Hijacker.pressandreleaseKey(KEY_BACKSPACE);
-                    Keyboard.write ('c');
-                    strcpy(KorSlot0,"c");
-                } else if(strcmp(KorSlot0,"c")==0){
-                    KBD_Hijacker.pressandreleaseKey(KEY_BACKSPACE);
-                    Keyboard.write ('W');
-                    strcpy(KorSlot0,"W");
-                } else if(strcmp(KorSlot0,"W")==0){
-                    KBD_Hijacker.pressandreleaseKey(KEY_BACKSPACE);  KORPAD_correctBottomSingleConsonantError();
-                                                        if(strcmp(KorSlot1,"s")==0){ KORPAD_correctBottomDualConsonantError(); }
-                    Keyboard.write ('w');
-                    strcpy(KorSlot0,"w");
-                } else{
-                    KORPAD_updateConfirmedInputs();
-                    Keyboard.write ('w');
-                    strcpy(KorSlot0,"w");
-                }
-            }
-            else if(MILLIS_FROM_PRESSED_UNTIL_RELEASE > 400){
-                KORPAD_updateConfirmedInputs();
-                KBD_Hijacker.pressandreleaseKey(KEY_BACKSPACE);
-                Keyboard.write ('3');
-                strcpy(KorSlot0,"3");
-            }
-            isActivateKeyEvent=false; key=0;
-        }
-        break;
-
-        case KEYPAD_0:
-        {
-            if(event){
-                if       (strcmp(KorSlot0,"d")==0){
-                    KBD_Hijacker.pressandreleaseKey(KEY_BACKSPACE);  if(strcmp(KorSlot1,"f")==0){ KORPAD_correctBottomDualConsonantError(); }
-                    Keyboard.write ('a');
-                    strcpy(KorSlot0,"a");
-                } else if(strcmp(KorSlot0,"a")==0){
-                    KBD_Hijacker.pressandreleaseKey(KEY_BACKSPACE);
-                    Keyboard.write ('d');
-                    strcpy(KorSlot0,"d");
-                } else{
-                    KORPAD_updateConfirmedInputs();
-                    Keyboard.write ('d');
-                    strcpy(KorSlot0,"d");
-                }
-            }
-            else if(MILLIS_FROM_PRESSED_UNTIL_RELEASE > 400){
-                KORPAD_updateConfirmedInputs();
-                KBD_Hijacker.pressandreleaseKey(KEY_BACKSPACE);
-                Keyboard.write ('0');
-                strcpy(KorSlot0,"0");
-            }
-            isActivateKeyEvent=false; key=0;
-        }
-        break;
-
         case KEYPAD_7:
         {
             if(event){
-                if       (strcmp(KorSlot0,"*")==0){
-                    KBD_Hijacker.pressandreleaseKey(KEY_BACKSPACE);  KORPAD_correctAraeAVowelError();
-                    Keyboard.write ('j');
-                    strcpy(KorSlot0,"j");
-                } else if(strcmp(KorSlot0,":")==0){
-                    KBD_Hijacker.pressandreleaseKey(KEY_BACKSPACE);  KORPAD_correctAraeAVowelError();
-                    Keyboard.write ('u');
-                    strcpy(KorSlot0,"u");
-                } else if(strcmp(KorSlot0,"k")==0){
-                    KBD_Hijacker.pressandreleaseKey(KEY_BACKSPACE);
-                    Keyboard.write ('o');
-                    strcpy(KorSlot0,"o");
-                } else if(strcmp(KorSlot0,"i")==0){
-                    KBD_Hijacker.pressandreleaseKey(KEY_BACKSPACE);
-                    Keyboard.write ('O');
-                    strcpy(KorSlot0,"O");
-                } else if(strcmp(KorSlot0,"j")==0){
-                    KBD_Hijacker.pressandreleaseKey(KEY_BACKSPACE);
-                    Keyboard.write ('p');
-                    strcpy(KorSlot0,"p");
-                } else if(strcmp(KorSlot0,"u")==0){
-                    KBD_Hijacker.pressandreleaseKey(KEY_BACKSPACE);
-                    Keyboard.write ('P');
-                    strcpy(KorSlot0,"P");
-                } else if(strcmp(KorSlot0,"h")==0){
-                    Keyboard.write ('l');
-                    strcpy(KorSlot0,"hl");
-                } else if(strcmp(KorSlot0,"n")==0){
-                    Keyboard.write ('l');
-                    strcpy(KorSlot0,"nl");
-                } else if(strcmp(KorSlot0,"m")==0){
-                    Keyboard.write ('l');
-                    strcpy(KorSlot0,"ml");
-                } else if(strcmp(KorSlot0,"hk")==0){
-                    KBD_Hijacker.pressandreleaseKey(KEY_BACKSPACE);
-                    Keyboard.write ('o');
-                    strcpy(KorSlot0,"ho");
-                } else if(strcmp(KorSlot0,"b")==0){
-                    KBD_Hijacker.pressandreleaseKey(KEY_BACKSPACE);
-                    Keyboard.write ('n');
-                    Keyboard.write ('j');
-                    strcpy(KorSlot0,"nj");
-                } else if(strcmp(KorSlot0,"nj")==0){
-                    KBD_Hijacker.pressandreleaseKey(KEY_BACKSPACE);
-                    Keyboard.write ('p');
-                    strcpy(KorSlot0,"np");
-                } else{
+                if
+                (   isEquals(KorSlot0,"*")   ){
+                    fillWith(KorSlot0,"j");
+
+                    KBD_HIJACKER.pressandreleaseKey(KEY_BACKSPACE); KORPAD_correctAraeAVowelError();
+                    Keyboard.write('j');
+                }
+                else if
+                (   isEquals(KorSlot0,":")   ){
+                    fillWith(KorSlot0,"u");
+
+                    KBD_HIJACKER.pressandreleaseKey(KEY_BACKSPACE); KORPAD_correctAraeAVowelError();
+                    Keyboard.write('u');
+                }
+                else if
+                (   isEquals(KorSlot0,"k")   ){
+                    fillWith(KorSlot0,"o");
+
+                    KBD_HIJACKER.pressandreleaseKey(KEY_BACKSPACE);
+                    Keyboard.write('o');
+                }
+                else if
+                (   isEquals(KorSlot0,"i")   ){
+                    fillWith(KorSlot0,"O");
+
+                    KBD_HIJACKER.pressandreleaseKey(KEY_BACKSPACE);
+                    Keyboard.write('O');
+                }
+                else if
+                (   isEquals(KorSlot0,"j")   ){
+                    fillWith(KorSlot0,"p");
+
+                    KBD_HIJACKER.pressandreleaseKey(KEY_BACKSPACE);
+                    Keyboard.write('p');
+                }
+                else if
+                (   isEquals(KorSlot0,"u")   ){
+                    fillWith(KorSlot0,"P");
+
+                    KBD_HIJACKER.pressandreleaseKey(KEY_BACKSPACE);
+                    Keyboard.write('P');
+                }
+                else if
+                (   isEquals(KorSlot0,"h")   ){
+                    fillWith(KorSlot0,"hl");
+
+                    Keyboard.write('l');
+                }
+                else if
+                (   isEquals(KorSlot0,"n")   ){
+                    fillWith(KorSlot0,"nl");
+
+                    Keyboard.write('l');
+                }
+                else if
+                (   isEquals(KorSlot0,"m")   ){
+                    fillWith(KorSlot0,"ml");
+
+                    Keyboard.write('l');
+                }
+                else if
+                (   isEquals(KorSlot0,"hk")   ){
+                    fillWith(KorSlot0,"ho");
+
+                    KBD_HIJACKER.pressandreleaseKey(KEY_BACKSPACE);
+                    Keyboard.write('o');
+                }
+                else if
+                (   isEquals(KorSlot0,"b")   ){
+                    fillWith(KorSlot0,"nj");
+
+                    KBD_HIJACKER.pressandreleaseKey(KEY_BACKSPACE);
+                    Keyboard.write('n'); Keyboard.write('j');
+                }
+                else if
+                (   isEquals(KorSlot0,"nj")   ){
+                    fillWith(KorSlot0,"np");
+
+                    KBD_HIJACKER.pressandreleaseKey(KEY_BACKSPACE);
+                    Keyboard.write('p');
+                }
+                else
+                {
                     KORPAD_updateConfirmedInputs();
-                    Keyboard.write ('l');
-                    strcpy(KorSlot0,"l");
+                    fillWith(KorSlot0,"l");
+
+                    Keyboard.write('l');
                 }
             }
             else if(MILLIS_FROM_PRESSED_UNTIL_RELEASE > 400){
-                KORPAD_updateConfirmedInputs();
-                KBD_Hijacker.pressandreleaseKey(KEY_BACKSPACE);
-                Keyboard.write ('7');
-                strcpy(KorSlot0,"7");
+                fillWith(KorSlot0,"7");
+
+                KBD_HIJACKER.pressandreleaseKey(KEY_BACKSPACE);
+                Keyboard.write('7');
             }
-            isActivateKeyEvent=false; key=0;
+            isActivatedKeyEvent=false; key=0;
         }
         break;
 
         case KEYPAD_8:
         {
             if(event){
-                if       (strcmp(KorSlot0,"l")==0){
-                    KBD_Hijacker.pressandreleaseKey(KEY_BACKSPACE);
-                    Keyboard.write ('k');
-                    strcpy(KorSlot0,"k");
-                } else if(strcmp(KorSlot0,"k")==0){
-                    KBD_Hijacker.pressandreleaseKey(KEY_BACKSPACE);
-                    Keyboard.write ('i');
-                    strcpy(KorSlot0,"i");
-                } else if(strcmp(KorSlot0,"m")==0){
-                    KBD_Hijacker.pressandreleaseKey(KEY_BACKSPACE);
-                    Keyboard.write ('n');
-                    strcpy(KorSlot0,"n");
-                } else if(strcmp(KorSlot0,"n")==0){
-                    KBD_Hijacker.pressandreleaseKey(KEY_BACKSPACE);
-                    Keyboard.write ('b');
-                    strcpy(KorSlot0,"b");
-                } else if(strcmp(KorSlot0,"hl")==0){
-                    KBD_Hijacker.pressandreleaseKey(KEY_BACKSPACE);
-                    Keyboard.write ('k');
-                    strcpy(KorSlot0,"hk");
-                } else if(strcmp(KorSlot0,"*")==0){
-                    KBD_Hijacker.pressandreleaseKey(KEY_BACKSPACE);
-                    Keyboard.write (':');
-                    strcpy(KorSlot0,":");
-                } else if(strcmp(KorSlot0,":")==0){
-                    KBD_Hijacker.pressandreleaseKey(KEY_BACKSPACE);
-                    Keyboard.write ('*');
-                    strcpy(KorSlot0,"*");
-                } else{
+                if
+                (   isEquals(KorSlot0,"l")   ){
+                    fillWith(KorSlot0,"k");
+
+                    KBD_HIJACKER.pressandreleaseKey(KEY_BACKSPACE);
+                    Keyboard.write('k');
+                }
+                else if
+                (   isEquals(KorSlot0,"k")   ){
+                    fillWith(KorSlot0,"i");
+
+                    KBD_HIJACKER.pressandreleaseKey(KEY_BACKSPACE);
+                    Keyboard.write('i');
+                }
+                else if
+                (   isEquals(KorSlot0,"m")   ){
+                    fillWith(KorSlot0,"n");
+
+                    KBD_HIJACKER.pressandreleaseKey(KEY_BACKSPACE);
+                    Keyboard.write('n');
+                }
+                else if
+                (   isEquals(KorSlot0,"n")   ){
+                    fillWith(KorSlot0,"b");
+
+                    KBD_HIJACKER.pressandreleaseKey(KEY_BACKSPACE);
+                    Keyboard.write('b');
+                }
+                else if
+                (   isEquals(KorSlot0,"hl")   ){
+                    fillWith(KorSlot0,"hk");
+
+                    KBD_HIJACKER.pressandreleaseKey(KEY_BACKSPACE);
+                    Keyboard.write('k');
+                }
+                else if
+                (   isEquals(KorSlot0,"*")   ){
+                    fillWith(KorSlot0,":");
+
+                    KBD_HIJACKER.pressandreleaseKey(KEY_BACKSPACE);
+                    Keyboard.write(':');
+                }
+                else if
+                (   isEquals(KorSlot0,":")   ){
+                    fillWith(KorSlot0,"*");
+
+                    KBD_HIJACKER.pressandreleaseKey(KEY_BACKSPACE);
+                    Keyboard.write('*');
+                }
+                else
+                {
                     KORPAD_updateConfirmedInputs();
-                    Keyboard.write ('*');
-                    strcpy(KorSlot0,"*");
+                    fillWith(KorSlot0,"*");
+
+                    Keyboard.write('*');
                 }
             }
             else if(MILLIS_FROM_PRESSED_UNTIL_RELEASE > 400){
-                KORPAD_updateConfirmedInputs();
-                KBD_Hijacker.pressandreleaseKey(KEY_BACKSPACE);
-                Keyboard.write ('8');
-                strcpy(KorSlot0,"8");
+                fillWith(KorSlot0,"8");
+
+                KBD_HIJACKER.pressandreleaseKey(KEY_BACKSPACE);
+                Keyboard.write('8');
             }
-            isActivateKeyEvent=false; key=0;
+            isActivatedKeyEvent=false; key=0;
         }
         break;
 
         case KEYPAD_9:
         {
             if(event){
-                if       (strcmp(KorSlot0,"*")==0){
-                    KBD_Hijacker.pressandreleaseKey(KEY_BACKSPACE);  KORPAD_correctAraeAVowelError();
-                    Keyboard.write ('h');
-                    strcpy(KorSlot0,"h");
-                } else if(strcmp(KorSlot0,":")==0){
-                    KBD_Hijacker.pressandreleaseKey(KEY_BACKSPACE);  KORPAD_correctAraeAVowelError();
-                    Keyboard.write ('y');
-                    strcpy(KorSlot0,"y");
-                } else{
-                    KORPAD_updateConfirmedInputs();
-                    Keyboard.write ('m');
-                    strcpy(KorSlot0,"m");
-                }
-            }
-            else if(MILLIS_FROM_PRESSED_UNTIL_RELEASE > 400){
-                KORPAD_updateConfirmedInputs();
-                KBD_Hijacker.pressandreleaseKey(KEY_BACKSPACE);
-                Keyboard.write ('9');
-                strcpy(KorSlot0,"9");
-            }
-            isActivateKeyEvent=false; key=0;
-        }
-        break;
+                if
+                (   isEquals(KorSlot0,"*")   ){
+                    fillWith(KorSlot0,"h");
 
-        case KEYPAD_PERIOD:
-        {
-            if(event){
-                
-            } else if(MILLIS_FROM_PRESSED_UNTIL_RELEASE > 400){
-                if(!ConvertMode_Alphabet)
-                {
-                    KORPAD_resetConfirmedInputs();
-                    
-                    //Turn On  ConvertMode_Alphabet
-                    ConvertMode_Alphabet = true;
-                        
-                    Buzzzzer::reserveBuzz(   { NOTE_FS5,0, NOTE_GS5,0, NOTE_AS5,0, NOTE_DS6,0, NOTE_CS6 }
-                                        ,   { 200,30,     100,150,    120,200,    150,150,    450      }   );
-                    
-                    //If CAPSLOCK was On, Turn Off BY FORCE
-                    if(KBD_Hijacker.getStateCapsLockToggle()){
-                        KBD_Hijacker.pressandreleaseKey(KEY_CAPS_LOCK);
-                    } KBD_Hijacker.reserveSyncTKS=true;
+                    KBD_HIJACKER.pressandreleaseKey(KEY_BACKSPACE); KORPAD_correctAraeAVowelError();
+                    Keyboard.write('h');
+                }
+                else if
+                (   isEquals(KorSlot0,":")   ){
+                    fillWith(KorSlot0,"y");
+
+                    KBD_HIJACKER.pressandreleaseKey(KEY_BACKSPACE); KORPAD_correctAraeAVowelError();
+                    Keyboard.write('y');
                 }
                 else
                 {
-                    KORPAD_resetConfirmedInputs();
-                    
-                    //Turn Off ConvertMode_Alphabet
-                    ConvertMode_Alphabet = false;
-                        
-                    Buzzzzer::reserveBuzz(   { NOTE_AS5,0, NOTE_GS5,0, NOTE_FS5,0, NOTE_FS5 }
-                                        ,   { 300,50,     230,50,     170,100,    350      }   );
-                }
-            } else{
-                if       (strcmp(KorSlot0,"")==0){
-                    Keyboard.write (' ');
-                    strcpy(KorSlot0," ");
-                } else if(strcmp(KorSlot0," ")==0){
-                    KBD_Hijacker.pressandreleaseKey(KEY_BACKSPACE);
-                    Keyboard.write ('?');
-                    strcpy(KorSlot0,"?");
-                } else if(strcmp(KorSlot0,"?")==0){
-                    KBD_Hijacker.pressandreleaseKey(KEY_BACKSPACE);
-                    Keyboard.write ('!');
-                    strcpy(KorSlot0,"!");
-                } else if(strcmp(KorSlot0,"!")==0){
-                    KBD_Hijacker.pressandreleaseKey(KEY_BACKSPACE);
-                    Keyboard.write ('.');
-                    strcpy(KorSlot0,".");
-                } else if(strcmp(KorSlot0,".")==0){
-                    KBD_Hijacker.pressandreleaseKey(KEY_BACKSPACE);
-                    Keyboard.write (' ');
-                    strcpy(KorSlot0," ");
-                    
-                } else if(strcmp(KorSlot0,"*a")==0){        //a→A
-                    KBD_Hijacker.pressandreleaseKey(KEY_BACKSPACE);
-                    KORPAD_writeAlphabet('A');
-                    strcpy(KorSlot0,"*A");
-                    KORPAD_switchCapsLockToggleIfBattered3();
-                } else if(strcmp(KorSlot0,"*A")==0){
-                    KORPAD_switchCapsLockToggleIfBattered4();
-                    KBD_Hijacker.pressandreleaseKey(KEY_BACKSPACE);
-                    KORPAD_writeAlphabet('a');
-                    strcpy(KorSlot0,"*a");
-                } else if(strcmp(KorSlot0,"*b")==0){        //b→B
-                    KBD_Hijacker.pressandreleaseKey(KEY_BACKSPACE);
-                    KORPAD_writeAlphabet('B');
-                    strcpy(KorSlot0,"*B");
-                    KORPAD_switchCapsLockToggleIfBattered3();
-                } else if(strcmp(KorSlot0,"*B")==0){
-                    KORPAD_switchCapsLockToggleIfBattered4();
-                    KBD_Hijacker.pressandreleaseKey(KEY_BACKSPACE);
-                    KORPAD_writeAlphabet('b');
-                    strcpy(KorSlot0,"*b");
-                } else if(strcmp(KorSlot0,"*c")==0){        //c→C
-                    KBD_Hijacker.pressandreleaseKey(KEY_BACKSPACE);
-                    KORPAD_writeAlphabet('C');
-                    strcpy(KorSlot0,"*C");
-                    KORPAD_switchCapsLockToggleIfBattered3();
-                } else if(strcmp(KorSlot0,"*C")==0){
-                    KORPAD_switchCapsLockToggleIfBattered4();
-                    KBD_Hijacker.pressandreleaseKey(KEY_BACKSPACE);
-                    KORPAD_writeAlphabet('c');
-                    strcpy(KorSlot0,"*c");
-                } else if(strcmp(KorSlot0,"*d")==0){        //d→D
-                    KBD_Hijacker.pressandreleaseKey(KEY_BACKSPACE);
-                    KORPAD_writeAlphabet('D');
-                    strcpy(KorSlot0,"*D");
-                    KORPAD_switchCapsLockToggleIfBattered3();
-                } else if(strcmp(KorSlot0,"*D")==0){
-                    KORPAD_switchCapsLockToggleIfBattered4();
-                    KBD_Hijacker.pressandreleaseKey(KEY_BACKSPACE);
-                    KORPAD_writeAlphabet('d');
-                    strcpy(KorSlot0,"*d");
-                } else if(strcmp(KorSlot0,"*e")==0){        //e→E
-                    KBD_Hijacker.pressandreleaseKey(KEY_BACKSPACE);
-                    KORPAD_writeAlphabet('E');
-                    strcpy(KorSlot0,"*E");
-                    KORPAD_switchCapsLockToggleIfBattered3();
-                } else if(strcmp(KorSlot0,"*E")==0){
-                    KORPAD_switchCapsLockToggleIfBattered4();
-                    KBD_Hijacker.pressandreleaseKey(KEY_BACKSPACE);
-                    KORPAD_writeAlphabet('e');
-                    strcpy(KorSlot0,"*e");
-                } else if(strcmp(KorSlot0,"*f")==0){        //f→F
-                    KBD_Hijacker.pressandreleaseKey(KEY_BACKSPACE);
-                    KORPAD_writeAlphabet('F');
-                    strcpy(KorSlot0,"*F");
-                    KORPAD_switchCapsLockToggleIfBattered3();
-                } else if(strcmp(KorSlot0,"*F")==0){
-                    KORPAD_switchCapsLockToggleIfBattered4();
-                    KBD_Hijacker.pressandreleaseKey(KEY_BACKSPACE);
-                    KORPAD_writeAlphabet('f');
-                    strcpy(KorSlot0,"*f");
-                } else if(strcmp(KorSlot0,"*g")==0){        //g→G
-                    KBD_Hijacker.pressandreleaseKey(KEY_BACKSPACE);
-                    KORPAD_writeAlphabet('G');
-                    strcpy(KorSlot0,"*G");
-                    KORPAD_switchCapsLockToggleIfBattered3();
-                } else if(strcmp(KorSlot0,"*G")==0){
-                    KORPAD_switchCapsLockToggleIfBattered4();
-                    KBD_Hijacker.pressandreleaseKey(KEY_BACKSPACE);
-                    KORPAD_writeAlphabet('g');
-                    strcpy(KorSlot0,"*g");
-                } else if(strcmp(KorSlot0,"*h")==0){        //h→H
-                    KBD_Hijacker.pressandreleaseKey(KEY_BACKSPACE);
-                    KORPAD_writeAlphabet('H');
-                    strcpy(KorSlot0,"*H");
-                    KORPAD_switchCapsLockToggleIfBattered3();
-                } else if(strcmp(KorSlot0,"*H")==0){
-                    KORPAD_switchCapsLockToggleIfBattered4();
-                    KBD_Hijacker.pressandreleaseKey(KEY_BACKSPACE);
-                    KORPAD_writeAlphabet('h');
-                    strcpy(KorSlot0,"*h");
-                } else if(strcmp(KorSlot0,"*i")==0){        //i→I
-                    KBD_Hijacker.pressandreleaseKey(KEY_BACKSPACE);
-                    KORPAD_writeAlphabet('I');
-                    strcpy(KorSlot0,"*I");
-                    KORPAD_switchCapsLockToggleIfBattered3();
-                } else if(strcmp(KorSlot0,"*I")==0){
-                    KORPAD_switchCapsLockToggleIfBattered4();
-                    KBD_Hijacker.pressandreleaseKey(KEY_BACKSPACE);
-                    KORPAD_writeAlphabet('i');
-                    strcpy(KorSlot0,"*i");
-                } else if(strcmp(KorSlot0,"*j")==0){        //j→J
-                    KBD_Hijacker.pressandreleaseKey(KEY_BACKSPACE);
-                    KORPAD_writeAlphabet('J');
-                    strcpy(KorSlot0,"*J");
-                    KORPAD_switchCapsLockToggleIfBattered3();
-                } else if(strcmp(KorSlot0,"*J")==0){
-                    KORPAD_switchCapsLockToggleIfBattered4();
-                    KBD_Hijacker.pressandreleaseKey(KEY_BACKSPACE);
-                    KORPAD_writeAlphabet('j');
-                    strcpy(KorSlot0,"*j");
-                } else if(strcmp(KorSlot0,"*k")==0){        //k→K
-                    KBD_Hijacker.pressandreleaseKey(KEY_BACKSPACE);
-                    KORPAD_writeAlphabet('K');
-                    strcpy(KorSlot0,"*K");
-                    KORPAD_switchCapsLockToggleIfBattered3();
-                } else if(strcmp(KorSlot0,"*K")==0){
-                    KORPAD_switchCapsLockToggleIfBattered4();
-                    KBD_Hijacker.pressandreleaseKey(KEY_BACKSPACE);
-                    KORPAD_writeAlphabet('k');
-                    strcpy(KorSlot0,"*k");
-                } else if(strcmp(KorSlot0,"*l")==0){        //l→L
-                    KBD_Hijacker.pressandreleaseKey(KEY_BACKSPACE);
-                    KORPAD_writeAlphabet('L');
-                    strcpy(KorSlot0,"*L");
-                    KORPAD_switchCapsLockToggleIfBattered3();
-                } else if(strcmp(KorSlot0,"*L")==0){
-                    KORPAD_switchCapsLockToggleIfBattered4();
-                    KBD_Hijacker.pressandreleaseKey(KEY_BACKSPACE);
-                    KORPAD_writeAlphabet('l');
-                    strcpy(KorSlot0,"*l");
-                } else if(strcmp(KorSlot0,"*m")==0){        //m→M
-                    KBD_Hijacker.pressandreleaseKey(KEY_BACKSPACE);
-                    KORPAD_writeAlphabet('M');
-                    strcpy(KorSlot0,"*M");
-                    KORPAD_switchCapsLockToggleIfBattered3();
-                } else if(strcmp(KorSlot0,"*M")==0){
-                    KORPAD_switchCapsLockToggleIfBattered4();
-                    KBD_Hijacker.pressandreleaseKey(KEY_BACKSPACE);
-                    KORPAD_writeAlphabet('m');
-                    strcpy(KorSlot0,"*m");
-                } else if(strcmp(KorSlot0,"*n")==0){        //n→N
-                    KBD_Hijacker.pressandreleaseKey(KEY_BACKSPACE);
-                    KORPAD_writeAlphabet('N');
-                    strcpy(KorSlot0,"*N");
-                    KORPAD_switchCapsLockToggleIfBattered3();
-                } else if(strcmp(KorSlot0,"*N")==0){
-                    KORPAD_switchCapsLockToggleIfBattered4();
-                    KBD_Hijacker.pressandreleaseKey(KEY_BACKSPACE);
-                    KORPAD_writeAlphabet('n');
-                    strcpy(KorSlot0,"*n");
-                } else if(strcmp(KorSlot0,"*o")==0){        //o→O
-                    KBD_Hijacker.pressandreleaseKey(KEY_BACKSPACE);
-                    KORPAD_writeAlphabet('O');
-                    strcpy(KorSlot0,"*O");
-                    KORPAD_switchCapsLockToggleIfBattered3();
-                } else if(strcmp(KorSlot0,"*O")==0){
-                    KORPAD_switchCapsLockToggleIfBattered4();
-                    KBD_Hijacker.pressandreleaseKey(KEY_BACKSPACE);
-                    KORPAD_writeAlphabet('o');
-                    strcpy(KorSlot0,"*o");
-                } else if(strcmp(KorSlot0,"*p")==0){        //p→P
-                    KBD_Hijacker.pressandreleaseKey(KEY_BACKSPACE);
-                    KORPAD_writeAlphabet('P');
-                    strcpy(KorSlot0,"*P");
-                    KORPAD_switchCapsLockToggleIfBattered3();
-                } else if(strcmp(KorSlot0,"*P")==0){
-                    KORPAD_switchCapsLockToggleIfBattered4();
-                    KBD_Hijacker.pressandreleaseKey(KEY_BACKSPACE);
-                    KORPAD_writeAlphabet('p');
-                    strcpy(KorSlot0,"*p");
-                } else if(strcmp(KorSlot0,"*q")==0){        //q→Q
-                    KBD_Hijacker.pressandreleaseKey(KEY_BACKSPACE);
-                    KORPAD_writeAlphabet('Q');
-                    strcpy(KorSlot0,"*Q");
-                    KORPAD_switchCapsLockToggleIfBattered3();
-                } else if(strcmp(KorSlot0,"*Q")==0){
-                    KORPAD_switchCapsLockToggleIfBattered4();
-                    KBD_Hijacker.pressandreleaseKey(KEY_BACKSPACE);
-                    KORPAD_writeAlphabet('q');
-                    strcpy(KorSlot0,"*q");
-                } else if(strcmp(KorSlot0,"*r")==0){        //r→R
-                    KBD_Hijacker.pressandreleaseKey(KEY_BACKSPACE);
-                    KORPAD_writeAlphabet('R');
-                    strcpy(KorSlot0,"*R");
-                    KORPAD_switchCapsLockToggleIfBattered3();
-                } else if(strcmp(KorSlot0,"*R")==0){
-                    KORPAD_switchCapsLockToggleIfBattered4();
-                    KBD_Hijacker.pressandreleaseKey(KEY_BACKSPACE);
-                    KORPAD_writeAlphabet('r');
-                    strcpy(KorSlot0,"*r");
-                } else if(strcmp(KorSlot0,"*s")==0){        //s→S
-                    KBD_Hijacker.pressandreleaseKey(KEY_BACKSPACE);
-                    KORPAD_writeAlphabet('S');
-                    strcpy(KorSlot0,"*S");
-                    KORPAD_switchCapsLockToggleIfBattered3();
-                } else if(strcmp(KorSlot0,"*S")==0){
-                    KORPAD_switchCapsLockToggleIfBattered4();
-                    KBD_Hijacker.pressandreleaseKey(KEY_BACKSPACE);
-                    KORPAD_writeAlphabet('s');
-                    strcpy(KorSlot0,"*s");
-                } else if(strcmp(KorSlot0,"*t")==0){        //t→T
-                    KBD_Hijacker.pressandreleaseKey(KEY_BACKSPACE);
-                    KORPAD_writeAlphabet('T');
-                    strcpy(KorSlot0,"*T");
-                    KORPAD_switchCapsLockToggleIfBattered3();
-                } else if(strcmp(KorSlot0,"*T")==0){
-                    KORPAD_switchCapsLockToggleIfBattered4();
-                    KBD_Hijacker.pressandreleaseKey(KEY_BACKSPACE);
-                    KORPAD_writeAlphabet('t');
-                    strcpy(KorSlot0,"*t");
-                } else if(strcmp(KorSlot0,"*u")==0){        //u→U
-                    KBD_Hijacker.pressandreleaseKey(KEY_BACKSPACE);
-                    KORPAD_writeAlphabet('U');
-                    strcpy(KorSlot0,"*U");
-                    KORPAD_switchCapsLockToggleIfBattered3();
-                } else if(strcmp(KorSlot0,"*U")==0){
-                    KORPAD_switchCapsLockToggleIfBattered4();
-                    KBD_Hijacker.pressandreleaseKey(KEY_BACKSPACE);
-                    KORPAD_writeAlphabet('u');
-                    strcpy(KorSlot0,"*u");
-                } else if(strcmp(KorSlot0,"*v")==0){        //v→V
-                    KBD_Hijacker.pressandreleaseKey(KEY_BACKSPACE);
-                    KORPAD_writeAlphabet('V');
-                    strcpy(KorSlot0,"*V");
-                    KORPAD_switchCapsLockToggleIfBattered3();
-                } else if(strcmp(KorSlot0,"*V")==0){
-                    KORPAD_switchCapsLockToggleIfBattered4();
-                    KBD_Hijacker.pressandreleaseKey(KEY_BACKSPACE);
-                    KORPAD_writeAlphabet('v');
-                    strcpy(KorSlot0,"*v");
-                } else if(strcmp(KorSlot0,"*w")==0){        //w→W
-                    KBD_Hijacker.pressandreleaseKey(KEY_BACKSPACE);
-                    KORPAD_writeAlphabet('W');
-                    strcpy(KorSlot0,"*W");
-                    KORPAD_switchCapsLockToggleIfBattered3();
-                } else if(strcmp(KorSlot0,"*W")==0){
-                    KORPAD_switchCapsLockToggleIfBattered4();
-                    KBD_Hijacker.pressandreleaseKey(KEY_BACKSPACE);
-                    KORPAD_writeAlphabet('w');
-                    strcpy(KorSlot0,"*w");
-                } else if(strcmp(KorSlot0,"*x")==0){        //x→X
-                    KBD_Hijacker.pressandreleaseKey(KEY_BACKSPACE);
-                    KORPAD_writeAlphabet('X');
-                    strcpy(KorSlot0,"*X");
-                    KORPAD_switchCapsLockToggleIfBattered3();
-                } else if(strcmp(KorSlot0,"*X")==0){
-                    KORPAD_switchCapsLockToggleIfBattered4();
-                    KBD_Hijacker.pressandreleaseKey(KEY_BACKSPACE);
-                    KORPAD_writeAlphabet('x');
-                    strcpy(KorSlot0,"*x");
-                } else if(strcmp(KorSlot0,"*y")==0){        //y→Y
-                    KBD_Hijacker.pressandreleaseKey(KEY_BACKSPACE);
-                    KORPAD_writeAlphabet('Y');
-                    strcpy(KorSlot0,"*Y");
-                    KORPAD_switchCapsLockToggleIfBattered3();
-                } else if(strcmp(KorSlot0,"*Y")==0){
-                    KORPAD_switchCapsLockToggleIfBattered4();
-                    KBD_Hijacker.pressandreleaseKey(KEY_BACKSPACE);
-                    KORPAD_writeAlphabet('y');
-                    strcpy(KorSlot0,"*y");
-                } else if(strcmp(KorSlot0,"*z")==0){        //z→Z
-                    KBD_Hijacker.pressandreleaseKey(KEY_BACKSPACE);
-                    KORPAD_writeAlphabet('Z');
-                    strcpy(KorSlot0,"*Z");
-                    KORPAD_switchCapsLockToggleIfBattered3();
-                } else if(strcmp(KorSlot0,"*Z")==0){
-                    KORPAD_switchCapsLockToggleIfBattered4();
-                    KBD_Hijacker.pressandreleaseKey(KEY_BACKSPACE);
-                    KORPAD_writeAlphabet('z');
-                    strcpy(KorSlot0,"*z");
-                } else{
-                    KORPAD_resetConfirmedInputs();
-                    Keyboard.write (' '); KBD_Hijacker.pressandreleaseKey(KEY_BACKSPACE);
-                    strcpy(KorSlot0,"");
+                    KORPAD_updateConfirmedInputs();
+                    fillWith(KorSlot0,"m");
+
+                    Keyboard.write('m');
                 }
             }
-            isActivateKeyEvent=false; key=0;
+            else if(MILLIS_FROM_PRESSED_UNTIL_RELEASE > 400){
+                fillWith(KorSlot0,"9");
+
+                KBD_HIJACKER.pressandreleaseKey(KEY_BACKSPACE);
+                Keyboard.write('9');
+            }
+            isActivatedKeyEvent=false; key=0;
         }
         break;
 
-//        case KEY_TAB:
-//        {
-//            if(event){
-//                
-//            }
-//            isActivateKeyEvent=false; key=0;
-//        }
-//        break;
+        case KEYPAD_4:
+        {
+            if(event){
+                if
+                (   isEquals(KorSlot0,"r")   ){
+                    fillWith(KorSlot0,"z");
+
+                    KBD_HIJACKER.pressandreleaseKey(KEY_BACKSPACE);
+                    Keyboard.write('z');
+                }
+                else if
+                (   isEquals(KorSlot0,"z")   ){
+                    fillWith(KorSlot0,"R");
+
+                    KBD_HIJACKER.pressandreleaseKey(KEY_BACKSPACE);
+                    Keyboard.write('R');
+                }
+                else if
+                (   isEquals(KorSlot0,"R")   ){
+                    fillWith(KorSlot0,"r");
+
+                    KBD_HIJACKER.pressandreleaseKey(KEY_BACKSPACE); KORPAD_correctBottomDualConsonantError();
+                    Keyboard.write('r');
+                }
+                else
+                {
+                    KORPAD_updateConfirmedInputs();
+                    fillWith(KorSlot0,"r");
+
+                    Keyboard.write('r');
+                }
+            }
+            else if(MILLIS_FROM_PRESSED_UNTIL_RELEASE > 400){
+                fillWith(KorSlot0,"4");
+
+                KBD_HIJACKER.pressandreleaseKey(KEY_BACKSPACE);
+                Keyboard.write('4');
+            }
+            isActivatedKeyEvent=false; key=0;
+        }
+        break;
+
+        case KEYPAD_5:
+        {
+            if(event){
+                if
+                (   isEquals(KorSlot0,"s")   ){
+                    fillWith(KorSlot0,"f");
+
+                    KBD_HIJACKER.pressandreleaseKey(KEY_BACKSPACE);
+                    Keyboard.write('f');
+                }
+                else if
+                (   isEquals(KorSlot0,"f")   ){
+                    fillWith(KorSlot0,"s");
+
+                    KBD_HIJACKER.pressandreleaseKey(KEY_BACKSPACE);
+                    Keyboard.write('s');
+                }
+                else
+                {
+                    KORPAD_updateConfirmedInputs();
+                    fillWith(KorSlot0,"s");
+
+                    Keyboard.write('s');
+                }
+            }
+            else if(MILLIS_FROM_PRESSED_UNTIL_RELEASE > 400){
+                fillWith(KorSlot0,"5");
+
+                KBD_HIJACKER.pressandreleaseKey(KEY_BACKSPACE);
+                Keyboard.write('5');
+            }
+            isActivatedKeyEvent=false; key=0;
+        }
+        break;
+
+        case KEYPAD_6:
+        {
+            if(event){
+                if
+                (   isEquals(KorSlot0,"e")   ){
+                    fillWith(KorSlot0,"x");
+
+                    KBD_HIJACKER.pressandreleaseKey(KEY_BACKSPACE); KORPAD_correctBottomDualConsonantError();
+                    Keyboard.write('x');
+                }
+                else if
+                (   isEquals(KorSlot0,"x")   ){
+                    fillWith(KorSlot0,"E");
+
+                    KBD_HIJACKER.pressandreleaseKey(KEY_BACKSPACE);
+                    Keyboard.write('E');
+                }
+                else if
+                (   isEquals(KorSlot0,"E")   ){
+                    fillWith(KorSlot0,"e");
+
+                    KBD_HIJACKER.pressandreleaseKey(KEY_BACKSPACE); KORPAD_correctBottomSingleConsonantError();
+                    Keyboard.write('e');
+                }
+                else
+                {
+                    KORPAD_updateConfirmedInputs();
+                    fillWith(KorSlot0,"e");
+
+                    Keyboard.write('e');
+                }
+            }
+            else if(MILLIS_FROM_PRESSED_UNTIL_RELEASE > 400){
+                fillWith(KorSlot0,"6");
+
+                KBD_HIJACKER.pressandreleaseKey(KEY_BACKSPACE);
+                Keyboard.write('6');
+            }
+            isActivatedKeyEvent=false; key=0;
+        }
+        break;
+
+        case KEYPAD_1:
+        {
+            if(event){
+                if
+                (   isEquals(KorSlot0,"q")   ){
+                    fillWith(KorSlot0,"v");
+
+                    KBD_HIJACKER.pressandreleaseKey(KEY_BACKSPACE);
+                    Keyboard.write('v');
+                }
+                else if
+                (   isEquals(KorSlot0,"v")   ){
+                    fillWith(KorSlot0,"Q");
+
+                    KBD_HIJACKER.pressandreleaseKey(KEY_BACKSPACE);
+                    Keyboard.write('Q');
+                }
+                else if
+                (   isEquals(KorSlot0,"Q")   ){
+                    fillWith(KorSlot0,"q");
+
+                    KBD_HIJACKER.pressandreleaseKey(KEY_BACKSPACE); KORPAD_correctBottomSingleConsonantError();
+                                                                    KORPAD_correctBottomDualConsonantError();
+                    Keyboard.write('q');
+                }
+                else
+                {
+                    KORPAD_updateConfirmedInputs();
+                    fillWith(KorSlot0,"q");
+
+                    Keyboard.write('q');
+                }
+            }
+            else if(MILLIS_FROM_PRESSED_UNTIL_RELEASE > 400){
+                fillWith(KorSlot0,"1");
+
+                KBD_HIJACKER.pressandreleaseKey(KEY_BACKSPACE);
+                Keyboard.write('1');
+            }
+            isActivatedKeyEvent=false; key=0;
+        }
+        break;
+
+        case KEYPAD_2:
+        {
+            if(event){
+                if
+                (   isEquals(KorSlot0,"t")   ){
+                    fillWith(KorSlot0,"g");
+
+                    KBD_HIJACKER.pressandreleaseKey(KEY_BACKSPACE); KORPAD_correctBottomDualConsonantError();
+                    Keyboard.write('g');
+                }
+                else if
+                (   isEquals(KorSlot0,"g")   ){
+                    fillWith(KorSlot0,"T");
+
+                    KBD_HIJACKER.pressandreleaseKey(KEY_BACKSPACE);
+                    Keyboard.write('T');
+                }
+                else if
+                (   isEquals(KorSlot0,"T")   ){
+                    fillWith(KorSlot0,"t");
+
+                    KBD_HIJACKER.pressandreleaseKey(KEY_BACKSPACE); KORPAD_correctBottomDualConsonantError();
+                    Keyboard.write('t');
+                }
+                else
+                {
+                    KORPAD_updateConfirmedInputs();
+                    fillWith(KorSlot0,"t");
+
+                    Keyboard.write('t');
+                }
+            }
+            else if(MILLIS_FROM_PRESSED_UNTIL_RELEASE > 400){
+                fillWith(KorSlot0,"2");
+
+                KBD_HIJACKER.pressandreleaseKey(KEY_BACKSPACE);
+                Keyboard.write('2');
+            }
+            isActivatedKeyEvent=false; key=0;
+        }
+        break;
+
+        case KEYPAD_3:
+        {
+            if(event){
+                if
+                (   isEquals(KorSlot0,"w")   ){
+                    fillWith(KorSlot0,"c");
+
+                    KBD_HIJACKER.pressandreleaseKey(KEY_BACKSPACE);
+                    Keyboard.write('c');
+                }
+                else if
+                (   isEquals(KorSlot0,"c")   ){
+                    fillWith(KorSlot0,"W");
+
+                    KBD_HIJACKER.pressandreleaseKey(KEY_BACKSPACE);
+                    Keyboard.write('W');
+                }
+                else if
+                (   isEquals(KorSlot0,"W")   ){
+                    fillWith(KorSlot0,"w");
+
+                    KBD_HIJACKER.pressandreleaseKey(KEY_BACKSPACE); KORPAD_correctBottomSingleConsonantError();
+                                                                    KORPAD_correctBottomDualConsonantError();
+                    Keyboard.write('w');
+                }
+                else
+                {
+                    KORPAD_updateConfirmedInputs();
+                    fillWith(KorSlot0,"w");
+
+                    Keyboard.write('w');
+                }
+            }
+            else if(MILLIS_FROM_PRESSED_UNTIL_RELEASE > 400){
+                fillWith(KorSlot0,"3");
+
+                KBD_HIJACKER.pressandreleaseKey(KEY_BACKSPACE);
+                Keyboard.write('3');
+            }
+            isActivatedKeyEvent=false; key=0;
+        }
+        break;
+
+        case KEYPAD_0:
+        {
+            if(event){
+                if
+                (   isEquals(KorSlot0,"d")   ){
+                    fillWith(KorSlot0,"a");
+
+                    KBD_HIJACKER.pressandreleaseKey(KEY_BACKSPACE); KORPAD_correctBottomDualConsonantError();
+                    Keyboard.write('a');
+                }
+                else if
+                (   isEquals(KorSlot0,"a")   ){
+                    fillWith(KorSlot0,"d");
+
+                    KBD_HIJACKER.pressandreleaseKey(KEY_BACKSPACE);
+                    Keyboard.write('d');
+                }
+                else
+                {
+                    KORPAD_updateConfirmedInputs();
+                    fillWith(KorSlot0,"d");
+
+                    Keyboard.write('d');
+                }
+            }
+            else if(MILLIS_FROM_PRESSED_UNTIL_RELEASE > 400){
+                fillWith(KorSlot0,"0");
+
+                KBD_HIJACKER.pressandreleaseKey(KEY_BACKSPACE);
+                Keyboard.write('0');
+            }
+            isActivatedKeyEvent=false; key=0;
+        }
+        break;
 
         #endif
         /* ------------------------------------------------ KEYPAD_KOREAN_LAYOUT1 CheonJiIn ------------------------------------------------ */
 
 
 
-        /* ------------------------------------------------ KEYPAD_KOREAN_LAYOUT2 NaRatGle ------------------------------------------------ */
+        /* ------------------------------------------------ KEYPAD_KOREAN_LAYOUT2 NaRatGeul ------------------------------------------------ */
         #if (KEYPAD_KOREAN_LAYOUT == 2)
-        
+
         case KEYPAD_7:
         {
             if(event){
                 KORPAD_updateConfirmedInputs();
-                Keyboard.write ('r');
-                strcpy(KorSlot0,"r");
+                fillWith(KorSlot0,"r");
+
+                Keyboard.write('r');
             }
             else if(MILLIS_FROM_PRESSED_UNTIL_RELEASE > 400){
-                KORPAD_updateConfirmedInputs();
-                KBD_Hijacker.pressandreleaseKey(KEY_BACKSPACE);
-                Keyboard.write ('7');
-                strcpy(KorSlot0,"7");
+                fillWith(KorSlot0,"7");
+
+                KBD_HIJACKER.pressandreleaseKey(KEY_BACKSPACE);
+                Keyboard.write('7');
             }
-            isActivateKeyEvent=false; key=0;
+            isActivatedKeyEvent=false; key=0;
         }
         break;
-        
+
         case KEYPAD_8:
         {
             if(event){
                 KORPAD_updateConfirmedInputs();
-                Keyboard.write ('s');
-                strcpy(KorSlot0,"s");
+                fillWith(KorSlot0,"s");
+
+                Keyboard.write('s');
             }
             else if(MILLIS_FROM_PRESSED_UNTIL_RELEASE > 400){
-                KORPAD_updateConfirmedInputs();
-                KBD_Hijacker.pressandreleaseKey(KEY_BACKSPACE);
-                Keyboard.write ('8');
-                strcpy(KorSlot0,"8");
+                fillWith(KorSlot0,"8");
+
+                KBD_HIJACKER.pressandreleaseKey(KEY_BACKSPACE);
+                Keyboard.write('8');
             }
-            isActivateKeyEvent=false; key=0;
+            isActivatedKeyEvent=false; key=0;
         }
         break;
-        
+
+        case KEYPAD_9:
+        {
+            if(event){
+                if
+                (   isEquals(KorSlot0,"k")   ){
+                    fillWith(KorSlot0,"j");
+
+                    KBD_HIJACKER.pressandreleaseKey(KEY_BACKSPACE);
+                    Keyboard.write('j');
+                }
+                else if
+                (   isEquals(KorSlot0,"j")   ){
+                    fillWith(KorSlot0,"k");
+
+                    KBD_HIJACKER.pressandreleaseKey(KEY_BACKSPACE);
+                    Keyboard.write('k');
+                }
+                else if
+                (   isEquals(KorSlot0,"h")   ){
+                    fillWith(KorSlot0,"hk");
+
+                    Keyboard.write('k');
+                }
+                else if
+                (   isEquals(KorSlot0,"n")   ){
+                    fillWith(KorSlot0,"nj");
+
+                    Keyboard.write('j');
+                }
+                else
+                {
+                    KORPAD_updateConfirmedInputs();
+                    fillWith(KorSlot0,"k");
+
+                    Keyboard.write('k');
+                }
+            }
+            else if(MILLIS_FROM_PRESSED_UNTIL_RELEASE > 400){
+                fillWith(KorSlot0,"9");
+
+                KBD_HIJACKER.pressandreleaseKey(KEY_BACKSPACE);
+                Keyboard.write('9');
+            }
+            isActivatedKeyEvent=false; key=0;
+        }
+        break;
+
         case KEYPAD_4:
         {
             if(event){
                 KORPAD_updateConfirmedInputs();
-                Keyboard.write ('f');
-                strcpy(KorSlot0,"f");
+                fillWith(KorSlot0,"f");
+
+                Keyboard.write('f');
             }
             else if(MILLIS_FROM_PRESSED_UNTIL_RELEASE > 400){
-                KORPAD_updateConfirmedInputs();
-                KBD_Hijacker.pressandreleaseKey(KEY_BACKSPACE);
-                Keyboard.write ('4');
-                strcpy(KorSlot0,"4");
+                fillWith(KorSlot0,"4");
+
+                KBD_HIJACKER.pressandreleaseKey(KEY_BACKSPACE);
+                Keyboard.write('4');
             }
-            isActivateKeyEvent=false; key=0;
+            isActivatedKeyEvent=false; key=0;
         }
         break;
-        
+
         case KEYPAD_5:
         {
             if(event){
                 KORPAD_updateConfirmedInputs();
-                Keyboard.write ('a');
-                strcpy(KorSlot0,"a");
+                fillWith(KorSlot0,"a");
+
+                Keyboard.write('a');
             }
             else if(MILLIS_FROM_PRESSED_UNTIL_RELEASE > 400){
-                KORPAD_updateConfirmedInputs();
-                KBD_Hijacker.pressandreleaseKey(KEY_BACKSPACE);
-                Keyboard.write ('5');
-                strcpy(KorSlot0,"5");
+                fillWith(KorSlot0,"5");
+
+                KBD_HIJACKER.pressandreleaseKey(KEY_BACKSPACE);
+                Keyboard.write('5');
             }
-            isActivateKeyEvent=false; key=0;
+            isActivatedKeyEvent=false; key=0;
         }
         break;
-        
+
+        case KEYPAD_6:
+        {
+            if(event){
+                if
+                (   isEquals(KorSlot0,"h")   ){
+                    fillWith(KorSlot0,"n");
+
+                    KBD_HIJACKER.pressandreleaseKey(KEY_BACKSPACE);
+                    Keyboard.write('n');
+                }
+                else if
+                (   isEquals(KorSlot0,"n")   ){
+                    fillWith(KorSlot0,"h");
+
+                    KBD_HIJACKER.pressandreleaseKey(KEY_BACKSPACE);
+                    Keyboard.write('h');
+                }
+                else
+                {
+                    KORPAD_updateConfirmedInputs();
+                    fillWith(KorSlot0,"h");
+
+                    Keyboard.write('h');
+                }
+            }
+            else if(MILLIS_FROM_PRESSED_UNTIL_RELEASE > 400){
+                fillWith(KorSlot0,"6");
+
+                KBD_HIJACKER.pressandreleaseKey(KEY_BACKSPACE);
+                Keyboard.write('6');
+            }
+            isActivatedKeyEvent=false; key=0;
+        }
+        break;
+
         case KEYPAD_1:
         {
             if(event){
                 KORPAD_updateConfirmedInputs();
-                Keyboard.write ('t');
-                strcpy(KorSlot0,"t");
+                fillWith(KorSlot0,"t");
+
+                Keyboard.write('t');
             }
             else if(MILLIS_FROM_PRESSED_UNTIL_RELEASE > 400){
-                KORPAD_updateConfirmedInputs();
-                KBD_Hijacker.pressandreleaseKey(KEY_BACKSPACE);
-                Keyboard.write ('1');
-                strcpy(KorSlot0,"1");
+                fillWith(KorSlot0,"1");
+
+                KBD_HIJACKER.pressandreleaseKey(KEY_BACKSPACE);
+                Keyboard.write('1');
             }
-            isActivateKeyEvent=false; key=0;
+            isActivatedKeyEvent=false; key=0;
         }
         break;
-        
+
         case KEYPAD_2:
         {
             if(event){
                 KORPAD_updateConfirmedInputs();
-                Keyboard.write ('d');
-                strcpy(KorSlot0,"d");
+                fillWith(KorSlot0,"d");
+
+                Keyboard.write('d');
             }
             else if(MILLIS_FROM_PRESSED_UNTIL_RELEASE > 400){
-                KORPAD_updateConfirmedInputs();
-                KBD_Hijacker.pressandreleaseKey(KEY_BACKSPACE);
-                Keyboard.write ('2');
-                strcpy(KorSlot0,"2");
+                fillWith(KorSlot0,"2");
+
+                KBD_HIJACKER.pressandreleaseKey(KEY_BACKSPACE);
+                Keyboard.write('2');
             }
-            isActivateKeyEvent=false; key=0;
+            isActivatedKeyEvent=false; key=0;
         }
         break;
-        
-        case KEYPAD_9:
-        {
-            if(event){
-                if       (strcmp(KorSlot0,"k")==0){
-                    KBD_Hijacker.pressandreleaseKey(KEY_BACKSPACE);
-                    Keyboard.write ('j');
-                    strcpy(KorSlot0,"j");
-                } else if(strcmp(KorSlot0,"j")==0){
-                    KBD_Hijacker.pressandreleaseKey(KEY_BACKSPACE);
-                    Keyboard.write ('k');
-                    strcpy(KorSlot0,"k");
-                } else if(strcmp(KorSlot0,"h")==0){
-                    Keyboard.write ('k');
-                    strcpy(KorSlot0,"hk");
-                } else if(strcmp(KorSlot0,"n")==0){
-                    Keyboard.write ('j');
-                    strcpy(KorSlot0,"nj");
-                } else{
-                    KORPAD_updateConfirmedInputs();
-                    Keyboard.write ('k');
-                    strcpy(KorSlot0,"k");
-                }
-            }
-            else if(MILLIS_FROM_PRESSED_UNTIL_RELEASE > 400){
-                KORPAD_updateConfirmedInputs();
-                KBD_Hijacker.pressandreleaseKey(KEY_BACKSPACE);
-                Keyboard.write ('9');
-                strcpy(KorSlot0,"9");
-            }
-            isActivateKeyEvent=false; key=0;
-        }
-        break;
-        
-        case KEYPAD_6:
-        {
-            if(event){
-                if       (strcmp(KorSlot0,"h")==0){
-                    KBD_Hijacker.pressandreleaseKey(KEY_BACKSPACE);
-                    Keyboard.write ('n');
-                    strcpy(KorSlot0,"n");
-                } else if(strcmp(KorSlot0,"n")==0){
-                    KBD_Hijacker.pressandreleaseKey(KEY_BACKSPACE);
-                    Keyboard.write ('h');
-                    strcpy(KorSlot0,"h");
-                } else{
-                    KORPAD_updateConfirmedInputs();
-                    Keyboard.write ('h');
-                    strcpy(KorSlot0,"h");
-                }
-            }
-            else if(MILLIS_FROM_PRESSED_UNTIL_RELEASE > 400){
-                KORPAD_updateConfirmedInputs();
-                KBD_Hijacker.pressandreleaseKey(KEY_BACKSPACE);
-                Keyboard.write ('6');
-                strcpy(KorSlot0,"6");
-            }
-            isActivateKeyEvent=false; key=0;
-        }
-        break;
-        
+
         case KEYPAD_3:
         {
             if(event){
-                if       (strcmp(KorSlot0,"k")==0){
-                    KBD_Hijacker.pressandreleaseKey(KEY_BACKSPACE);
-                    Keyboard.write ('o');
-                    strcpy(KorSlot0,"o");
-                } else if(strcmp(KorSlot0,"i")==0){
-                    KBD_Hijacker.pressandreleaseKey(KEY_BACKSPACE);
-                    Keyboard.write ('O');
-                    strcpy(KorSlot0,"O");
-                } else if(strcmp(KorSlot0,"j")==0){
-                    KBD_Hijacker.pressandreleaseKey(KEY_BACKSPACE);
-                    Keyboard.write ('p');
-                    strcpy(KorSlot0,"p");
-                } else if(strcmp(KorSlot0,"u")==0){
-                    KBD_Hijacker.pressandreleaseKey(KEY_BACKSPACE);
-                    Keyboard.write ('P');
-                    strcpy(KorSlot0,"P");
-                } else if(strcmp(KorSlot0,"h")==0){
-                    Keyboard.write ('l');
-                    strcpy(KorSlot0,"hl");
-                } else if(strcmp(KorSlot0,"n")==0){
-                    Keyboard.write ('l');
-                    strcpy(KorSlot0,"nl");
-                } else if(strcmp(KorSlot0,"m")==0){
-                    Keyboard.write ('l');
-                    strcpy(KorSlot0,"ml");
-                } else if(strcmp(KorSlot0,"hk")==0){
-                    KBD_Hijacker.pressandreleaseKey(KEY_BACKSPACE);
-                    Keyboard.write ('o');
-                    strcpy(KorSlot0,"ho");
-                } else if(strcmp(KorSlot0,"nj")==0){
-                    KBD_Hijacker.pressandreleaseKey(KEY_BACKSPACE);
-                    Keyboard.write ('p');
-                    strcpy(KorSlot0,"np");
-                } else{
+                if
+                (   isEquals(KorSlot0,"k")   ){
+                    fillWith(KorSlot0,"o");
+
+                    KBD_HIJACKER.pressandreleaseKey(KEY_BACKSPACE);
+                    Keyboard.write('o');
+                }
+                else if
+                (   isEquals(KorSlot0,"i")   ){
+                    fillWith(KorSlot0,"O");
+
+                    KBD_HIJACKER.pressandreleaseKey(KEY_BACKSPACE);
+                    Keyboard.write('O');
+                }
+                else if
+                (   isEquals(KorSlot0,"j")   ){
+                    fillWith(KorSlot0,"p");
+
+                    KBD_HIJACKER.pressandreleaseKey(KEY_BACKSPACE);
+                    Keyboard.write('p');
+                }
+                else if
+                (   isEquals(KorSlot0,"u")   ){
+                    fillWith(KorSlot0,"P");
+
+                    KBD_HIJACKER.pressandreleaseKey(KEY_BACKSPACE);
+                    Keyboard.write('P');
+                }
+                else if
+                (   isEquals(KorSlot0,"h")   ){
+                    fillWith(KorSlot0,"hl");
+
+                    Keyboard.write('l');
+                }
+                else if
+                (   isEquals(KorSlot0,"n")   ){
+                    fillWith(KorSlot0,"nl");
+
+                    Keyboard.write('l');
+                }
+                else if
+                (   isEquals(KorSlot0,"m")   ){
+                    fillWith(KorSlot0,"ml");
+
+                    Keyboard.write('l');
+                }
+                else if
+                (   isEquals(KorSlot0,"hk")   ){
+                    fillWith(KorSlot0,"ho");
+
+                    KBD_HIJACKER.pressandreleaseKey(KEY_BACKSPACE);
+                    Keyboard.write('o');
+                }
+                else if
+                (   isEquals(KorSlot0,"nj")   ){
+                    fillWith(KorSlot0,"np");
+
+                    KBD_HIJACKER.pressandreleaseKey(KEY_BACKSPACE);
+                    Keyboard.write('p');
+                }
+                else
+                {
                     KORPAD_updateConfirmedInputs();
-                    Keyboard.write ('l');
-                    strcpy(KorSlot0,"l");
+                    fillWith(KorSlot0,"l");
+
+                    Keyboard.write('l');
                 }
             }
             else if(MILLIS_FROM_PRESSED_UNTIL_RELEASE > 400){
-                KORPAD_updateConfirmedInputs();
-                KBD_Hijacker.pressandreleaseKey(KEY_BACKSPACE);
-                Keyboard.write ('3');
-                strcpy(KorSlot0,"3");
+                fillWith(KorSlot0,"3");
+
+                KBD_HIJACKER.pressandreleaseKey(KEY_BACKSPACE);
+                Keyboard.write('3');
             }
-            isActivateKeyEvent=false; key=0;
+            isActivatedKeyEvent=false; key=0;
         }
         break;
-        
+
         case KEYPAD_0:
         {
             if(event){
                 KORPAD_updateConfirmedInputs();
-                Keyboard.write ('m');
-                strcpy(KorSlot0,"m");
+                fillWith(KorSlot0,"m");
+
+                Keyboard.write('m');
             }
             else if(MILLIS_FROM_PRESSED_UNTIL_RELEASE > 400){
-                KORPAD_updateConfirmedInputs();
-                KBD_Hijacker.pressandreleaseKey(KEY_BACKSPACE);
-                Keyboard.write ('0');
-                strcpy(KorSlot0,"0");
+                fillWith(KorSlot0,"0");
+
+                KBD_HIJACKER.pressandreleaseKey(KEY_BACKSPACE);
+                Keyboard.write('0');
             }
-            isActivateKeyEvent=false; key=0;
+            isActivatedKeyEvent=false; key=0;
         }
         break;
-        
+
+        #endif
+        /* ------------------------------------------------ KEYPAD_KOREAN_LAYOUT2 NaRatGeul ------------------------------------------------ */
+
+
+
+
+
         case KEY_TAB:
         {
             if(event){
-                if       (strcmp(KorSlot0,"r")==0){
-                    KBD_Hijacker.pressandreleaseKey(KEY_BACKSPACE);
-                    Keyboard.write ('z');
-                    strcpy(KorSlot0,"z");
-                } else if(strcmp(KorSlot0,"z")==0){
-                    KBD_Hijacker.pressandreleaseKey(KEY_BACKSPACE); if(strcmp(KorSlot1,"f")==0){ KORPAD_correctBottomDualConsonantError(); }
-                    Keyboard.write ('r');
-                    strcpy(KorSlot0,"r");
-                } else if(strcmp(KorSlot0,"s")==0){
-                    KBD_Hijacker.pressandreleaseKey(KEY_BACKSPACE);
-                    Keyboard.write ('e');
-                    strcpy(KorSlot0,"e");
-                } else if(strcmp(KorSlot0,"e")==0){
-                    KBD_Hijacker.pressandreleaseKey(KEY_BACKSPACE); if(strcmp(KorSlot1,"f")==0){ KORPAD_correctBottomDualConsonantError(); }
-                    Keyboard.write ('x');
-                    strcpy(KorSlot0,"x");
-                } else if(strcmp(KorSlot0,"x")==0){
-                    KBD_Hijacker.pressandreleaseKey(KEY_BACKSPACE);
-                    Keyboard.write ('s');
-                    strcpy(KorSlot0,"s");
-                } else if(strcmp(KorSlot0,"a")==0){
-                    KBD_Hijacker.pressandreleaseKey(KEY_BACKSPACE);
-                    Keyboard.write ('q');
-                    strcpy(KorSlot0,"q");
-                } else if(strcmp(KorSlot0,"q")==0){
-                    KBD_Hijacker.pressandreleaseKey(KEY_BACKSPACE);
-                    Keyboard.write ('v');
-                    strcpy(KorSlot0,"v");
-                } else if(strcmp(KorSlot0,"v")==0){
-                    KBD_Hijacker.pressandreleaseKey(KEY_BACKSPACE);
-                    Keyboard.write ('a');
-                    strcpy(KorSlot0,"a");
-                } else if(strcmp(KorSlot0,"t")==0){
-                    KBD_Hijacker.pressandreleaseKey(KEY_BACKSPACE); if(strcmp(KorSlot1,"s")==0){ KORPAD_correctBottomDualConsonantError(); }
-                    Keyboard.write ('w');
-                    strcpy(KorSlot0,"w");
-                } else if(strcmp(KorSlot0,"w")==0){
-                    KBD_Hijacker.pressandreleaseKey(KEY_BACKSPACE);
-                    Keyboard.write ('c');
-                    strcpy(KorSlot0,"c");
-                } else if(strcmp(KorSlot0,"c")==0){
-                    KBD_Hijacker.pressandreleaseKey(KEY_BACKSPACE); if(strcmp(KorSlot1,"r")==0){ KORPAD_correctBottomDualConsonantError(); }
-                                                                    if(strcmp(KorSlot1,"f")==0){ KORPAD_correctBottomDualConsonantError(); }
-                                                                    if(strcmp(KorSlot1,"q")==0){ KORPAD_correctBottomDualConsonantError(); }
-                    Keyboard.write ('t');
-                    strcpy(KorSlot0,"t");
-                } else if(strcmp(KorSlot0,"d")==0){
-                    KBD_Hijacker.pressandreleaseKey(KEY_BACKSPACE); if(strcmp(KorSlot1,"s")==0){ KORPAD_correctBottomDualConsonantError(); }
-                                                                    if(strcmp(KorSlot1,"f")==0){ KORPAD_correctBottomDualConsonantError(); }
-                    Keyboard.write ('g');
-                    strcpy(KorSlot0,"g");
-                } else if(strcmp(KorSlot0,"g")==0){
-                    KBD_Hijacker.pressandreleaseKey(KEY_BACKSPACE);
-                    Keyboard.write ('d');
-                    strcpy(KorSlot0,"d");
-                } else if(strcmp(KorSlot0,"k")==0){
-                    KBD_Hijacker.pressandreleaseKey(KEY_BACKSPACE);
-                    Keyboard.write ('i');
-                    strcpy(KorSlot0,"i");
-                } else if(strcmp(KorSlot0,"i")==0){
-                    KBD_Hijacker.pressandreleaseKey(KEY_BACKSPACE);
-                    Keyboard.write ('k');
-                    strcpy(KorSlot0,"k");
-                } else if(strcmp(KorSlot0,"j")==0){
-                    KBD_Hijacker.pressandreleaseKey(KEY_BACKSPACE);
-                    Keyboard.write ('u');
-                    strcpy(KorSlot0,"u");
-                } else if(strcmp(KorSlot0,"u")==0){
-                    KBD_Hijacker.pressandreleaseKey(KEY_BACKSPACE);
-                    Keyboard.write ('j');
-                    strcpy(KorSlot0,"j");
-                } else if(strcmp(KorSlot0,"h")==0){
-                    KBD_Hijacker.pressandreleaseKey(KEY_BACKSPACE);
-                    Keyboard.write ('y');
-                    strcpy(KorSlot0,"y");
-                } else if(strcmp(KorSlot0,"y")==0){
-                    KBD_Hijacker.pressandreleaseKey(KEY_BACKSPACE);
-                    Keyboard.write ('h');
-                    strcpy(KorSlot0,"h");
-                } else if(strcmp(KorSlot0,"n")==0){
-                    KBD_Hijacker.pressandreleaseKey(KEY_BACKSPACE);
-                    Keyboard.write ('b');
-                    strcpy(KorSlot0,"b");
-                } else if(strcmp(KorSlot0,"b")==0){
-                    KBD_Hijacker.pressandreleaseKey(KEY_BACKSPACE);
-                    Keyboard.write ('n');
-                    strcpy(KorSlot0,"n");
-                } else if(strcmp(KorSlot0,"")==0 || KBD_Parser.KeyLogger.peek_key(1)==KEY_TAB){
-                        KORPAD_resetConfirmedInputs();
-                        KBD_Hijacker.pressandreleaseKey(KEY_TAB);
+                #if (KEYPAD_KOREAN_LAYOUT == 2) //NaRatGeul
+
+                if
+                (   isEquals(KorSlot0,"r")   ){
+                    fillWith(KorSlot0,"z");
+
+                    KBD_HIJACKER.pressandreleaseKey(KEY_BACKSPACE);
+                    Keyboard.write('z');
                 }
+                else if
+                (   isEquals(KorSlot0,"z")   ){
+                    fillWith(KorSlot0,"r");
+
+                    KBD_HIJACKER.pressandreleaseKey(KEY_BACKSPACE); KORPAD_correctBottomDualConsonantError();
+                    Keyboard.write('r');
+                }
+                else if
+                (   isEquals(KorSlot0,"s")   ){
+                    fillWith(KorSlot0,"e");
+
+                    KBD_HIJACKER.pressandreleaseKey(KEY_BACKSPACE);
+                    Keyboard.write('e');
+                }
+                else if
+                (   isEquals(KorSlot0,"e")   ){
+                    fillWith(KorSlot0,"x");
+
+                    KBD_HIJACKER.pressandreleaseKey(KEY_BACKSPACE); KORPAD_correctBottomDualConsonantError();
+                    Keyboard.write('x');
+                }
+                else if
+                (   isEquals(KorSlot0,"x")   ){
+                    fillWith(KorSlot0,"s");
+
+                    KBD_HIJACKER.pressandreleaseKey(KEY_BACKSPACE);
+                    Keyboard.write('s');
+                }
+                else if
+                (   isEquals(KorSlot0,"a")   ){
+                    fillWith(KorSlot0,"q");
+
+                    KBD_HIJACKER.pressandreleaseKey(KEY_BACKSPACE);
+                    Keyboard.write('q');
+                }
+                else if
+                (   isEquals(KorSlot0,"q")   ){
+                    fillWith(KorSlot0,"v");
+
+                    KBD_HIJACKER.pressandreleaseKey(KEY_BACKSPACE);
+                    Keyboard.write('v');
+                }
+                else if
+                (   isEquals(KorSlot0,"v")   ){
+                    fillWith(KorSlot0,"a");
+
+                    KBD_HIJACKER.pressandreleaseKey(KEY_BACKSPACE);
+                    Keyboard.write('a');
+                }
+                else if
+                (   isEquals(KorSlot0,"t")   ){
+                    fillWith(KorSlot0,"w");
+
+                    KBD_HIJACKER.pressandreleaseKey(KEY_BACKSPACE); KORPAD_correctBottomDualConsonantError();
+                    Keyboard.write('w');
+                }
+                else if
+                (   isEquals(KorSlot0,"w")   ){
+                    fillWith(KorSlot0,"c");
+
+                    KBD_HIJACKER.pressandreleaseKey(KEY_BACKSPACE);
+                    Keyboard.write('c');
+                }
+                else if
+                (   isEquals(KorSlot0,"c")   ){
+                    fillWith(KorSlot0,"t");
+
+                    KBD_HIJACKER.pressandreleaseKey(KEY_BACKSPACE); KORPAD_correctBottomDualConsonantError();
+                    Keyboard.write('t');
+                }
+                else if
+                (   isEquals(KorSlot0,"d")   ){
+                    fillWith(KorSlot0,"g");
+
+                    KBD_HIJACKER.pressandreleaseKey(KEY_BACKSPACE); KORPAD_correctBottomDualConsonantError();
+                    Keyboard.write('g');
+                }
+                else if
+                (   isEquals(KorSlot0,"g")   ){
+                    fillWith(KorSlot0,"d");
+
+                    KBD_HIJACKER.pressandreleaseKey(KEY_BACKSPACE);
+                    Keyboard.write('d');
+                }
+                else if
+                (   isEquals(KorSlot0,"k")   ){
+                    fillWith(KorSlot0,"i");
+
+                    KBD_HIJACKER.pressandreleaseKey(KEY_BACKSPACE);
+                    Keyboard.write('i');
+                }
+                else if
+                (   isEquals(KorSlot0,"i")   ){
+                    fillWith(KorSlot0,"k");
+
+                    KBD_HIJACKER.pressandreleaseKey(KEY_BACKSPACE);
+                    Keyboard.write('k');
+                }
+                else if
+                (   isEquals(KorSlot0,"j")   ){
+                    fillWith(KorSlot0,"u");
+
+                    KBD_HIJACKER.pressandreleaseKey(KEY_BACKSPACE);
+                    Keyboard.write('u');
+                }
+                else if
+                (   isEquals(KorSlot0,"u")   ){
+                    fillWith(KorSlot0,"j");
+
+                    KBD_HIJACKER.pressandreleaseKey(KEY_BACKSPACE);
+                    Keyboard.write('j');
+                }
+                else if
+                (   isEquals(KorSlot0,"h")   ){
+                    fillWith(KorSlot0,"y");
+
+                    KBD_HIJACKER.pressandreleaseKey(KEY_BACKSPACE);
+                    Keyboard.write('y');
+                }
+                else if
+                (   isEquals(KorSlot0,"y")   ){
+                    fillWith(KorSlot0,"h");
+
+                    KBD_HIJACKER.pressandreleaseKey(KEY_BACKSPACE);
+                    Keyboard.write('h');
+                }
+                else if
+                (   isEquals(KorSlot0,"n")   ){
+                    fillWith(KorSlot0,"b");
+
+                    KBD_HIJACKER.pressandreleaseKey(KEY_BACKSPACE);
+                    Keyboard.write('b');
+                }
+                else if
+                (   isEquals(KorSlot0,"b")   ){
+                    fillWith(KorSlot0,"n");
+
+                    KBD_HIJACKER.pressandreleaseKey(KEY_BACKSPACE);
+                    Keyboard.write('n');
+                }
+
+                #endif                          //NaRatGeul End
             }
-            isActivateKeyEvent=false; key=0;
-        }
-        break;
-        
-        case KEYPAD_PERIOD:
-        {
-            if(event){
-                
-            } else if(MILLIS_FROM_PRESSED_UNTIL_RELEASE > 400){
-                if(!ConvertMode_Alphabet)
+            else 
+            if(isEquals(KorSlot0,"") || isEquals(KorSlot0," "))
+            {
+                if(MILLIS_FROM_PRESSED_UNTIL_RELEASE > 400)
                 {
-                    KORPAD_resetConfirmedInputs();
-                    
-                    //Turn On  ConvertMode_Alphabet
-                    ConvertMode_Alphabet = true;
-    
-                    Buzzzzer::reserveBuzz(   { NOTE_FS5,0, NOTE_GS5,0, NOTE_AS5,0, NOTE_DS6,0, NOTE_CS6 }
-                                        ,   { 200,30,     100,150,    120,200,    150,150,    450      }   );
-                    
+                    if(KORPAD_MODE != MODE_KANA)
+                    {
+                        KORPAD_resetConfirmedInputs();
+                        
+                        //Turn On MODE_KANA
+                        KORPAD_MODE = MODE_KANA;
+        
+                        Buzzzzer::reserveBuzz   ( { NOTE_E7,    NOTE_E7,0,  NOTE_E7,0,  NOTE_C7,    NOTE_E7,0,  NOTE_G7,0   }
+                                                , { 200,        130,50,     100,50,     100,        130,50,     300,444,    } );
+                    }
+                    else
+                    {
+                        KORPAD_resetConfirmedInputs();
+                        
+                        //Back To MODE_HANGEUL
+                        KORPAD_MODE = MODE_HANGEUL;
+                                                
+                        Buzzzzer::reserveBuzz   ( { NOTE_G6 }
+                                                , { 222     } );
+                    }
+
                     //If CAPSLOCK was On, Turn Off BY FORCE
-                    if(KBD_Hijacker.getStateCapsLockToggle()){
-                        KBD_Hijacker.pressandreleaseKey(KEY_CAPS_LOCK);
-                    } KBD_Hijacker.reserveSyncTKS=true;
+                    if(KBD_HIJACKER.getStateCapsLockToggle())
+                        KBD_HIJACKER.pressandreleaseKey(KEY_CAPS_LOCK);
+                    KBD_HIJACKER.reserveSyncToggleKeyStates();
                 }
                 else
                 {
+                    KBD_HIJACKER.pressandreleaseKey(KEY_TAB);
+
                     KORPAD_resetConfirmedInputs();
-                    
-                    //Turn Off ConvertMode_Alphabet
-                    ConvertMode_Alphabet = false;
-                                            
-                    Buzzzzer::reserveBuzz(   { NOTE_AS5,0, NOTE_GS5,0, NOTE_FS5,0, NOTE_FS5 }
-                                        ,   { 300,50,     230,50,     170,100,    350      }   );
-                }
-            } else{
-                if       (strcmp(KorSlot0,"r")==0){
-                    KBD_Hijacker.pressandreleaseKey(KEY_BACKSPACE);
-                    Keyboard.write ('R');
-                    strcpy(KorSlot0,"R");
-                } else if(strcmp(KorSlot0,"R")==0){
-                    KBD_Hijacker.pressandreleaseKey(KEY_BACKSPACE); if(strcmp(KorSlot1,"f")==0){ KORPAD_correctBottomDualConsonantError(); }
-                    Keyboard.write ('r');
-                    strcpy(KorSlot0,"r");
-                } else if(strcmp(KorSlot0,"e")==0){
-                    KBD_Hijacker.pressandreleaseKey(KEY_BACKSPACE);
-                    Keyboard.write ('E');
-                    strcpy(KorSlot0,"E");
-                } else if(strcmp(KorSlot0,"E")==0){
-                    KBD_Hijacker.pressandreleaseKey(KEY_BACKSPACE); KORPAD_correctBottomSingleConsonantError();
-                    Keyboard.write ('e');
-                    strcpy(KorSlot0,"e");
-                } else if(strcmp(KorSlot0,"q")==0){
-                    KBD_Hijacker.pressandreleaseKey(KEY_BACKSPACE);
-                    Keyboard.write ('Q');
-                    strcpy(KorSlot0,"Q");
-                } else if(strcmp(KorSlot0,"Q")==0){
-                    KBD_Hijacker.pressandreleaseKey(KEY_BACKSPACE); KORPAD_correctBottomSingleConsonantError();
-                                                                    if(strcmp(KorSlot1,"f")==0){ KORPAD_correctBottomDualConsonantError(); }
-                    Keyboard.write ('q');
-                    strcpy(KorSlot0,"q");
-                } else if(strcmp(KorSlot0,"t")==0){
-                    KBD_Hijacker.pressandreleaseKey(KEY_BACKSPACE);
-                    Keyboard.write ('T');
-                    strcpy(KorSlot0,"T");
-                } else if(strcmp(KorSlot0,"T")==0){
-                    KBD_Hijacker.pressandreleaseKey(KEY_BACKSPACE); if(strcmp(KorSlot1,"r")==0){ KORPAD_correctBottomDualConsonantError(); }
-                                                                    if(strcmp(KorSlot1,"f")==0){ KORPAD_correctBottomDualConsonantError(); }
-                                                                    if(strcmp(KorSlot1,"q")==0){ KORPAD_correctBottomDualConsonantError(); }
-                    Keyboard.write ('t');
-                    strcpy(KorSlot0,"t");
-                } else if(strcmp(KorSlot0,"w")==0){
-                    KBD_Hijacker.pressandreleaseKey(KEY_BACKSPACE);
-                    Keyboard.write ('W');
-                    strcpy(KorSlot0,"W");
-                } else if(strcmp(KorSlot0,"W")==0){
-                    KBD_Hijacker.pressandreleaseKey(KEY_BACKSPACE); KORPAD_correctBottomSingleConsonantError();
-                                                                    if(strcmp(KorSlot1,"s")==0){ KORPAD_correctBottomDualConsonantError(); }
-                    Keyboard.write ('w');
-                    strcpy(KorSlot0,"w");
-                } else if(strcmp(KorSlot0," ")==0){
-                    KBD_Hijacker.pressandreleaseKey(KEY_BACKSPACE);
-                    Keyboard.write (';');
-                    strcpy(KorSlot0,";");
-                } else if(strcmp(KorSlot0,";")==0){
-                    KBD_Hijacker.pressandreleaseKey(KEY_BACKSPACE);
-                    Keyboard.write ('('); Keyboard.write (')');
-                    strcpy(KorSlot0,"()");
-                } else if(strcmp(KorSlot0,"()")==0){
-                    KBD_Hijacker.pressandreleaseKey(KEY_BACKSPACE); KBD_Hijacker.pressandreleaseKey(KEY_BACKSPACE);
-                    Keyboard.write ('{'); Keyboard.write ('}');
-                    strcpy(KorSlot0,"{}");
-                } else if(strcmp(KorSlot0,"{}")==0){
-                    KBD_Hijacker.pressandreleaseKey(KEY_BACKSPACE); KBD_Hijacker.pressandreleaseKey(KEY_BACKSPACE);
-                    Keyboard.write ('?');
-                    strcpy(KorSlot0,"?");
-                } else if(strcmp(KorSlot0,"?")==0){
-                    KBD_Hijacker.pressandreleaseKey(KEY_BACKSPACE);
-                    Keyboard.write ('!');
-                    strcpy(KorSlot0,"!");
-                } else if(strcmp(KorSlot0,"!")==0){
-                    KBD_Hijacker.pressandreleaseKey(KEY_BACKSPACE);
-                    Keyboard.write ('.');
-                    strcpy(KorSlot0,".");
-                } else if(strcmp(KorSlot0,".")==0){
-                    KBD_Hijacker.pressandreleaseKey(KEY_BACKSPACE);
-                    Keyboard.write ('~');
-                    strcpy(KorSlot0,"~");
-                } else if(strcmp(KorSlot0,"~")==0){
-                    KBD_Hijacker.pressandreleaseKey(KEY_BACKSPACE);
-                    Keyboard.write ('^'); Keyboard.write ('^');
-                    strcpy(KorSlot0,"^^");
-                } else if(strcmp(KorSlot0,"^^")==0){
-                    KBD_Hijacker.pressandreleaseKey(KEY_BACKSPACE); KBD_Hijacker.pressandreleaseKey(KEY_BACKSPACE);
-                    Keyboard.write (' ');
-                    strcpy(KorSlot0," ");
-    
-                } else if(strcmp(KorSlot0,"*a")==0){        //a→A
-                    KBD_Hijacker.pressandreleaseKey(KEY_BACKSPACE);
-                    KORPAD_writeAlphabet('A');
-                    strcpy(KorSlot0,"*A");
-                    KORPAD_switchCapsLockToggleIfBattered3();
-                } else if(strcmp(KorSlot0,"*A")==0){
-                    KORPAD_switchCapsLockToggleIfBattered4();
-                    KBD_Hijacker.pressandreleaseKey(KEY_BACKSPACE);
-                    KORPAD_writeAlphabet('a');
-                    strcpy(KorSlot0,"*a");
-                } else if(strcmp(KorSlot0,"*b")==0){        //b→B
-                    KBD_Hijacker.pressandreleaseKey(KEY_BACKSPACE);
-                    KORPAD_writeAlphabet('B');
-                    strcpy(KorSlot0,"*B");
-                    KORPAD_switchCapsLockToggleIfBattered3();
-                } else if(strcmp(KorSlot0,"*B")==0){
-                    KORPAD_switchCapsLockToggleIfBattered4();
-                    KBD_Hijacker.pressandreleaseKey(KEY_BACKSPACE);
-                    KORPAD_writeAlphabet('b');
-                    strcpy(KorSlot0,"*b");
-                } else if(strcmp(KorSlot0,"*c")==0){        //c→C
-                    KBD_Hijacker.pressandreleaseKey(KEY_BACKSPACE);
-                    KORPAD_writeAlphabet('C');
-                    strcpy(KorSlot0,"*C");
-                    KORPAD_switchCapsLockToggleIfBattered3();
-                } else if(strcmp(KorSlot0,"*C")==0){
-                    KORPAD_switchCapsLockToggleIfBattered4();
-                    KBD_Hijacker.pressandreleaseKey(KEY_BACKSPACE);
-                    KORPAD_writeAlphabet('c');
-                    strcpy(KorSlot0,"*c");
-                } else if(strcmp(KorSlot0,"*d")==0){        //d→D
-                    KBD_Hijacker.pressandreleaseKey(KEY_BACKSPACE);
-                    KORPAD_writeAlphabet('D');
-                    strcpy(KorSlot0,"*D");
-                    KORPAD_switchCapsLockToggleIfBattered3();
-                } else if(strcmp(KorSlot0,"*D")==0){
-                    KORPAD_switchCapsLockToggleIfBattered4();
-                    KBD_Hijacker.pressandreleaseKey(KEY_BACKSPACE);
-                    KORPAD_writeAlphabet('d');
-                    strcpy(KorSlot0,"*d");
-                } else if(strcmp(KorSlot0,"*e")==0){        //e→E
-                    KBD_Hijacker.pressandreleaseKey(KEY_BACKSPACE);
-                    KORPAD_writeAlphabet('E');
-                    strcpy(KorSlot0,"*E");
-                    KORPAD_switchCapsLockToggleIfBattered3();
-                } else if(strcmp(KorSlot0,"*E")==0){
-                    KORPAD_switchCapsLockToggleIfBattered4();
-                    KBD_Hijacker.pressandreleaseKey(KEY_BACKSPACE);
-                    KORPAD_writeAlphabet('e');
-                    strcpy(KorSlot0,"*e");
-                } else if(strcmp(KorSlot0,"*f")==0){        //f→F
-                    KBD_Hijacker.pressandreleaseKey(KEY_BACKSPACE);
-                    KORPAD_writeAlphabet('F');
-                    strcpy(KorSlot0,"*F");
-                    KORPAD_switchCapsLockToggleIfBattered3();
-                } else if(strcmp(KorSlot0,"*F")==0){
-                    KORPAD_switchCapsLockToggleIfBattered4();
-                    KBD_Hijacker.pressandreleaseKey(KEY_BACKSPACE);
-                    KORPAD_writeAlphabet('f');
-                    strcpy(KorSlot0,"*f");
-                } else if(strcmp(KorSlot0,"*g")==0){        //g→G
-                    KBD_Hijacker.pressandreleaseKey(KEY_BACKSPACE);
-                    KORPAD_writeAlphabet('G');
-                    strcpy(KorSlot0,"*G");
-                    KORPAD_switchCapsLockToggleIfBattered3();
-                } else if(strcmp(KorSlot0,"*G")==0){
-                    KORPAD_switchCapsLockToggleIfBattered4();
-                    KBD_Hijacker.pressandreleaseKey(KEY_BACKSPACE);
-                    KORPAD_writeAlphabet('g');
-                    strcpy(KorSlot0,"*g");
-                } else if(strcmp(KorSlot0,"*h")==0){        //h→H
-                    KBD_Hijacker.pressandreleaseKey(KEY_BACKSPACE);
-                    KORPAD_writeAlphabet('H');
-                    strcpy(KorSlot0,"*H");
-                    KORPAD_switchCapsLockToggleIfBattered3();
-                } else if(strcmp(KorSlot0,"*H")==0){
-                    KORPAD_switchCapsLockToggleIfBattered4();
-                    KBD_Hijacker.pressandreleaseKey(KEY_BACKSPACE);
-                    KORPAD_writeAlphabet('h');
-                    strcpy(KorSlot0,"*h");
-                } else if(strcmp(KorSlot0,"*i")==0){        //i→I
-                    KBD_Hijacker.pressandreleaseKey(KEY_BACKSPACE);
-                    KORPAD_writeAlphabet('I');
-                    strcpy(KorSlot0,"*I");
-                    KORPAD_switchCapsLockToggleIfBattered3();
-                } else if(strcmp(KorSlot0,"*I")==0){
-                    KORPAD_switchCapsLockToggleIfBattered4();
-                    KBD_Hijacker.pressandreleaseKey(KEY_BACKSPACE);
-                    KORPAD_writeAlphabet('i');
-                    strcpy(KorSlot0,"*i");
-                } else if(strcmp(KorSlot0,"*j")==0){        //j→J
-                    KBD_Hijacker.pressandreleaseKey(KEY_BACKSPACE);
-                    KORPAD_writeAlphabet('J');
-                    strcpy(KorSlot0,"*J");
-                    KORPAD_switchCapsLockToggleIfBattered3();
-                } else if(strcmp(KorSlot0,"*J")==0){
-                    KORPAD_switchCapsLockToggleIfBattered4();
-                    KBD_Hijacker.pressandreleaseKey(KEY_BACKSPACE);
-                    KORPAD_writeAlphabet('j');
-                    strcpy(KorSlot0,"*j");
-                } else if(strcmp(KorSlot0,"*k")==0){        //k→K
-                    KBD_Hijacker.pressandreleaseKey(KEY_BACKSPACE);
-                    KORPAD_writeAlphabet('K');
-                    strcpy(KorSlot0,"*K");
-                    KORPAD_switchCapsLockToggleIfBattered3();
-                } else if(strcmp(KorSlot0,"*K")==0){
-                    KORPAD_switchCapsLockToggleIfBattered4();
-                    KBD_Hijacker.pressandreleaseKey(KEY_BACKSPACE);
-                    KORPAD_writeAlphabet('k');
-                    strcpy(KorSlot0,"*k");
-                } else if(strcmp(KorSlot0,"*l")==0){        //l→L
-                    KBD_Hijacker.pressandreleaseKey(KEY_BACKSPACE);
-                    KORPAD_writeAlphabet('L');
-                    strcpy(KorSlot0,"*L");
-                    KORPAD_switchCapsLockToggleIfBattered3();
-                } else if(strcmp(KorSlot0,"*L")==0){
-                    KORPAD_switchCapsLockToggleIfBattered4();
-                    KBD_Hijacker.pressandreleaseKey(KEY_BACKSPACE);
-                    KORPAD_writeAlphabet('l');
-                    strcpy(KorSlot0,"*l");
-                } else if(strcmp(KorSlot0,"*m")==0){        //m→M
-                    KBD_Hijacker.pressandreleaseKey(KEY_BACKSPACE);
-                    KORPAD_writeAlphabet('M');
-                    strcpy(KorSlot0,"*M");
-                    KORPAD_switchCapsLockToggleIfBattered3();
-                } else if(strcmp(KorSlot0,"*M")==0){
-                    KORPAD_switchCapsLockToggleIfBattered4();
-                    KBD_Hijacker.pressandreleaseKey(KEY_BACKSPACE);
-                    KORPAD_writeAlphabet('m');
-                    strcpy(KorSlot0,"*m");
-                } else if(strcmp(KorSlot0,"*n")==0){        //n→N
-                    KBD_Hijacker.pressandreleaseKey(KEY_BACKSPACE);
-                    KORPAD_writeAlphabet('N');
-                    strcpy(KorSlot0,"*N");
-                    KORPAD_switchCapsLockToggleIfBattered3();
-                } else if(strcmp(KorSlot0,"*N")==0){
-                    KORPAD_switchCapsLockToggleIfBattered4();
-                    KBD_Hijacker.pressandreleaseKey(KEY_BACKSPACE);
-                    KORPAD_writeAlphabet('n');
-                    strcpy(KorSlot0,"*n");
-                } else if(strcmp(KorSlot0,"*o")==0){        //o→O
-                    KBD_Hijacker.pressandreleaseKey(KEY_BACKSPACE);
-                    KORPAD_writeAlphabet('O');
-                    strcpy(KorSlot0,"*O");
-                    KORPAD_switchCapsLockToggleIfBattered3();
-                } else if(strcmp(KorSlot0,"*O")==0){
-                    KORPAD_switchCapsLockToggleIfBattered4();
-                    KBD_Hijacker.pressandreleaseKey(KEY_BACKSPACE);
-                    KORPAD_writeAlphabet('o');
-                    strcpy(KorSlot0,"*o");
-                } else if(strcmp(KorSlot0,"*p")==0){        //p→P
-                    KBD_Hijacker.pressandreleaseKey(KEY_BACKSPACE);
-                    KORPAD_writeAlphabet('P');
-                    strcpy(KorSlot0,"*P");
-                    KORPAD_switchCapsLockToggleIfBattered3();
-                } else if(strcmp(KorSlot0,"*P")==0){
-                    KORPAD_switchCapsLockToggleIfBattered4();
-                    KBD_Hijacker.pressandreleaseKey(KEY_BACKSPACE);
-                    KORPAD_writeAlphabet('p');
-                    strcpy(KorSlot0,"*p");
-                } else if(strcmp(KorSlot0,"*q")==0){        //q→Q
-                    KBD_Hijacker.pressandreleaseKey(KEY_BACKSPACE);
-                    KORPAD_writeAlphabet('Q');
-                    strcpy(KorSlot0,"*Q");
-                    KORPAD_switchCapsLockToggleIfBattered3();
-                } else if(strcmp(KorSlot0,"*Q")==0){
-                    KORPAD_switchCapsLockToggleIfBattered4();
-                    KBD_Hijacker.pressandreleaseKey(KEY_BACKSPACE);
-                    KORPAD_writeAlphabet('q');
-                    strcpy(KorSlot0,"*q");
-                } else if(strcmp(KorSlot0,"*r")==0){        //r→R
-                    KBD_Hijacker.pressandreleaseKey(KEY_BACKSPACE);
-                    KORPAD_writeAlphabet('R');
-                    strcpy(KorSlot0,"*R");
-                    KORPAD_switchCapsLockToggleIfBattered3();
-                } else if(strcmp(KorSlot0,"*R")==0){
-                    KORPAD_switchCapsLockToggleIfBattered4();
-                    KBD_Hijacker.pressandreleaseKey(KEY_BACKSPACE);
-                    KORPAD_writeAlphabet('r');
-                    strcpy(KorSlot0,"*r");
-                } else if(strcmp(KorSlot0,"*s")==0){        //s→S
-                    KBD_Hijacker.pressandreleaseKey(KEY_BACKSPACE);
-                    KORPAD_writeAlphabet('S');
-                    strcpy(KorSlot0,"*S");
-                    KORPAD_switchCapsLockToggleIfBattered3();
-                } else if(strcmp(KorSlot0,"*S")==0){
-                    KORPAD_switchCapsLockToggleIfBattered4();
-                    KBD_Hijacker.pressandreleaseKey(KEY_BACKSPACE);
-                    KORPAD_writeAlphabet('s');
-                    strcpy(KorSlot0,"*s");
-                } else if(strcmp(KorSlot0,"*t")==0){        //t→T
-                    KBD_Hijacker.pressandreleaseKey(KEY_BACKSPACE);
-                    KORPAD_writeAlphabet('T');
-                    strcpy(KorSlot0,"*T");
-                    KORPAD_switchCapsLockToggleIfBattered3();
-                } else if(strcmp(KorSlot0,"*T")==0){
-                    KORPAD_switchCapsLockToggleIfBattered4();
-                    KBD_Hijacker.pressandreleaseKey(KEY_BACKSPACE);
-                    KORPAD_writeAlphabet('t');
-                    strcpy(KorSlot0,"*t");
-                } else if(strcmp(KorSlot0,"*u")==0){        //u→U
-                    KBD_Hijacker.pressandreleaseKey(KEY_BACKSPACE);
-                    KORPAD_writeAlphabet('U');
-                    strcpy(KorSlot0,"*U");
-                    KORPAD_switchCapsLockToggleIfBattered3();
-                } else if(strcmp(KorSlot0,"*U")==0){
-                    KORPAD_switchCapsLockToggleIfBattered4();
-                    KBD_Hijacker.pressandreleaseKey(KEY_BACKSPACE);
-                    KORPAD_writeAlphabet('u');
-                    strcpy(KorSlot0,"*u");
-                } else if(strcmp(KorSlot0,"*v")==0){        //v→V
-                    KBD_Hijacker.pressandreleaseKey(KEY_BACKSPACE);
-                    KORPAD_writeAlphabet('V');
-                    strcpy(KorSlot0,"*V");
-                    KORPAD_switchCapsLockToggleIfBattered3();
-                } else if(strcmp(KorSlot0,"*V")==0){
-                    KORPAD_switchCapsLockToggleIfBattered4();
-                    KBD_Hijacker.pressandreleaseKey(KEY_BACKSPACE);
-                    KORPAD_writeAlphabet('v');
-                    strcpy(KorSlot0,"*v");
-                } else if(strcmp(KorSlot0,"*w")==0){        //w→W
-                    KBD_Hijacker.pressandreleaseKey(KEY_BACKSPACE);
-                    KORPAD_writeAlphabet('W');
-                    strcpy(KorSlot0,"*W");
-                    KORPAD_switchCapsLockToggleIfBattered3();
-                } else if(strcmp(KorSlot0,"*W")==0){
-                    KORPAD_switchCapsLockToggleIfBattered4();
-                    KBD_Hijacker.pressandreleaseKey(KEY_BACKSPACE);
-                    KORPAD_writeAlphabet('w');
-                    strcpy(KorSlot0,"*w");
-                } else if(strcmp(KorSlot0,"*x")==0){        //x→X
-                    KBD_Hijacker.pressandreleaseKey(KEY_BACKSPACE);
-                    KORPAD_writeAlphabet('X');
-                    strcpy(KorSlot0,"*X");
-                    KORPAD_switchCapsLockToggleIfBattered3();
-                } else if(strcmp(KorSlot0,"*X")==0){
-                    KORPAD_switchCapsLockToggleIfBattered4();
-                    KBD_Hijacker.pressandreleaseKey(KEY_BACKSPACE);
-                    KORPAD_writeAlphabet('x');
-                    strcpy(KorSlot0,"*x");
-                } else if(strcmp(KorSlot0,"*y")==0){        //y→Y
-                    KBD_Hijacker.pressandreleaseKey(KEY_BACKSPACE);
-                    KORPAD_writeAlphabet('Y');
-                    strcpy(KorSlot0,"*Y");
-                    KORPAD_switchCapsLockToggleIfBattered3();
-                } else if(strcmp(KorSlot0,"*Y")==0){
-                    KORPAD_switchCapsLockToggleIfBattered4();
-                    KBD_Hijacker.pressandreleaseKey(KEY_BACKSPACE);
-                    KORPAD_writeAlphabet('y');
-                    strcpy(KorSlot0,"*y");
-                } else if(strcmp(KorSlot0,"*z")==0){        //z→Z
-                    KBD_Hijacker.pressandreleaseKey(KEY_BACKSPACE);
-                    KORPAD_writeAlphabet('Z');
-                    strcpy(KorSlot0,"*Z");
-                    KORPAD_switchCapsLockToggleIfBattered3();
-                } else if(strcmp(KorSlot0,"*Z")==0){
-                    KORPAD_switchCapsLockToggleIfBattered4();
-                    KBD_Hijacker.pressandreleaseKey(KEY_BACKSPACE);
-                    KORPAD_writeAlphabet('z');
-                    strcpy(KorSlot0,"*z");
-                } else{
-                    KORPAD_resetConfirmedInputs();
-                    Keyboard.write (' '); KBD_Hijacker.pressandreleaseKey(KEY_BACKSPACE);
-                    strcpy(KorSlot0,"");
                 }
             }
-            isActivateKeyEvent=false; key=0;
+            isActivatedKeyEvent=false; key=0;
         }
         break;
+
+        case KEYPAD_PERIOD:
+        {
+            if(event){
+                #if (KEYPAD_KOREAN_LAYOUT == 1) //CheonJiIn
+
+                if
+                (   isEquals(KorSlot0,"") || isEquals(KorSlot0," ")   ){
+                    fillWith(KorSlot0,"\\ ");
+                }
+                else 
+
+                #endif                          //CheonJiIn End
+
+                #if (KEYPAD_KOREAN_LAYOUT == 2) //NaRatGeul
+
+                if
+                (   isEquals(KorSlot0,"r")   ){
+                    fillWith(KorSlot0,"R");
+
+                    KBD_HIJACKER.pressandreleaseKey(KEY_BACKSPACE);
+                    Keyboard.write('R');
+                }
+                else if
+                (   isEquals(KorSlot0,"R")   ){
+                    fillWith(KorSlot0,"r");
+
+                    KBD_HIJACKER.pressandreleaseKey(KEY_BACKSPACE); KORPAD_correctBottomDualConsonantError();
+                    Keyboard.write('r');
+                }
+                else if
+                (   isEquals(KorSlot0,"e")   ){
+                    fillWith(KorSlot0,"E");
+
+                    KBD_HIJACKER.pressandreleaseKey(KEY_BACKSPACE);
+                    Keyboard.write('E');
+                }
+                else if
+                (   isEquals(KorSlot0,"E")   ){
+                    fillWith(KorSlot0,"e");
+
+                    KBD_HIJACKER.pressandreleaseKey(KEY_BACKSPACE); KORPAD_correctBottomSingleConsonantError();
+                    Keyboard.write('e');
+                }
+                else if
+                (   isEquals(KorSlot0,"q")   ){
+                    fillWith(KorSlot0,"Q");
+
+                    KBD_HIJACKER.pressandreleaseKey(KEY_BACKSPACE);
+                    Keyboard.write('Q');
+                }
+                else if
+                (   isEquals(KorSlot0,"Q")   ){
+                    fillWith(KorSlot0,"q");
+
+                    KBD_HIJACKER.pressandreleaseKey(KEY_BACKSPACE); KORPAD_correctBottomSingleConsonantError();
+                                                                    KORPAD_correctBottomDualConsonantError();
+                    Keyboard.write('q');
+                }
+                else if
+                (   isEquals(KorSlot0,"t")   ){
+                    fillWith(KorSlot0,"T");
+
+                    KBD_HIJACKER.pressandreleaseKey(KEY_BACKSPACE);
+                    Keyboard.write('T');
+                }
+                else if
+                (   isEquals(KorSlot0,"T")   ){
+                    fillWith(KorSlot0,"t");
+
+                    KBD_HIJACKER.pressandreleaseKey(KEY_BACKSPACE);  KORPAD_correctBottomDualConsonantError();
+                    Keyboard.write('t');
+                }
+                else if
+                (   isEquals(KorSlot0,"w")   ){
+                    fillWith(KorSlot0,"W");
+
+                    KBD_HIJACKER.pressandreleaseKey(KEY_BACKSPACE);
+                    Keyboard.write('W');
+                }
+                else if
+                (   isEquals(KorSlot0,"W")   ){
+                    fillWith(KorSlot0,"w");
+
+                    KBD_HIJACKER.pressandreleaseKey(KEY_BACKSPACE); KORPAD_correctBottomSingleConsonantError();
+                                                                    KORPAD_correctBottomDualConsonantError();
+                    Keyboard.write('w');
+
+                // Special Characters
+                }
+                else if
+                (   isEquals(KorSlot0,"") || isEquals(KorSlot0," ")   ){
+
+                    /* NOTHING */
+
+                }
+                else if
+                (   isEquals(KorSlot0,";")   ){
+                    fillWith(KorSlot0,"()");
+
+                    KBD_HIJACKER.pressandreleaseKey(KEY_BACKSPACE);
+                    Keyboard.write('('); Keyboard.write(')');
+                }
+                else if
+                (   isEquals(KorSlot0,"()")   ){
+                    fillWith(KorSlot0,"{}");
+
+                    KBD_HIJACKER.pressandreleaseKey(KEY_BACKSPACE); KBD_HIJACKER.pressandreleaseKey(KEY_BACKSPACE);
+                    Keyboard.write('{'); Keyboard.write('}');
+                }
+                else if
+                (   isEquals(KorSlot0,"{}")   ){
+                    fillWith(KorSlot0,"?");
+
+                    KBD_HIJACKER.pressandreleaseKey(KEY_BACKSPACE); KBD_HIJACKER.pressandreleaseKey(KEY_BACKSPACE);
+                    Keyboard.write('?');
+                }
+                else if
+                (   isEquals(KorSlot0,"?")   ){
+                    fillWith(KorSlot0,"!");
+
+                    KBD_HIJACKER.pressandreleaseKey(KEY_BACKSPACE);
+                    Keyboard.write('!');
+                }
+                else if
+                (   isEquals(KorSlot0,"!")   ){
+                    fillWith(KorSlot0,".");
+
+                    KBD_HIJACKER.pressandreleaseKey(KEY_BACKSPACE);
+                    Keyboard.write('.');
+                }
+                else if
+                (   isEquals(KorSlot0,".")   ){
+                    fillWith(KorSlot0,"~");
+
+                    KBD_HIJACKER.pressandreleaseKey(KEY_BACKSPACE);
+                    Keyboard.write('~');
+                }
+                else if
+                (   isEquals(KorSlot0,"~")   ){
+                    fillWith(KorSlot0,"^^");
+
+                    KBD_HIJACKER.pressandreleaseKey(KEY_BACKSPACE);
+                    Keyboard.write('^'); Keyboard.write('^');
+                }
+                else if
+                (   isEquals(KorSlot0,"^^")   ){
+                    fillWith(KorSlot0,"\\ ");
+
+                    KBD_HIJACKER.pressandreleaseKey(KEY_BACKSPACE); KBD_HIJACKER.pressandreleaseKey(KEY_BACKSPACE);
+                    Keyboard.write(' ');
+                }
+                else if
+                (   isEquals(KorSlot0,"\\ ")   ){
+                    fillWith(KorSlot0,";");
+
+                    KBD_HIJACKER.pressandreleaseKey(KEY_BACKSPACE);
+                    Keyboard.write(';');
+                }
+                else 
+
+                #endif                          //NaRatGeul End
+
+                // MODE_ALPHABET
+                if
+                (   KORPAD_tryToDoAlphabetCaseConversion()   )
+                {
+                    /* Already done Alphabet Case Conversion */
+                }
+
+                else
+                {
+                    COMPLETE_THE_IN_PROGRESS_HANGEUL_IMMEDIATELY;
+
+                    KORPAD_updateConfirmedInputs();
+                    fillWith(KorSlot0,"");
+                }
+            }
+            else 
+            if(isEquals(KorSlot0,"") || isEquals(KorSlot0," ") || isEquals(KorSlot0,"\\ "))
+            {
+                if(MILLIS_FROM_PRESSED_UNTIL_RELEASE > 400)
+                {
+                    if(KORPAD_MODE != MODE_ALPHABET)
+                    {
+                        KORPAD_resetConfirmedInputs();
+                        
+                        //Turn On MODE_ALPHABET
+                        KORPAD_MODE = MODE_ALPHABET;
         
-        #endif
-        /* ------------------------------------------------ KEYPAD_KOREAN_LAYOUT2 NaRatGle ------------------------------------------------ */
+                        Buzzzzer::reserveBuzz   ( { NOTE_FS5,0, NOTE_GS5,0, NOTE_AS5,0, NOTE_DS6,0, NOTE_CS6    }
+                                                , { 200,30,     100,150,    120,200,    150,150,    450         } );
+                    }
+                    else
+                    {
+                        KORPAD_resetConfirmedInputs();
+                        
+                        //Back To MODE_HANGEUL
+                        KORPAD_MODE = MODE_HANGEUL;
+                                                
+                        Buzzzzer::reserveBuzz   ( { NOTE_AS5,0, NOTE_GS5,0, NOTE_FS5,0, NOTE_FS5    }
+                                                , { 300,50,     230,50,     170,100,    350         } );
+                    }
 
+                    //If CAPSLOCK was On, Turn Off BY FORCE
+                    if(KBD_HIJACKER.getStateCapsLockToggle())
+                        KBD_HIJACKER.pressandreleaseKey(KEY_CAPS_LOCK);
+                    KBD_HIJACKER.reserveSyncToggleKeyStates();
+                }
+                else
+                {
+                    #if (KEYPAD_KOREAN_LAYOUT == 1) //CheonJiIn
 
+                    if(isEquals(KorSlot0,"\\ ")){
+                        KORPAD_resetConfirmedInputs();
+                        KBD_HIJACKER.pressandreleaseKey(KEY_SPACE);
+                    }
 
+                    #endif                          //CheonJiIn End
+
+                    #if (KEYPAD_KOREAN_LAYOUT == 2) //NaRatGeul
+
+                    if(isEquals(KorSlot0," ")){
+                        KBD_HIJACKER.pressandreleaseKey(KEY_BACKSPACE);
+                        Keyboard.write(';');
+                        fillWith(KorSlot0,";");
+                    }
+
+                    #endif                          //NaRatGeul End
+                }
+            }
+            isActivatedKeyEvent=false; key=0;
+        }
+        break;
+
+        case KEYPAD_ENTER:
+        {
+            if(event){
+                // both MODES, [ " " + ENTER ] means [ SHIFT + ENTER ]
+                if(isEquals(KorSlot0," "))
+                {
+                    KBD_HIJACKER.pressandreleaseKey(KEY_BACKSPACE);
+                    KBD_HIJACKER.pressandreleaseMultiKey( {KEY_SHIFT,KEY_ENTER} );
+                    KORPAD_resetConfirmedInputs();
+                }
+
+                // MODE_ALPHABET
+                else if(KORPAD_tryToTypeAlphabetByHangeulPronounce())
+                {
+                    /* Already typed Alphabet By Hangeul Pronounce */
+                }
+
+                // MODE_KANA
+                else if(KORPAD_tryToTypeKanaByHangeulPronounce())
+                {
+                    /* Already typed Kana By Hangeul Pronounce */
+                }
+
+                // MODE_HANGEUL
+                else
+                {
+                    KBD_HIJACKER.pressandreleaseKey(KEY_ENTER);
+                    KORPAD_resetConfirmedInputs();
+                }
+            }
+            isActivatedKeyEvent=false; key=0;
+        }
+        break;
     }
-    
-    #endif
-    /* ------------------------------------------------------ KEYPAD_KOREAN_LAYOUT COMMON ------------------------------------------------------ */
+
+
+
+    KORPAD_surveillanceKorSlotsForKana();
+
+#endif
+/* ------------------------------------------------------ KEYPAD_KOREAN_LAYOUT COMMON ------------------------------------------------------ */
 }

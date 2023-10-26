@@ -30,6 +30,9 @@ void setup(){ EEPROM.begin(4096); for(int i=0;i<4096;i++){ EEPROM.write(i,0); } 
 #include "res_html_INDEX.h"
 #include "res_html_SELECT_WIFI.h"
 
+#define DISABLE_INTERRUPTS() cli()
+#define ENABLE_INTERRUPTS() sei()
+
 
 
 
@@ -67,7 +70,8 @@ namespace WIFI_CONNECTOR
 
     void loadWifiList()
     {
-        cli(); // DISABLE INTERRUPT while using EEPROM
+        DISABLE_INTERRUPTS();
+        // DISABLE INTERRUPT while using EEPROM
         {
             int addr = 0;
             WIFI_NET wifi;
@@ -79,7 +83,7 @@ namespace WIFI_CONNECTOR
                 addr += sizeof(WIFI_NET);
             }
         }
-        sei(); // DISABLE INTERRUPT while using EEPROM 
+        ENABLE_INTERRUPTS();
     }
 
     void saveWifiList()
@@ -100,7 +104,8 @@ namespace WIFI_CONNECTOR
         SAVED_WIFI_NET_LIST.push_front( WIFI_NET(NOW_WIFI_ID, NOW_WIFI_PW) );
 
 
-        cli(); // DISABLE INTERRUPT while using EEPROM 
+        DISABLE_INTERRUPTS();
+        // DISABLE INTERRUPT while using EEPROM
         {
             int addr = 0;
 
@@ -115,7 +120,7 @@ namespace WIFI_CONNECTOR
             else
                 Serial.println("SAVE......... ERROR!?");
         }
-        sei(); // DISABLE INTERRUPT while using EEPROM 
+        ENABLE_INTERRUPTS();
     }
 
     std::list<String> scanNetList()

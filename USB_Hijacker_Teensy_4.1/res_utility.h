@@ -1,4 +1,3 @@
-
 extern unsigned long _heap_end; //extern char *__brkval;
 void MEASURE_FREE_MEMORY() // for Teensy® 4.1 =32bit!!
 {
@@ -27,8 +26,7 @@ void print8bitHex(uint8_t hexcode)
 void print8bitBin(uint8_t bincode)
 {
     Serial.print("0b");
-    for(int i=7; i>=0;i--)
-        Serial.print( (bincode & (1<<i)) ? '1' : '0' );
+    for(int i=7; i>=0;i--) Serial.print( (bincode & (1<<i)) ? '1' : '0' );
 }
 
 

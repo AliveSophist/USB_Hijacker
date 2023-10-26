@@ -1,7 +1,7 @@
 
 void KeyboardHijacker::TRANSMIT_AFTER_HIJACK()
 {
-    isActivateKeyEvent=true;
+    isActivatedKeyEvent=true;
 
 
 
@@ -16,7 +16,7 @@ void KeyboardHijacker::TRANSMIT_AFTER_HIJACK()
         else
         {
             // SYNCHRONIZE ToggleKeyStates after a few ms
-            reserveSyncTKS=true;
+            reserveSyncToggleKeyStates();
         }
     }
 
@@ -24,44 +24,52 @@ void KeyboardHijacker::TRANSMIT_AFTER_HIJACK()
 
     if(!stateNumLockToggle)
     {
-        // MACRO Function KEYs (Ctrl+Alt+1, Ctrl+Alt+2, Ctrl+Alt+3, … Ctrl+Alt+9)
-        if(getLogicalState(KEY_LEFT_CTRL) && getLogicalState(KEY_LEFT_ALT))
+        if  (   numDN == 3
+                && (KBD_PARSER.KeyLogger.peek_key(1)==KEYPAD_0 || KBD_PARSER.KeyLogger.peek_key(1)==KEYPAD_SLASH)
+            )
         {
-            if(key == KEYPAD_7)
+            if  (   (KBD_PARSER.KeyLogger.peek_key(1)==KEYPAD_0 && KBD_PARSER.KeyLogger.peek_key(2)==KEYPAD_SLASH)
+                    || (KBD_PARSER.KeyLogger.peek_key(1)==KEYPAD_SLASH && KBD_PARSER.KeyLogger.peek_key(2)==KEYPAD_0)
+                )
             {
-                if(event)
+                if(key == KEYPAD_7)
                 {
-                    releaseAllBeingHoldDownKey(); delay(10);
-        
-                    pressandreleaseShortcutKey( {KEY_GUI,KEY_R} );
-                    delay(1000);
-                    pressandreleaseKeys("https://drive.google.com/file/d/1jy5C9P_xP0G-GG9I29iKfttaGfzxMcIq/view");
-                    delay(1000);
-                    pressandreleaseKey(KEY_ENTER);
+                    if(event)
+                    {
+                        releaseAllBeingHoldDownKey(); delay(10);
+            
+                        pressandreleaseMultiKey( {KEY_GUI,KEY_R} );
+                        delay(1000);
+                        pressandreleaseKeys("https://drive.google.com/file/d/1jy5C9P_xP0G-GG9I29iKfttaGfzxMcIq/view");
+                        delay(1000);
+                        pressandreleaseKey(KEY_ENTER);
+                    }
+                    isActivatedKeyEvent=false; key=0;
                 }
-                isActivateKeyEvent=false; key=0;
-            }
-            if(key == KEYPAD_8)
-            {
-                if(event)
+
+                if(key == KEYPAD_8)
                 {
-                    releaseAllBeingHoldDownKey(); delay(10);
-                    
-                    while(numDN){}
-                    REBOOT();
+                    if(event)
+                    {
+                        releaseAllBeingHoldDownKey(); delay(10);
+                        
+                        while(numDN){}
+                        REBOOT();
+                    }
+                    isActivatedKeyEvent=false; key=0;
                 }
-                isActivateKeyEvent=false; key=0;
-            }
-            if(key == KEYPAD_9)
-            {
-                if(event)
+
+                if(key == KEYPAD_9)
                 {
-                    releaseAllBeingHoldDownKey(); delay(10);
-                    
-                    pressandreleaseKeys_LikeHuman(F("Upload completed~ "));
-                    pressandreleaseKeys_LikeHuman(__TIMESTAMP__);
+                    if(event)
+                    {
+                        releaseAllBeingHoldDownKey(); delay(10);
+                        
+                        pressandreleaseKeys_LikeHuman(F("Upload completed~ "));
+                        pressandreleaseKeys_LikeHuman(__TIMESTAMP__);
+                    }
+                    isActivatedKeyEvent=false; key=0;
                 }
-                isActivateKeyEvent=false; key=0;
             }
         }
     }
@@ -73,8 +81,10 @@ void KeyboardHijacker::TRANSMIT_AFTER_HIJACK()
 
 
 
-    // If mapped?, HIJACK! 
+    // If mapped?, HIJACK!
     MODULE_KEYMAPPER_HIJACK();
+
+
 
 
 
@@ -123,12 +133,12 @@ void KeyboardHijacker::TRANSMIT_AFTER_HIJACK()
                 …
                 …
             }
-            isActivateKeyEvent=false; key=0;    //To prevent default event
+            isActivatedKeyEvent=false; key=0;    //To prevent default event
         }
 
 
     *  Example4)
-    *          Hijack Shortcut KEY to NONE And excute MACRO
+    *          Hijack Shortcut TRIGGER EVENT to NONE And excute MACRO
 
         if(key == KEY_*** && getLogicalState(KEY_$$$))
         {
@@ -137,7 +147,7 @@ void KeyboardHijacker::TRANSMIT_AFTER_HIJACK()
                 …
                 …
             }
-            isActivateKeyEvent=false; key=0;    //To prevent default event
+            isActivatedKeyEvent=false; key=0;    //To prevent default event
         }
 
 
@@ -192,58 +202,42 @@ void KeyboardHijacker::TRANSMIT_AFTER_HIJACK()
 
 
 
+    // KEY_ESC CAN SHUTDOWN MACRO IMMEDIATELY
+    MODULE_MACRO_CHECK_FOR_SHUTDOWN_PLAYER();
 
 
 
-
-
-
-
-
-
-
-    //MODULE_MACRO
-    MODULE_MACRO_PLAYER_SHUTDOWN_ARBITER();
-
-
-
-    if(isActivateKeyEvent)
+    if(isActivatedKeyEvent)
     {
         if(event)
         {
-            //Skip KEY release event, if bugged
-            if(getLogicalState(key))
-                return;
-
-            Keyboard.press(key);
-            numBeingHoldDownKey++;
-            setLogicalState(key,true);
+            if(!getLogicalState(key))    //Skip KEY press event, if key ALREADY PRESSED
+            {
+                Keyboard.press(key);
+                numBeingHoldDownKey++;
+                setLogicalState(key,true);
+            }
         }
         else
         {
-            //Skip KEY release event, if key ALREADY RELEASED
-            if(!getLogicalState(key))
-                return;
-
-            Keyboard.release(key);
-            if (numBeingHoldDownKey) numBeingHoldDownKey--;
-            setLogicalState(key,false);
-
-            //Release all Pressed signals for contingencies, When only ESC event
-            if (key == KEY_ESC && numBeingHoldDownKey == 0) releaseAllBeingHoldDownKey();
+            if(getLogicalState(key))   //Skip KEY release event, if key ALREADY RELEASED
+            {
+                Keyboard.release(key);
+                if (numBeingHoldDownKey) numBeingHoldDownKey--;
+                setLogicalState(key,false);
+            }
         }
     }
 
     if(isSerial) //For, Debugging
     {
-        if(isActivateKeyEvent)
+        if(isActivatedKeyEvent)
         {
             uint8_t keycode = TeensyLayout_To_keycode(key);
-            Serial.print(F("( After Hijack) Executed KEY "));
             if(event)
-            {   Serial.print(F("Press   : ")); print8bitHex(keycode); Serial.println();   }
+            {   Serial.print(F("( After Hijack) Executed KEY Press   : ")); print8bitHex(keycode); Serial.println();   }
             else
-            {   Serial.print(F("Release : ")); print8bitHex(keycode); Serial.println();   }
+            {   Serial.print(F("( After Hijack) Executed KEY Release : ")); print8bitHex(keycode); Serial.println();   }
         }
         else
         {
@@ -271,7 +265,12 @@ void KeyboardHijacker::TRANSMIT_AFTER_HIJACK()
 
 
 
-    isActivateKeyEvent=false;
+    // If CLEANSE reserved?, CLEANSE!
+    MODULE_KEYMAPPER_CLEANSE_IF_RESERVED();
+
+
+
+    isActivatedKeyEvent=false;
 }
 
 
@@ -290,66 +289,44 @@ void KeyboardHijacker::syncToggleKeyStates() //Synchronize "SLAVE" kbd LEDs to "
     if (stateLEDs & LED_NUM_LOCK)       //if HOST 's NumLock state is ON
     {
         stateNumLockToggle = true;
-        KBD_Parser.numLock(true);
+        KBD_PARSER.numLock(true);
     }
     else                                //if HOST 's NumLock state is OFF
     {
         stateNumLockToggle = false;
-        KBD_Parser.numLock(false);
+        KBD_PARSER.numLock(false);
     }
     
     if (stateLEDs & LED_CAPS_LOCK)      //if HOST 's CapsLock state is ON
     {
         stateCapsLockToggle = true;
-        KBD_Parser.capsLock(true);
+        KBD_PARSER.capsLock(true);
     }
     else                                //if HOST 's CapsLock state is OFF
     {
         stateCapsLockToggle = false;
-        KBD_Parser.capsLock(false);
+        KBD_PARSER.capsLock(false);
     }
     
     if (stateLEDs & LED_SCROLL_LOCK)    //if HOST 's ScrollLock state is ON
     {
         stateScrollLockToggle = true;
-        KBD_Parser.scrollLock(true);
+        KBD_PARSER.scrollLock(true);
     }
     else                                //if HOST 's ScrollLock state is OFF
     {
         stateScrollLockToggle = false;
-        KBD_Parser.scrollLock(false);
+        KBD_PARSER.scrollLock(false);
     }
     
     return;
 }
-
-
-
-
-
-void KeyboardHijacker::printKeyInfo(uint8_t keycode)
-{
-    Serial.print(getLogicalState(KEY_LEFT_CTRL)  ? "C" : " ");
-    Serial.print(getLogicalState(KEY_LEFT_SHIFT) ? "S" : " ");
-    Serial.print(getLogicalState(KEY_LEFT_ALT)   ? "A" : " ");
-    Serial.print(getLogicalState(KEY_LEFT_GUI)   ? "G" : " ");
-    Serial.print(" >"); print8bitHex(keycode); Serial.print("< ");
-    Serial.print(getLogicalState(KEY_RIGHT_CTRL)  ? "C" : " ");
-    Serial.print(getLogicalState(KEY_RIGHT_SHIFT) ? "S" : " ");
-    Serial.print(getLogicalState(KEY_RIGHT_ALT)   ? "A" : " ");
-    Serial.print(getLogicalState(KEY_RIGHT_GUI)   ? "G" : " ");
-}
-
-
-
-
 
 void KeyboardHijacker::releaseAllBeingHoldDownKey()
 {
     //Keyboard.releaseAll();
     
     numBeingHoldDownKey = 0;
-    isActivateKeyEvent=false;
     
     for(uint8_t i=0; i<255; i++)
     {
@@ -412,7 +389,7 @@ void KeyboardHijacker::pressandreleaseKeys(std::initializer_list<int32_t> keys)
 
     return;
 }
-void KeyboardHijacker::pressandreleaseShortcutKey(std::initializer_list<int32_t> keys)
+void KeyboardHijacker::pressandreleaseMultiKey(std::initializer_list<int32_t> keys)
 {
     for(int32_t key : keys)
     {
@@ -449,7 +426,7 @@ void KeyboardHijacker::pressandreleaseKeys(int32_t* keys, int32_t len)
 
     return;
 }
-void KeyboardHijacker::pressandreleaseShortcutKey(int32_t* keys, int32_t len)
+void KeyboardHijacker::pressandreleaseMultiKey(int32_t* keys, int32_t len)
 {
     for(int32_t i=0; i<len; i++)
     {
@@ -508,7 +485,7 @@ void KeyboardHijacker::pressandreleaseKeys_LikeHuman(std::initializer_list<int32
 
     return;
 }
-void KeyboardHijacker::pressandreleaseShortcutKey_LikeHuman(std::initializer_list<int32_t> keys)
+void KeyboardHijacker::pressandreleaseMultiKey_LikeHuman(std::initializer_list<int32_t> keys)
 {
     for(int32_t key : keys)
     {
@@ -527,4 +504,21 @@ void KeyboardHijacker::pressandreleaseShortcutKey_LikeHuman(std::initializer_lis
     }
 
     return;
+}
+
+
+
+
+
+void KeyboardHijacker::printKeyInfo(uint8_t keycode)
+{
+    Serial.print(getLogicalState(KEY_LEFT_CTRL)  ? "C" : " ");
+    Serial.print(getLogicalState(KEY_LEFT_SHIFT) ? "S" : " ");
+    Serial.print(getLogicalState(KEY_LEFT_ALT)   ? "A" : " ");
+    Serial.print(getLogicalState(KEY_LEFT_GUI)   ? "G" : " ");
+    Serial.print(" >"); print8bitHex(keycode); Serial.print("< ");
+    Serial.print(getLogicalState(KEY_RIGHT_CTRL)  ? "C" : " ");
+    Serial.print(getLogicalState(KEY_RIGHT_SHIFT) ? "S" : " ");
+    Serial.print(getLogicalState(KEY_RIGHT_ALT)   ? "A" : " ");
+    Serial.print(getLogicalState(KEY_RIGHT_GUI)   ? "G" : " ");
 }
