@@ -68,7 +68,7 @@ void KeyboardHijacker::MODULE_MACRO_START_PLAYER_OR_RECORDER(const char* fname)
             return;
         }
         
-        if(isSerial) MODULE_MACRO_PRINT(filename); //For, Debugging
+        if(isSerial) MODULE_MACRO_PRINT(filename); // For, Debugging
         
         textfile = SD.open(filename);
         
@@ -100,7 +100,7 @@ void KeyboardHijacker::MODULE_MACRO_START_PLAYER_OR_RECORDER(const char* fname)
 
 
 
-void KeyboardHijacker::MODULE_MACRO_REC_PRESSED(uint8_t keycode, uint32_t delayed)
+void KeyboardHijacker::MODULE_MACRO_PROCEED_RECORDER(uint8_t keycode, uint32_t delayed, bool isPressed)
 {
     if(!isExistSD)
         return;
@@ -109,43 +109,25 @@ void KeyboardHijacker::MODULE_MACRO_REC_PRESSED(uint8_t keycode, uint32_t delaye
 
 
     //MODULE_RECORDER's shutdown signal (KEY_NUMLOCK x3 press&release)
-    if  (   keycode == KBD_PARSER.KeyLogger.peek_keycode(1) &&
-            keycode == KBD_PARSER.KeyLogger.peek_keycode(2) &&
-            keycode == TeensyLayout_To_keycode(KEY_NUM_LOCK)
-        )        
+    if  (   keycode == KEYCODE_KEY_NUM_LOCK &&
+            keycode == KBD_PARSER.KeyLogger.peek_keycode(1)  &&
+            keycode == KBD_PARSER.KeyLogger.peek_keycode(2)
+        )
         MODULE_MACRO_END_RECORDER( String(textfile.name()).c_str() ); //this textfile will remove, therefore textfile.name() have to copy!
 
 
     // RECORD DELAY
-    if(numRecorded) //if numRecorded==0 DO NOT RECORD DELAY !
+    if(numRecorded!=0)
     {
         textfile.print(String(delayed, DEC)); textfile.println("ms");
         if(isSerial) Serial.println("MODULE_MACRO_REC_DELAY");
         numRecorded++;
     }
 
-    // RECORD DN event
-    textfile.print("DN 0x"); if(keycode<16)textfile.print('0'); textfile.println(String(keycode, HEX));
-    if(isSerial) Serial.println("MODULE_MACRO_REC_DNKEY");
-    numRecorded++;
-}
-
-void KeyboardHijacker::MODULE_MACRO_REC_RELEASED(uint8_t keycode, uint32_t delayed)
-{
-    if(!isExistSD)
-        return;
-    if(!isMacroRecording)
-        return;
-
-
-    // RECORD DELAY
-    textfile.print(String(delayed, DEC)); textfile.println("ms");
-    if(isSerial) Serial.println("MODULE_MACRO_REC_DELAY");
-    numRecorded++;
-
-    // RECORD UP event
-    textfile.print("UP 0x"); if(keycode<16)textfile.print('0'); textfile.println(String(keycode, HEX));
-    if(isSerial) Serial.println("MODULE_MACRO_REC_UPKEY");
+    // RECORD EVENT
+    String strDNUP = isPressed ? "DN" : "UP";
+    textfile.print(strDNUP+" 0x"); if(keycode<16)textfile.print('0'); textfile.println(String(keycode, HEX));
+    if(isSerial) Serial.println("MODULE_MACRO_REC_"+strDNUP+"KEY");
     numRecorded++;
 }
 
@@ -181,7 +163,7 @@ void KeyboardHijacker::MODULE_MACRO_END_RECORDER(const char* filename)
             uint8_t lineKeycode = String_To_keycode(line.toUpperCase());
             if(lineKeycode)
             {
-                if(lineKeycode == TeensyLayout_To_keycode(KEY_NUM_LOCK))
+                if(lineKeycode == KEYCODE_KEY_NUM_LOCK)
                 {
                     if(numValidLine == 0)
                         numValidLine = i;
@@ -228,7 +210,7 @@ void KeyboardHijacker::MODULE_MACRO_END_RECORDER(const char* filename)
 
 
 
-void KeyboardHijacker::MODULE_MACRO_PLAY_ONGOING()
+void KeyboardHijacker::MODULE_MACRO_PROCEED_PLAYER()
 {
     if(!isExistSD)
         return;
@@ -438,6 +420,29 @@ void KeyboardHijacker::MODULE_MACRO_END_PLAYER()
     if(isSerial){ Serial.print("\nMODULE_MACRO_END_PLAYER    PLAYED LINES : "); Serial.println(numPlayed); Serial.println(); }
 }
 
+void KeyboardHijacker::MODULE_MACRO_CHECK_FOR_SHUTDOWN_PLAYER()
+{
+    if(!isExistSD)
+        return;
+    if(!isMacroPlaying)
+        return;
+
+
+    // BY FORCE, NOT BY MACRO!
+    if(byMacro)
+        return;
+
+    // WHEN KEY_ESC PUSHED, SHUTDOWN PLAYER!!
+    if (key == KEY_ESC)
+    {
+        if(event)
+        {
+            MODULE_MACRO_END_PLAYER();
+        }
+        isActivatedKeyEvent=false; key=KEY_NONE;
+    }
+}
+
 
 
 
@@ -452,29 +457,6 @@ void KeyboardHijacker::MODULE_MACRO_BLOCK_EVENTS_WHEN_JUST_STARTED(volatile bool
 
     if(numDN == 0)
         isMacroJustStarted = false;
-}
-
-void KeyboardHijacker::MODULE_MACRO_CHECK_FOR_SHUTDOWN_PLAYER()
-{
-    if(!isExistSD)
-        return;
-    if(!isMacroPlaying)
-        return;
-
-
-    // ONLY BY FORCE, NOT BY MACRO!
-    if(byMacro)
-        return;
-
-    // WHEN KEY_ESC PUSHED, SHUTDOWN PLAYER!!
-    if (key == KEY_ESC)
-    {
-        if(event)
-        {
-            MODULE_MACRO_END_PLAYER();
-        }
-        isActivatedKeyEvent=false; key=0;
-    }
 }
 
 void KeyboardHijacker::MODULE_MACRO_MANUAL_EVENT_DETECTED()
@@ -492,7 +474,7 @@ void KeyboardHijacker::MODULE_MACRO_MANUAL_EVENT_DETECTED()
 
 
 
-void KeyboardHijacker::MODULE_MACRO_PRINT(const char* filename) //For, Debugging
+void MODULE_MACRO_PRINT(const char* filename) // For, Debugging
 {
     textfile = SD.open(filename);
     

@@ -6,17 +6,14 @@
     https://gist.github.com/Cyclenerd/7c9cba13360ec1ec9d2ea36e50c7ff77
 */
 
-#include <EEPROM.h>
-
-#define IS_CLEARING 0       // 0:MAIN   1:CLEAR EEPROM
-#if (IS_CLEARING == 1)
-
-void setup(){ EEPROM.begin(4096); for(int i=0;i<4096;i++){ EEPROM.write(i,0); } EEPROM.end(); } void loop(){}
-
-#else
-
 #include <algorithm>
 #include <list>
+
+#include <SoftwareSerial.h>
+#include <CRC32.h>
+
+#include <ESP8266TimerInterrupt.h>  // https://github.com/khoih-prog/ESP8266TimerInterrupt
+#include <EEPROM.h>
 
 #include <ESP8266WiFi.h>
 #include <ESP8266LLMNR.h>
@@ -25,22 +22,29 @@ void setup(){ EEPROM.begin(4096); for(int i=0;i<4096;i++){ EEPROM.write(i,0); } 
 #include <lwip/napt.h>
 #include <lwip/dns.h>
 
-#include <ESP8266TimerInterrupt.h>  // https://github.com/khoih-prog/ESP8266TimerInterrupt
-
 #include "res_html_INDEX.h"
 #include "res_html_SELECT_WIFI.h"
 
-#define DISABLE_INTERRUPTS() cli()
-#define ENABLE_INTERRUPTS() sei()
+#define DISABLE_INTERRUPTS cli()
+#define ENABLE_INTERRUPTS sei()
 
 
 
 
 
-#define STATUS_COMMON           0x00
-#define STATUS_WIFI_PROVIDED    0x01
+#define RESET_EEPROM_PIN         4
+#define RX_TO_HIJACKER_PIN      12  // D6
+#define TX_TO_HIJACKER_PIN      13  // D7
+#define PIN_BIDIRECTIONAL       15  // D8
 
-static byte NOW_MODULE_STATUS = STATUS_COMMON;
+
+
+
+
+DNSServer dnsServer;
+ESP8266WebServer webServer(80);
+
+ESP8266Timer TimerInterrupt;
 
 
 
@@ -50,8 +54,6 @@ namespace WIFI_CONNECTOR
 {
     bool isConnected = false;
     IPAddress NOW_IP;
-    String NOW_WIFI_ID;
-    String NOW_WIFI_PW;
 
     #define SAVED_WIFI_NET_MAX_COUNT 10
     struct WIFI_NET
@@ -70,7 +72,7 @@ namespace WIFI_CONNECTOR
 
     void loadWifiList()
     {
-        DISABLE_INTERRUPTS();
+        DISABLE_INTERRUPTS;
         // DISABLE INTERRUPT while using EEPROM
         {
             int addr = 0;
@@ -83,15 +85,27 @@ namespace WIFI_CONNECTOR
                 addr += sizeof(WIFI_NET);
             }
         }
-        ENABLE_INTERRUPTS();
+        ENABLE_INTERRUPTS;
+
+        /*
+        // SERIAL scan test
+        {
+            int i=0;
+            for (WIFI_NET wifi : SAVED_WIFI_NET_LIST)
+            {
+                Serial.print("Wifi "); Serial.print(i++); Serial.print(" : ");
+                Serial.print(wifi.id); Serial.print(" / "); Serial.println(wifi.pw);
+            }
+        }
+        */
     }
 
-    void saveWifiList()
+    void saveWifiList(String apName, String apPw)
     {
         // If already EXISTS, FUCK OFF.
         bool isAlreadyExist = false;
         for (WIFI_NET wifi : SAVED_WIFI_NET_LIST) {
-            if(NOW_WIFI_ID.equals(wifi.id) && NOW_WIFI_PW.equals(wifi.pw))
+            if(apName.equals(wifi.id) && apPw.equals(wifi.pw))
                 isAlreadyExist = true;
         }
         if(isAlreadyExist)
@@ -101,11 +115,10 @@ namespace WIFI_CONNECTOR
         // DEL a most old WIFI_NET
         SAVED_WIFI_NET_LIST.pop_back();
         // ADD a new WIFI_NET
-        SAVED_WIFI_NET_LIST.push_front( WIFI_NET(NOW_WIFI_ID, NOW_WIFI_PW) );
+        SAVED_WIFI_NET_LIST.push_front( WIFI_NET(apName, apPw) );
 
 
-        DISABLE_INTERRUPTS();
-        // DISABLE INTERRUPT while using EEPROM
+        DISABLE_INTERRUPTS; // DISABLE INTERRUPT while using EEPROM
         {
             int addr = 0;
 
@@ -120,7 +133,7 @@ namespace WIFI_CONNECTOR
             else
                 Serial.println("SAVE......... ERROR!?");
         }
-        ENABLE_INTERRUPTS();
+        ENABLE_INTERRUPTS;
     }
 
     std::list<String> scanNetList()
@@ -174,10 +187,124 @@ namespace WIFI_CONNECTOR
 
 
 
-DNSServer dnsServer;
-ESP8266WebServer webServer(80);
+namespace DarkJunction
+{
+    //              S3r14l (PIN_RX_TO_ESP,      PIN_TX_TO_ESP);         // 21, 20
+    SoftwareSerial  S3r14l (RX_TO_HIJACKER_PIN, TX_TO_HIJACKER_PIN);    // 12, 13
 
-ESP8266Timer TimerInterrupt;
+
+
+    /***(( About, Digital Communication ))***/
+    bool PIN_BIDIRECTIONAL_readForXXms(uint16_t msSearch)
+    {
+        pinMode(PIN_BIDIRECTIONAL,INPUT);
+
+        int8_t msValidate = 10;
+        msValidate = msSearch>msValidate ? msValidate : msSearch*1;
+
+        int8_t isValid = 0-msValidate;
+        for(uint8_t i=0; i<msSearch; i++)
+        {   delay(1); if((isValid=(digitalRead(PIN_BIDIRECTIONAL)==HIGH ? isValid+1 : 0-msValidate)) > 0) return true;   }
+
+        return false;
+    }
+    void PIN_BIDIRECTIONAL_writeHIGHForXXms(uint16_t msWrite)
+    {
+        pinMode(PIN_BIDIRECTIONAL,OUTPUT);
+
+        digitalWrite(PIN_BIDIRECTIONAL,HIGH); delay(msWrite);
+        digitalWrite(PIN_BIDIRECTIONAL,LOW);
+    }
+    void PIN_BIDIRECTIONAL_writeLOWForXXms(uint16_t msWrite)
+    {
+        pinMode(PIN_BIDIRECTIONAL,OUTPUT);
+
+        digitalWrite(PIN_BIDIRECTIONAL,LOW); delay(msWrite);
+        digitalWrite(PIN_BIDIRECTIONAL,HIGH);
+    }
+    #define PIN_BIDIRECTIONAL_MODE_WRITE    { pinMode(PIN_BIDIRECTIONAL,OUTPUT); digitalWrite(PIN_BIDIRECTIONAL,LOW); }
+    #define PIN_BIDIRECTIONAL_MODE_READ     { pinMode(PIN_BIDIRECTIONAL,INPUT); }
+
+
+
+    /***(( About, RX / TX ))***/
+    String strMessages;
+    void clearMessages() { strMessages=""; }
+    String getMessages() { return strMessages; }
+
+    bool download(int countLeftRetry = 5)
+    {
+        if(countLeftRetry == 0)
+            return false;
+
+
+        PIN_BIDIRECTIONAL_MODE_WRITE;
+
+
+        while(S3r14l.available() == 0){ delay(1); }
+        String strMerged = S3r14l.readStringUntil('\0');
+
+
+        // if invalidate, redownload
+        int indexSeparator;
+        if((indexSeparator=strMerged.indexOf('|')) < 0)
+        {
+            PIN_BIDIRECTIONAL_writeHIGHForXXms(5);
+            download(countLeftRetry - 1);
+        }
+
+
+        String strReceived = strMerged.substring(0, indexSeparator);
+
+        uint32_t crcReceived = atoll( strMerged.substring(indexSeparator+1).c_str() );
+        uint32_t crcCalculated = CRC32::calculate( strReceived.c_str(), strReceived.length() );
+
+
+                Serial.println("Received Data  : " + strReceived);
+                Serial.println("Received   CRC : " + String(crcReceived));
+                Serial.println("Calculated CRC : " + String(crcCalculated));
+
+
+        // if invalidate, redownload
+        if(crcReceived != crcCalculated)
+        {
+            PIN_BIDIRECTIONAL_writeHIGHForXXms(5);
+            download(countLeftRetry - 1);
+        }
+        else
+        {
+            strMessages += strReceived;
+        }
+
+
+        return true;
+    }
+
+    bool upload(String strSend, int countLeftRetry = 5)
+    {
+        if(countLeftRetry == 0)
+            return false;
+
+
+        PIN_BIDIRECTIONAL_MODE_READ;
+
+
+        uint32_t crcCalculated = CRC32::calculate(strSend.c_str(),strSend.length());
+        S3r14l.println( strSend + "|" + String(crcCalculated) );
+        bool hasChecksumError = PIN_BIDIRECTIONAL_readForXXms(10);
+
+
+        Serial.println("dataToSend Data : " + strSend);
+        Serial.println("Calculated CRC  : " + String(crcCalculated));
+
+
+        if(hasChecksumError)
+            upload(strSend);
+
+
+        return true;
+    }
+}
 
 
 
@@ -185,35 +312,42 @@ ESP8266Timer TimerInterrupt;
 
 void setup()
 {
-    pinMode(LED_BUILTIN, OUTPUT);
-    digitalWrite(LED_BUILTIN, LOW);
+    // LED
+    pinMode(LED_BUILTIN, OUTPUT); digitalWrite(LED_BUILTIN, HIGH);
 
 
-    // Serial begin
-    Serial.begin(115200);
-    delay(4444);
-    Serial.println("\nSERIAL IS ONLINE\n");
+    // To HIJACKER, wake me up when you need me...
+    {
+        if(DarkJunction::PIN_BIDIRECTIONAL_readForXXms(2222) == false)
+        {   ESP.deepSleep(0); return;   }
+        else
+        {   digitalWrite(LED_BUILTIN, LOW);   }
+    }
 
 
-    // EEPROM begin
-    EEPROM.begin(4096);
+    // Serial begin, for Debugging
+    {
+        Serial.begin(115200); while(!Serial){}
+        delay(999); Serial.println("\nSERIAL IS ONLINE\n");
+    }
 
 
-    // Try to CONNECT from the SAVED_WIFI_NET_LIST
+    // EEPROM begin, if RESET_EEPROM_PIN grounded, reset EEPROM
+    {
+        EEPROM.begin(4096);
+
+        pinMode(RESET_EEPROM_PIN,INPUT_PULLUP);
+        for(uint8_t i=0; i<101; i++)
+        {
+            delay(1);
+
+            if(digitalRead(RESET_EEPROM_PIN)!=LOW) break;
+            if(i==100){ Serial.println(F("EEPROM RESET")); for(int i=0;i<4096;i++) EEPROM.write(i,0); EEPROM.commit(); }
+        }
+    }
+    // Try to CONNECT WIFI (from SAVED_WIFI_NET_LIST)
     {
         WIFI_CONNECTOR::loadWifiList();
-
-        /*
-        // SERIAL scan test
-        {
-            int i=0;
-            for (WIFI_CONNECTOR::WIFI_NET wifi : WIFI_CONNECTOR::SAVED_WIFI_NET_LIST)
-            {
-                Serial.print("Wifi "); Serial.print(i++); Serial.print(" : ");
-                Serial.print(wifi.id); Serial.print(" / "); Serial.println(wifi.pw);
-            }
-        }
-        */
 
         for (String ssid : WIFI_CONNECTOR::scanNetList())
         {
@@ -233,7 +367,7 @@ void setup()
 
                     // Up to 10 seconds...
                     int i=0;
-                    while (WiFi.status() != WL_CONNECTED) { Serial.print("."); delay(500); if(i++ > 20) break; }
+                    while (WiFi.status() != WL_CONNECTED) { Serial.print("."); delay(200); if(i++ > 40) break; }
 
                     // CONNECT SUCCEX !
                     if(WiFi.status() == WL_CONNECTED)
@@ -262,8 +396,9 @@ void setup()
     }
 
 
-    // ABOUT AP MODE
+    // Set AP MODE
     {
+        // if WIFI is Connected, Activate mDNS(LLMNR)
         if(WIFI_CONNECTOR::isConnected)
         {
             // SET WIFI
@@ -275,6 +410,7 @@ void setup()
             // Start LLMNR responder
             LLMNR.begin("accomplice");
         }
+        // if WIFI is not Connected, Startup DNSServer for spoofing
         else
         {
             IPAddress APIP(192, 0, 0, 1); // It doubles as GATEWAY
@@ -285,13 +421,14 @@ void setup()
             WiFi.softAPConfig(APIP, APIP, IPAddress(255, 255, 255, 0));
             WiFi.softAP( F("I AM NOT WIFI") );
 
-            // DNS spoofing (Only for HTTP)
-            // if DNSServer is started with "*" for domain name, it will reply with
-            // provided IP to all DNS request
+            // if DNSServer is started with "*" for domain name,
+            // it will reply with provided IP to all DNS request
+            // = DNS spoofing (Only for HTTP)
             dnsServer.start(DNS_PORT, "*", APIP);
         }
 
         // WiFi INFO will not persist after reboot
+        // it works MANUALLY by "WIFI_CONNECTOR"
         WiFi.persistent(false);
 
         // NAPT allows multiple devices in a private network to share a single public IP
@@ -300,178 +437,155 @@ void setup()
         err_t ret = ip_napt_init(NAPT, NAPT_PORT);
         if (ret == ERR_OK) { ret = ip_napt_enable_no(SOFTAP_IF, 1); }
     }
+    // Set WEB SERVER
+    {
+        #define HTTP_CODE 200
 
-
-
-
-
-
-
-
-
-
-
-
-
-    #define HTTP_CODE 200
-
-    // WebServer requests
-    // webServer.on("/post",[]() { webServer.send(HTTP_CODE, "text/html", posted()); BLINK(); });
-    // webServer.on("/ssid",[]() { webServer.send(HTTP_CODE, "text/html", ssid()); });
-    // webServer.on("/postSSID",[]() { webServer.send(HTTP_CODE, "text/html", postedSSID()); });
-    // webServer.on("/pass",[]() { webServer.send(HTTP_CODE, "text/html", pass()); });
-    // webServer.on("/clear",[]() { webServer.send(HTTP_CODE, "text/html", clear()); });
-
-    webServer.on        (   "/test",
-                            []
-                            {
-                                String html = String(rawhtml_INDEX);
-                                webServer.send(HTTP_CODE, "text/html", html);
-                            }
-                        );
-    webServer.on        (   "/connectToAP",
-                            []
-                            {
-                                String html = String(rawhtml_INDEX);
-
-
-                                // INIT args from client
-                                String apName;
-                                String apPw;
-                                for (uint8_t i=0; i<webServer.args(); i++)
+        webServer.on        (   "/",
+                                []
                                 {
-                                    if(webServer.argName(i).equals("apName"))
-                                        apName = webServer.arg(i);
-                                    if(webServer.argName(i).equals("apPw"))
-                                        apPw = webServer.arg(i);
-                                }
-
-
-                                // CONNECT TO NET !
-                                WiFi.begin(apName, apPw);
-                                Serial.println( "\nTry to connect to. [ " + apName + " / " + apPw + " ]" );
-                                
-                                // Up to 10 seconds...
-                                int i=0;
-                                while (WiFi.status() != WL_CONNECTED) { Serial.print("."); delay(500); if(i++ > 20) break; }
-
-
-                                // CONNECT SUCCEX !
-                                if(WiFi.status() == WL_CONNECTED)
-                                {
-                                    WIFI_CONNECTOR::isConnected = true;
-                                    WIFI_CONNECTOR::NOW_IP = WiFi.localIP();
-                                    WIFI_CONNECTOR::NOW_WIFI_ID = apName;
-                                    WIFI_CONNECTOR::NOW_WIFI_PW = apPw;
-
-                                    html.replace("<h1>This is HACK</h1>", String("<h1>Connected SUCCEX!!<br>Now IP : " + WIFI_CONNECTOR::NOW_IP.toString() + " </h1>"));
+                                    String html = String(rawhtml_INDEX);
                                     webServer.send(HTTP_CODE, "text/html", html);
-
-                                    // Serial.println(" SUCCEX!!");
-                                    // Serial.print("Now Wifi Connected with IP Address : ");
-                                    // Serial.println(WIFI_CONNECTOR::NOW_IP);
-                                    // Serial.println();
-
-                                    // SWITCH MODULE_STATUS
-                                    NOW_MODULE_STATUS = STATUS_WIFI_PROVIDED;
                                 }
-                                // CONNECT DENIED..
-                                else
+                            );
+        webServer.on        (   "/connectToAP",
+                                HTTP_POST,
+                                []
                                 {
-                                    html.replace("<h1>This is HACK</h1>", "<h1>NOOOOOOOOO</h1>");
-                                    webServer.send(HTTP_CODE, "text/html", html);
-                                    
-                                    // Serial.println(" TIMEOUT..");
-                                    // Serial.print("Now Wifi Connected with IP Address : ");
-                                    // Serial.println(WIFI_CONNECTOR::NOW_IP);
-                                    // Serial.println();
-                                }
-                            }
-                        );
-    webServer.onNotFound(   []
-                            {
-                                String html = String(rawhtml_SELECT_WIFI);
+                                    String html = String(rawhtml_INDEX);
 
-                                // MAKE strWiFiList
-                                String strWiFiList ="";
-                                {
-                                    strWiFiList += "<ul>";
-                                    
-                                    for (String ssid : WIFI_CONNECTOR::scanNetList())
+
+                                    // INIT args from client
+                                    String apName;
+                                    String apPw;
+                                    for (uint8_t i=0; i<webServer.args(); i++)
                                     {
-                                        if(ssid.length() <= 0) // valid check
-                                            continue;
-
-                                        strWiFiList += "<li class='liApName'><a name='" + ssid + "'>" + ssid + "</a> </li>";
+                                        if(webServer.argName(i).equals("apName"))
+                                            apName = webServer.arg(i);
+                                        if(webServer.argName(i).equals("apPw"))
+                                            apPw = webServer.arg(i);
                                     }
 
-                                    strWiFiList += "<a id='aSummary' style='display:none;text-decoration:underline';>...</a>";
-                                    strWiFiList += "</ul>";
+
+                                    // CONNECT TO NET !
+                                    WiFi.begin(apName, apPw);
+                                    Serial.println( "\nTry to connect to. [ " + apName + " / " + apPw + " ]" );
+
+                                    // Up to 10 seconds...
+                                    int i=0;
+                                    while (WiFi.status() != WL_CONNECTED) { Serial.print("."); delay(200); if(i++ > 40) break; }
+
+
+                                    // CONNECT SUCCEX !
+                                    if(WiFi.status() == WL_CONNECTED)
+                                    {
+                                        html.replace("<h1>This is HACK</h1>", String("<h1>Connected SUCCEX!!<br>Now IP : " + (WiFi.localIP()).toString() + " </h1>"));
+                                        webServer.send(HTTP_CODE, "text/html", html);
+                                        WIFI_CONNECTOR::saveWifiList(apName, apPw);
+
+                                        delay(4444); dnsServer.stop();
+
+                                        // RESTART MODULE !
+                                        ESP.restart();
+                                    }
+                                    // CONNECT DENIED..
+                                    else
+                                    {
+                                        html.replace("<h1>This is HACK</h1>", "<h1>NOOOOOOOOO</h1>");
+                                        webServer.send(HTTP_CODE, "text/html", html);
+                                        
+                                        // Serial.println(" TIMEOUT..");
+                                        // Serial.print("Now Wifi Connected with IP Address : ");
+                                        // Serial.println(WIFI_CONNECTOR::NOW_IP);
+                                        // Serial.println();
+                                    }
                                 }
+                            );
+        webServer.on        (   "/connectToAP",
+                                HTTP_GET,
+                                []
+                                {
+                                    String html = String(rawhtml_SELECT_WIFI);
 
-                                // INSERT encoded strWiFiList
-                                html.replace("#{strWiFiList}", strWiFiList);
+                                    // MAKE strWiFiList
+                                    String strWiFiList ="";
+                                    {
+                                        strWiFiList += "<ul>";
+                                        
+                                        for (String ssid : WIFI_CONNECTOR::scanNetList())
+                                        {
+                                            if(ssid.length() <= 0) // valid check
+                                                continue;
 
-                                webServer.send(HTTP_CODE, "text/html", html);
-                            }
-                        );
-    webServer.begin();
+                                            strWiFiList += "<li class='liApName'><a name='" + ssid + "'>" + ssid + "</a> </li>";
+                                        }
 
-    Serial.println("\n");
-    Serial.println("SERVER STARTED!!");
-    Serial.println("TimerInterrupt START!!");
+                                        strWiFiList += "<a id='aSummary' style='display:none;text-decoration:underline';>...</a>";
+                                        strWiFiList += "</ul>";
+                                    }
 
-    // ALL READY! LED BLLLLLINK!!
-    TimerInterrupt.attachInterruptInterval  (   1000,
-                                                [] 
-                                                {
-                                                    //per1ms!
+                                    // INSERT encoded strWiFiList
+                                    html.replace("#{strWiFiList}", strWiFiList);
+
+                                    webServer.send(HTTP_CODE, "text/html", html);
+                                }
+                            );
+        webServer.onNotFound(   []
+                                {
+                                    // redirect to "/connectToAP"
+                                    webServer.sendHeader("Location", "/connectToAP", true);
+                                    webServer.send(302, "text/plain", "");
+                                }
+                            );
+        webServer.begin();
+
+        Serial.println("\n");
+        Serial.println("SERVER STARTED!!");
+        Serial.println("TimerInterrupt START!!");
+
+        // ALL READY! LED BLLLLLINK!!
+        TimerInterrupt.attachInterruptInterval  (   1000,
+                                                    []
                                                     {
-                                                        
-                                                    }
+                                                        //per1ms!
+                                                        {
+                                                            
+                                                        }
 
-                                                    //per500ms!
-                                                    if( !(millis()%500) )
-                                                    {
-                                                        static bool stateLED = false;
-                                                        digitalWrite(LED_BUILTIN, stateLED^=1 ? HIGH : LOW);
+                                                        //per500ms!
+                                                        if( !(millis() % (WIFI_CONNECTOR::isConnected?1500:150)) )
+                                                        {
+                                                            static bool stateLED = false;
+                                                            digitalWrite(LED_BUILTIN, stateLED^=1 ? HIGH : LOW);
+                                                        }
                                                     }
-                                                }
-                                            );
+                                                );
+    }
+
+
+    // To HIJACKER, im all ready...
+    if(WIFI_CONNECTOR::isConnected)
+        DarkJunction::PIN_BIDIRECTIONAL_writeHIGHForXXms(100);
+    // else
+    //     DarkJunction::PIN_BIDIRECTIONAL_writeLOWForXXms(100);
+    Serial.println(F("ACCOMPLICE ALL READY, SIR!\n\n\n\n"));
 }
 
 void loop()
 {
     delay(1);
 
-    switch(NOW_MODULE_STATUS)
-    {
-        case STATUS_COMMON:
-        {
-            if(!WIFI_CONNECTOR::isConnected)
-                dnsServer.processNextRequest();
+    if(!WIFI_CONNECTOR::isConnected)
+        dnsServer.processNextRequest();
 
-            webServer.handleClient();
-        }
-        break;
-        case STATUS_WIFI_PROVIDED:
-        {
-            delay(8282); dnsServer.stop();
+    webServer.handleClient();
 
-            // MODIFY WIFI
-            WiFi.mode(WIFI_AP_STA);
-            WiFi.softAPConfig( IPAddress(192, 168, 69, 1), IPAddress(192, 168, 69, 1), IPAddress(255, 255, 255, 0) );
-            WiFi.softAPDhcpServer().setDns( WiFi.dnsIP(0) );
-            WiFi.softAP( F("I AM WIFI") );
 
-            // Start LLMNR responder
-            LLMNR.begin("accomplice");
 
-            WIFI_CONNECTOR::saveWifiList();
 
-            NOW_MODULE_STATUS = STATUS_COMMON;
-        }
-    }
+
+
+
+
+
 }
-
-#endif

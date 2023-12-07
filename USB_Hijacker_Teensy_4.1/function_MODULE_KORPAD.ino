@@ -1,12 +1,24 @@
 
-#define KEYPAD_KOREAN_LAYOUT 2      // 0:None   1:CheonJiIn   2:NaRatGeul
+#define KEYPAD_KOREAN_LAYOUT    2      // 0:None   1:CheonJiIn   2:NaRatGeul
+// CheonJiIn is... https://namu.wiki/w/%EC%B2%9C%EC%A7%80%EC%9D%B8%20%EC%9E%90%ED%8C%90
+// NaRatGeul is... https://namu.wiki/w/KT%EB%82%98%EB%9E%8F%EA%B8%80%20%EC%9E%90%ED%8C%90
+
+#define isEquals(STRX,STRY)     (strcmp(STRX,STRY)==0)
+#define fillWith(STRX,STRY)     strcpy(STRX,STRY)
+#define isContains(STR,CHSTR)   ((STR).indexOf(CHSTR)>-1)
+
+#define DO_BACKSPACE    KBD_HIJACKER.pressandreleaseKey(KEY_BACKSPACE); delay(10);
+#define DO_SPACE        KBD_HIJACKER.pressandreleaseKey(KEY_SPACE);     delay(10);
+#define COMPLETE_THE_IN_PROGRESS_HANGEUL_IMMEDIATELY        DO_SPACE; DO_BACKSPACE;
+
+
+
+
 
 void KeyboardHijacker::MODULE_KOREAN_KEYPAD_EVOLUTION()
 {
 /* ------------------------------------------------------ KEYPAD_KOREAN_LAYOUT COMMON ------------------------------------------------------ */
 #if (KEYPAD_KOREAN_LAYOUT > 0)
-
-    static bool KoreanKeypadToggle = false;
 
     static char* KorSlot0 = (char*) malloc( sizeof(char) * 3 );
     static char* KorSlot1 = (char*) malloc( sizeof(char) * 3 );
@@ -21,7 +33,7 @@ void KeyboardHijacker::MODULE_KOREAN_KEYPAD_EVOLUTION()
     // https://github.com/AliveSophist/USB_Hijacker/blob/e83d5220efb0088f9565fd778ef1e0cd9ec290f2/USB_Hijacker_Teensy_4.1/function_MODULE_KORPAD.ino
     auto KORPAD_updateConfirmedInputs = [&]() -> void
                                         {
-                                            strcpy(KorSlot4,"");
+                                            fillWith(KorSlot4,"");
 
                                             char* temp = KorSlot4;
                                             KorSlot4 = KorSlot3;
@@ -34,12 +46,12 @@ void KeyboardHijacker::MODULE_KOREAN_KEYPAD_EVOLUTION()
                                         };
     auto KORPAD_undoConfirmedInputs =   [&]() -> void
                                         {
-                                            if(strcmp(KorSlot0,"")==0){
+                                            if(isEquals(KorSlot0,"")){
                                                 isKorSlotUnderflowed = true;
                                                 return;
                                             }
 
-                                            strcpy(KorSlot0,"");
+                                            fillWith(KorSlot0,"");
 
                                             char* temp = KorSlot0;
                                             KorSlot0 = KorSlot1;
@@ -50,11 +62,11 @@ void KeyboardHijacker::MODULE_KOREAN_KEYPAD_EVOLUTION()
                                         };
     auto KORPAD_resetConfirmedInputs =  [&]() -> void
                                         {
-                                            strcpy(KorSlot4,"");
-                                            strcpy(KorSlot3,"");
-                                            strcpy(KorSlot2,"");
-                                            strcpy(KorSlot1,"");
-                                            strcpy(KorSlot0,"");
+                                            fillWith(KorSlot4,"");
+                                            fillWith(KorSlot3,"");
+                                            fillWith(KorSlot2,"");
+                                            fillWith(KorSlot1,"");
+                                            fillWith(KorSlot0,"");
 
                                             isKorSlotReset = true;
                                         };
@@ -63,17 +75,111 @@ void KeyboardHijacker::MODULE_KOREAN_KEYPAD_EVOLUTION()
 
     /**⦓   KORPAD_MODE   ⦔**/
 
+    #define MODE_NONE       -1
     #define MODE_HANGEUL    0
     #define MODE_ALPHABET   1
     #define MODE_KANA       2
-    static uint8_t KORPAD_MODE = MODE_HANGEUL;
+
+    static int8_t KORPAD_MODE = MODE_NONE;
+
+    auto KORPAD_switchMODE =    [&](uint8_t UPDATE_MODE) -> void
+                                {
+                                    KORPAD_resetConfirmedInputs();
+
+
+                                    // Tune Lock States & KorEng state
+                                    {
+                                        // Tune KorEng state, When entering the KORPAD MODE
+                                        if( KORPAD_MODE == MODE_NONE )
+                                        {
+                                            // While KORPAD_MODE, Numlock is always on
+                                            if(!KBD_HIJACKER.getStateNumLockToggle()) KBD_HIJACKER.pressandreleaseKey(KEY_NUM_LOCK);
+
+                                            // Reverse KorEng state IMMEDIATELY, if NumLock pressed more than 1000 millis
+                                            if(MILLIS_FROM_PRESSED_UNTIL_RELEASE > 1000) KBD_HIJACKER.pressandreleaseKey(KEY_KORENG);
+                                            // Otherwise,
+                                            // If your system supports KorEngStatus.exe (Maker's Blog:https://blog.naver.com/breeze4me/140056743544)
+                                            // Reverse the KorEng state, Dependent on ScrollLock state
+                                            else
+                                            {
+                                                KBD_HIJACKER.pressandreleaseKey(KEY_SCROLL_LOCK); // For, Update ScrollLock state with THE LATEST
+                                                delay(69); KBD_HIJACKER.syncToggleKeyStates();
+
+                                                if(!KBD_HIJACKER.getStateScrollLockToggle())
+                                                {
+                                                    bool stateBeforeReverse = KBD_HIJACKER.getStateScrollLockToggle();
+
+                                                    KBD_HIJACKER.pressandreleaseKey(KEY_SCROLL_LOCK); // For, Monitor the changes in the ScrollLock state
+                                                    delay(69); KBD_HIJACKER.syncToggleKeyStates();
+
+                                                    bool stateAfterReverse  = KBD_HIJACKER.getStateScrollLockToggle();
+
+                                                    // Switch KorEng state, If the KorEngStatus.exe's feature that reflects the KORENG state on the ScrollLock state is running
+                                                    if(stateBeforeReverse == stateAfterReverse)
+                                                        KBD_HIJACKER.pressandreleaseKey(KEY_KORENG);
+                                                }
+                                                // rollback ScrollLock state
+                                                else
+                                                    KBD_HIJACKER.pressandreleaseKey(KEY_SCROLL_LOCK); // For, Rollback ScrollLock's state
+                                            }
+                                        }
+
+                                        //If CAPSLOCK was On, Turn Off BY FORCE
+                                        if(KBD_HIJACKER.getStateCapsLockToggle()) KBD_HIJACKER.pressandreleaseKey(KEY_CAPS_LOCK);
+
+                                        // Sync Lock states
+                                        KBD_HIJACKER.reserveSyncToggleKeyStates();
+                                    }
+
+
+                                    // Enter & Exit Sounds
+                                    {
+                                        if
+                                        ( KORPAD_MODE == MODE_NONE )        // Enter the KORPAD MODE
+                                        {
+                                            Buzzzzer::reserveBuzz   ( { NOTE_G5 }
+                                                                    , { 333     } );
+                                        }
+                                        else if
+                                        ( UPDATE_MODE == MODE_ALPHABET )    // Enter MODE_ALPHABET
+                                        {
+                                            Buzzzzer::reserveBuzz   ( { NOTE_FS5,0, NOTE_GS5,0, NOTE_AS5,0, NOTE_DS6,0, NOTE_CS6    }
+                                                                    , { 200,30,     100,150,    120,200,    150,150,    450         } );
+                                        }
+                                        else if
+                                        ( UPDATE_MODE == MODE_KANA )        // Enter MODE_KANA
+                                        {
+                                            Buzzzzer::reserveBuzz   ( { NOTE_E7,    NOTE_E7,0,  NOTE_E7,0,  NOTE_C7,    NOTE_E7,0,  NOTE_G7,0   }
+                                                                    , { 200,        130,50,     100,50,     100,        130,50,     300,444,    } );
+                                        }
+
+                                        else if
+                                        ( UPDATE_MODE == MODE_NONE )        // Exit the KORPAD MODE
+                                        {
+                                            Buzzzzer::reserveBuzz   ( { NOTE_D3 }
+                                                                    , { 181     } );
+                                        }
+                                        else if
+                                        ( KORPAD_MODE == MODE_ALPHABET )    // Exit MODE_ALPHABET
+                                        {
+                                            Buzzzzer::reserveBuzz   ( { NOTE_AS5,0, NOTE_GS5,0, NOTE_FS5,0, NOTE_FS5    }
+                                                                    , { 300,50,     230,50,     170,100,    350         } );
+                                        }
+                                        else if
+                                        ( KORPAD_MODE == MODE_KANA )        // Exit MODE_KANA
+                                        {
+                                            Buzzzzer::reserveBuzz   ( { NOTE_G6 }
+                                                                    , { 222     } );
+                                        }
+                                    }
+
+
+                                    KORPAD_MODE = UPDATE_MODE;
+                                };
 
 
 
     /**⦓   About, MODE_HANGEUL   ⦔**/
-
-    #define isEquals(KorSlotX,STR)      (strcmp(KorSlotX,STR)==0)
-    #define fillWith(KorSlotX,STR)      strcpy(KorSlotX,STR)
 
     auto isExistConsonant =             [](char* KorSlotX) -> bool
                                         {
@@ -113,11 +219,10 @@ void KeyboardHijacker::MODULE_KOREAN_KEYPAD_EVOLUTION()
                                                         {
                                                             if(isExistConsonant(KorSlot3))
                                                             {
-                                                                delay(11); KBD_HIJACKER.pressandreleaseKey(KEY_BACKSPACE);
-                                                                delay(11); KBD_HIJACKER.pressandreleaseKeys(KorSlot3);
-                                                                delay(11); KBD_HIJACKER.pressandreleaseKeys(KorSlot2);
-                                                                delay(11); KBD_HIJACKER.pressandreleaseKeys(KorSlot1);
-                                                                delay(11);
+                                                                DO_BACKSPACE;
+                                                                KBD_HIJACKER.pressandreleaseKeys(KorSlot3); delay(5);
+                                                                KBD_HIJACKER.pressandreleaseKeys(KorSlot2); delay(5);
+                                                                KBD_HIJACKER.pressandreleaseKeys(KorSlot1); delay(5);
                                                             }
                                                         }
                                                     };
@@ -127,10 +232,9 @@ void KeyboardHijacker::MODULE_KOREAN_KEYPAD_EVOLUTION()
                                                         {
                                                             if(isExistConsonant(KorSlot2))
                                                             {
-                                                                delay(11); KBD_HIJACKER.pressandreleaseKey(KEY_BACKSPACE);
-                                                                delay(11); KBD_HIJACKER.pressandreleaseKeys(KorSlot2);
-                                                                delay(11); KBD_HIJACKER.pressandreleaseKeys(KorSlot1);
-                                                                delay(11);
+                                                                DO_BACKSPACE;
+                                                                KBD_HIJACKER.pressandreleaseKeys(KorSlot2); delay(5);
+                                                                KBD_HIJACKER.pressandreleaseKeys(KorSlot1); delay(5);
                                                             }
                                                         }
                                                     };
@@ -146,11 +250,10 @@ void KeyboardHijacker::MODULE_KOREAN_KEYPAD_EVOLUTION()
                                                         isExistConsonant(KorSlot3)
                                                     )
                                                     {
-                                                        delay(11); KBD_HIJACKER.pressandreleaseKey(KEY_BACKSPACE);
-                                                        delay(11); KBD_HIJACKER.pressandreleaseKeys(KorSlot3);
-                                                        delay(11); KBD_HIJACKER.pressandreleaseKeys(KorSlot2);
-                                                        delay(11); KBD_HIJACKER.pressandreleaseKeys(KorSlot1);
-                                                        delay(11);
+                                                        DO_BACKSPACE;
+                                                        KBD_HIJACKER.pressandreleaseKeys(KorSlot3); delay(5);
+                                                        KBD_HIJACKER.pressandreleaseKeys(KorSlot2); delay(5);
+                                                        KBD_HIJACKER.pressandreleaseKeys(KorSlot1); delay(5);
                                                     }
                                                     else if
                                                     (   /*isExistConsonant(KorSlot2) &&*/
@@ -159,18 +262,16 @@ void KeyboardHijacker::MODULE_KOREAN_KEYPAD_EVOLUTION()
                                                         isExistConsonant(KorSlot4)
                                                     )
                                                     {
-                                                        delay(11); KBD_HIJACKER.pressandreleaseKey(KEY_BACKSPACE);
-                                                        delay(11); KBD_HIJACKER.pressandreleaseKeys(KorSlot4);
-                                                        delay(11); KBD_HIJACKER.pressandreleaseKeys(KorSlot3);
-                                                        delay(11); KBD_HIJACKER.pressandreleaseKeys(KorSlot2);
-                                                        delay(11); KBD_HIJACKER.pressandreleaseKeys(KorSlot1);
-                                                        delay(11);
+                                                        DO_BACKSPACE;
+                                                        KBD_HIJACKER.pressandreleaseKeys(KorSlot4); delay(5);
+                                                        KBD_HIJACKER.pressandreleaseKeys(KorSlot3); delay(5);
+                                                        KBD_HIJACKER.pressandreleaseKeys(KorSlot2); delay(5);
+                                                        KBD_HIJACKER.pressandreleaseKeys(KorSlot1); delay(5);
                                                     }
                                                     else
                                                     {
-                                                        delay(11); KBD_HIJACKER.pressandreleaseKey(KEY_BACKSPACE);
-                                                        delay(11); KBD_HIJACKER.pressandreleaseKeys(KorSlot1);
-                                                        delay(11);
+                                                        DO_BACKSPACE;
+                                                        KBD_HIJACKER.pressandreleaseKeys(KorSlot1); delay(5);
                                                     }
                                                     
                                                     isKorSlotUpdated = true;
@@ -179,17 +280,17 @@ void KeyboardHijacker::MODULE_KOREAN_KEYPAD_EVOLUTION()
 
     #endif
 
-    #define COMPLETE_THE_IN_PROGRESS_HANGEUL_IMMEDIATELY    KBD_HIJACKER.pressandreleaseKey(KEY_SPACE); KBD_HIJACKER.pressandreleaseKey(KEY_BACKSPACE);
-
 
 
     /**⦓   About, MODE_ALPHABET   ⦔**/
 
-    #define KORPAD_writeAlphabet(CHSTR)     KBD_HIJACKER.pressandreleaseKey(KEY_KORENG); delay(11); Keyboard.write(CHSTR); delay(11); KBD_HIJACKER.pressandreleaseKey(KEY_KORENG); delay(11);
+    #define KORPAD_writeAlphabet(CHSTR)     KBD_HIJACKER.pressandreleaseKey(KEY_KORENG); delay(10); Keyboard.write(CHSTR); delay(10); KBD_HIJACKER.pressandreleaseKey(KEY_KORENG);
 
     auto KORPAD_tryToTypeAlphabetByHangeulPronounce =   [&]() -> bool
                                                         {
                                                             if(KORPAD_MODE != MODE_ALPHABET)
+                                                                return false;
+                                                            if(isEquals(KorSlot0, ""))
                                                                 return false;
 
 
@@ -208,9 +309,10 @@ void KeyboardHijacker::MODULE_KOREAN_KEYPAD_EVOLUTION()
 
                                                             if(alphabet!=0) numNeededBackspace++;
 
-                                                            alphabet = (alphabet!=0) ? alphabet :
+                                                            alphabet = alphabet!=0 ? alphabet :
                                                             KORPAD_isAlphabetPronounce("d","o","d","l") ? 'a' :
                                                             KORPAD_isAlphabetPronounce("d","p","d","l") ? 'a' :
+                                                            KORPAD_isAlphabetPronounce("d","o","v","m") ? 'f' :
                                                             KORPAD_isAlphabetPronounce("d","p","v","m") ? 'f' :
                                                             KORPAD_isAlphabetPronounce("d","p","c","l") ? 'h' :
                                                             KORPAD_isAlphabetPronounce("d","k","d","l") ? 'i' :
@@ -228,8 +330,7 @@ void KeyboardHijacker::MODULE_KOREAN_KEYPAD_EVOLUTION()
 
                                                             if(alphabet!=0) numNeededBackspace++;
 
-                                                            char isExCase_dl_ = 0;
-                                                            alphabet = (alphabet!=0) ? alphabet :
+                                                            alphabet = alphabet!=0 ? alphabet :
                                                             KORPAD_isAlphabetPronounce("","","d","k")   ? 'a' :
                                                             KORPAD_isAlphabetPronounce("","","d","o")   ? 'a' :
                                                             KORPAD_isAlphabetPronounce("","","q","l")   ? 'b' :
@@ -239,7 +340,8 @@ void KeyboardHijacker::MODULE_KOREAN_KEYPAD_EVOLUTION()
                                                             KORPAD_isAlphabetPronounce("","","z","m")   ? 'c' :
                                                             KORPAD_isAlphabetPronounce("","","e","l")   ? 'd' :
                                                             KORPAD_isAlphabetPronounce("","","e","m")   ? 'd' :
-                                                            KORPAD_isAlphabetPronounce("","","d","l")   ? (isExCase_dl_='e') :
+                                                            KORPAD_isAlphabetPronounce("","","d","l")   ? 'e' :
+                                                            KORPAD_isAlphabetPronounce("","","d","j")   ? 'e' :
                                                             KORPAD_isAlphabetPronounce("","","d","p")   ? 'e' :
                                                             KORPAD_isAlphabetPronounce("","","d","m")   ? 'e' :
                                                             KORPAD_isAlphabetPronounce("","d","p","v")  ? 'f' :
@@ -276,7 +378,6 @@ void KeyboardHijacker::MODULE_KOREAN_KEYPAD_EVOLUTION()
                                                             KORPAD_isAlphabetPronounce("","","x","m")   ? 't' :
                                                             KORPAD_isAlphabetPronounce("","","d","b")   ? 'u' :
                                                             KORPAD_isAlphabetPronounce("","","d","n")   ? 'u' :
-                                                            KORPAD_isAlphabetPronounce("","","d","j")   ? 'u' :
                                                             KORPAD_isAlphabetPronounce("","","q","ml")  ? 'v' :
                                                             KORPAD_isAlphabetPronounce("","","q","m")   ? 'v' :
                                                             KORPAD_isAlphabetPronounce("","E","j","q")  ? 'w' :
@@ -295,115 +396,77 @@ void KeyboardHijacker::MODULE_KOREAN_KEYPAD_EVOLUTION()
                                                             if(alphabet!=0)
                                                             {
                                                                 // Tune KorSlots
-                                                                KORPAD_resetConfirmedInputs(); if(isExCase_dl_!=0)fillWith(KorSlot1,"l");
+                                                                KORPAD_resetConfirmedInputs();
                                                                 KorSlot0[0]='@'; KorSlot0[1]=alphabet;
 
                                                                 // Type!
-                                                                for(uint8_t i=0; i<numNeededBackspace; i++){ KBD_HIJACKER.pressandreleaseKey(KEY_BACKSPACE); delay(11); }
+                                                                for(uint8_t i=0; i<numNeededBackspace; i++){ DO_BACKSPACE; }
                                                                 KORPAD_writeAlphabet( alphabet );
 
                                                                 return true;
                                                             }
 
                                                             alphabet =
-                                                            //Hangeul Consonent to Alphabet
                                                             isEquals(KorSlot0, "r") ? 'g' :
-                                                            isEquals(KorSlot1, "r") 
-                                                                                    ? ( isEquals(KorSlot0,"@g") ? 'g' : 0 ) :
+                                                            isEquals(KorSlot0, "R") ? 'q' :
                                                             isEquals(KorSlot0, "s") ? 'n' :
-                                                            isEquals(KorSlot1, "s") 
-                                                                                    ? ( isEquals(KorSlot0,"@n") ? 'n' : 0 ) :
                                                             isEquals(KorSlot0, "e") ? 'd' :
-                                                            isEquals(KorSlot1, "e")
-                                                                                    ? ( isEquals(KorSlot0,"@d") ? 'd' : 0 ) :
+                                                            isEquals(KorSlot0, "E") ? '%' :
                                                             isEquals(KorSlot0, "f") ? 'l' :
+                                                            isEquals(KorSlot0, "a") ? 'm' :
+                                                            isEquals(KorSlot0, "q") ? 'b' :
+                                                            isEquals(KorSlot0, "Q") ? 'p' :
+                                                            isEquals(KorSlot0, "t") ? 's' :
+                                                            isEquals(KorSlot0, "T") ? 'c' :
+                                                            isEquals(KorSlot0, "d") ? '~' :
+                                                            isEquals(KorSlot0, "w") ? 'j' :
+                                                            isEquals(KorSlot0, "W") ? 'z' :
+                                                            isEquals(KorSlot0, "c") ? '*' :
+                                                            isEquals(KorSlot0, "z") ? 'c' :
+                                                            isEquals(KorSlot0, "x") ? 't' :
+                                                            isEquals(KorSlot0, "v") ? 'f' :
+                                                            isEquals(KorSlot0, "g") ? 'h' :
+                                                            isEquals(KorSlot0, "k") ? 'a' :
+                                                            isEquals(KorSlot0, "o") ? 'a' :
+                                                            isEquals(KorSlot0, "j") ? 'e' :
+                                                            isEquals(KorSlot0, "p") ? 'e' :
+                                                            isEquals(KorSlot0, "h") ? 'o' :
+                                                            isEquals(KorSlot0, "hk")? 'y' :
+                                                            isEquals(KorSlot0, "n") ? 'u' :
+                                                            isEquals(KorSlot0, "i") ? 'y' :
+                                                            isEquals(KorSlot0, "u") ? 'y' :
+                                                            isEquals(KorSlot0, "y") ? 'y' :
+                                                            isEquals(KorSlot0, "b") ? 'w' :
+                                                            isEquals(KorSlot0, "m") ? 'e' :
+                                                            isEquals(KorSlot0, "l") ? 'i' :
                                                             isEquals(KorSlot1, "f")
                                                                                     ? ( isEquals(KorSlot0,"@l") ? 'r' :
                                                                                         isEquals(KorSlot0,"@r") ? 'l' : 0 ) :
-                                                            isEquals(KorSlot0, "a") ? 'm' :
-                                                            isEquals(KorSlot1, "a")
-                                                                                    ? ( isEquals(KorSlot0,"@m") ? 'm' : 0 ) :
-                                                            isEquals(KorSlot0, "q") ? 'b' :
                                                             isEquals(KorSlot1, "q")
                                                                                     ? ( isEquals(KorSlot0,"@b") ? 'v' :
                                                                                         isEquals(KorSlot0,"@v") ? 'b' : 0 ) :
-                                                            isEquals(KorSlot0, "t") ? 's' :
                                                             isEquals(KorSlot1, "t")
                                                                                     ? ( isEquals(KorSlot0,"@s") ? 'c' :
                                                                                         isEquals(KorSlot0,"@c") ? 'x' :
                                                                                         isEquals(KorSlot0,"@x") ? 's' : 0 ) :
-                                                            isEquals(KorSlot0, "T") ? 'c' :
                                                             isEquals(KorSlot1, "T")
                                                                                     ? ( isEquals(KorSlot0,"@c") ? 'x' :
                                                                                         isEquals(KorSlot0,"@x") ? 'c' : 0 ) :
-                                                            isEquals(KorSlot0, "d") ? '~' :
-                                                            isEquals(KorSlot1, "d")
-                                                                                    ? ( isEquals(KorSlot0,"@~") ? '~' : 0 ) : // '~' is ng
-                                                            isEquals(KorSlot0, "w") ? 'j' :
                                                             isEquals(KorSlot1, "w")
                                                                                     ? ( isEquals(KorSlot0,"@j") ? 'g' :
                                                                                         isEquals(KorSlot0,"@g") ? 'z' :
                                                                                         isEquals(KorSlot0,"@z") ? 'j' : 0 ) :
-                                                            isEquals(KorSlot0, "c") ? '*' :
-                                                            isEquals(KorSlot1, "c")
-                                                                                    ? ( isEquals(KorSlot0,"@*") ? '*' : 0 ) : // '*' is ch
-                                                            isEquals(KorSlot0, "z") ? 'c' :
                                                             isEquals(KorSlot1, "z")
                                                                                     ? ( isEquals(KorSlot0,"@c") ? 'k' :
                                                                                         isEquals(KorSlot0,"@k") ? 'q' :
                                                                                         isEquals(KorSlot0,"@q") ? 'x' :
                                                                                         isEquals(KorSlot0,"@x") ? 'c' : 0 ) :
-                                                            isEquals(KorSlot0, "x") ? 't' :
-                                                            isEquals(KorSlot1, "x")
-                                                                                    ? ( isEquals(KorSlot0,"@t") ? 't' : 0 ) :
-                                                            isEquals(KorSlot0, "v") ? 'f' :
                                                             isEquals(KorSlot1, "v")
                                                                                     ? ( isEquals(KorSlot0,"@f") ? 'p' :
                                                                                         isEquals(KorSlot0,"@p") ? 'f' : 0 ) :
-                                                            isEquals(KorSlot0, "g") ? 'h' :
-                                                            isEquals(KorSlot1, "g")
-                                                                                    ? ( isEquals(KorSlot0,"@h") ? 'h' : 0 ) :
-                                                            //Hangeul Vowel to Alphabet
-                                                            isEquals(KorSlot0, "k") ? 'a' :
-                                                            isEquals(KorSlot1, "k")
-                                                                                    ? ( isEquals(KorSlot0,"@a") ? 'a' : 0 ) :
-                                                            isEquals(KorSlot0, "o") ? 'a' :
-                                                            isEquals(KorSlot1, "o")
-                                                                                    ? ( isEquals(KorSlot0,"@a") ? 'a' : 0 ) :
-                                                            isEquals(KorSlot0, "j") ? 'e' :
-                                                            isEquals(KorSlot1, "j")
-                                                                                    ? ( isEquals(KorSlot0,"@e") ? 'e' : 0 ) :
-                                                            isEquals(KorSlot0, "p") ? 'e' :
-                                                            isEquals(KorSlot1, "p")
-                                                                                    ? ( isEquals(KorSlot0,"@e") ? 'e' : 0 ) :
-                                                            isEquals(KorSlot0, "h") ? 'o' :
-                                                            isEquals(KorSlot1, "h")
-                                                                                    ? ( isEquals(KorSlot0,"@o") ? 'o' : 0 ) :
-                                                            isEquals(KorSlot0, "n") ? 'u' :
-                                                            isEquals(KorSlot1, "n")
-                                                                                    ? ( isEquals(KorSlot0,"@u") ? 'u' : 0 ) :
-                                                            isEquals(KorSlot0, "i") ? 'y' :
-                                                            isEquals(KorSlot1, "i")
-                                                                                    ? ( isEquals(KorSlot0,"@y") ? 'y' : 0 ) :
-                                                            isEquals(KorSlot0, "u") ? 'y' :
-                                                            isEquals(KorSlot1, "u")
-                                                                                    ? ( isEquals(KorSlot0,"@y") ? 'y' : 0 ) :
-                                                            isEquals(KorSlot0, "y") ? 'y' :
-                                                            isEquals(KorSlot1, "y")
-                                                                                    ? ( isEquals(KorSlot0,"@y") ? 'y' : 0 ) :
-                                                            isEquals(KorSlot0, "b") ? 'w' :
-                                                            isEquals(KorSlot1, "b")
-                                                                                    ? ( isEquals(KorSlot0,"@w") ? 'w' : 0 ) :
-                                                            isEquals(KorSlot0, "m") ? 'e' :
-                                                            isEquals(KorSlot1, "m")
-                                                                                    ? ( isEquals(KorSlot0,"@e") ? 'e' : 0 ) :
-                                                            isEquals(KorSlot0, "l") ? 'i' :
                                                             isEquals(KorSlot1, "l")
                                                                                     ? ( isEquals(KorSlot0,"@i") ? 'e' :
                                                                                         isEquals(KorSlot0,"@e") ? 'i' : 0 ) : 0;
-
-                                                            if(alphabet==KorSlot0[1]) // DO NOT NEED TO RETYPE
-                                                                return true;
 
                                                             if(alphabet!=0)
                                                             {
@@ -412,13 +475,13 @@ void KeyboardHijacker::MODULE_KOREAN_KEYPAD_EVOLUTION()
                                                                 KorSlot0[0]='@'; KorSlot0[1]=alphabet;
 
                                                                 // Type!
-                                                                KBD_HIJACKER.pressandreleaseKey(KEY_BACKSPACE); delay(11);
-                                                                KORPAD_writeAlphabet( alphabet=='~' ? "ng" : alphabet=='*' ? "ch" : String(alphabet).c_str() );
-
-                                                                return true;
+                                                                DO_BACKSPACE;
+                                                                KORPAD_writeAlphabet(   alphabet=='%' ? "th" :
+                                                                                        alphabet=='~' ? "ng" :
+                                                                                        alphabet=='*' ? "ch" : String(alphabet).c_str()   );
                                                             }
 
-                                                            return false;
+                                                            return true;
                                                         };
 
     auto KORPAD_tryToDoAlphabetCaseConversion =         [&]() -> bool
@@ -440,14 +503,14 @@ void KeyboardHijacker::MODULE_KOREAN_KEYPAD_EVOLUTION()
                                                                 // switch CapsLockToggle, If Case Conversion Battered 4 times
                                                                 if(KBD_PARSER.KeyLogger.peek_key(1)==KEYPAD_PERIOD && KBD_PARSER.KeyLogger.peek_key(2)==KEYPAD_PERIOD && KBD_PARSER.KeyLogger.peek_key(3)==KEYPAD_PERIOD) KBD_HIJACKER.pressandreleaseKey(KEY_CAPS_LOCK);
 
-                                                                KBD_HIJACKER.pressandreleaseKey(KEY_BACKSPACE); delay(11);
+                                                                DO_BACKSPACE;
                                                                 KORPAD_writeAlphabet( KorSlot0[1] );
                                                             }
                                                             else
                                                             {
                                                                 KorSlot0[1] -= 32;
 
-                                                                KBD_HIJACKER.pressandreleaseKey(KEY_BACKSPACE); delay(11);
+                                                                DO_BACKSPACE;
                                                                 KORPAD_writeAlphabet( KorSlot0[1] );
 
                                                                 // switch CapsLockToggle, If Case Conversion Battered 3 times
@@ -461,50 +524,142 @@ void KeyboardHijacker::MODULE_KOREAN_KEYPAD_EVOLUTION()
 
     /**⦓   About, MODE_KANA   ⦔**/
 
+    #define SET_IME_TO_KOR  KBD_HIJACKER.pressandreleaseMultiKey( {KEY_ALT,KEY_SHIFT,KEY_3} );
+    #define SET_IME_TO_GJI  KBD_HIJACKER.pressandreleaseMultiKey( {KEY_ALT,KEY_SHIFT,KEY_4} );
+
     static std::list<String> queueKana;
     static std::list<uint8_t> logBeQueued;
 
-    auto KORPAD_doQueueingKana =                [&](int8_t indexExcludeSlot) -> void
+    auto KORPAD_enqueueKana =                   [&](int8_t indexFrom) -> void
                                                 {
                                                     char* KorSlots[] = {KorSlot0, KorSlot1, KorSlot2, KorSlot3, KorSlot4};
+
                                                     uint8_t lenBeQueued = 0;
                                                     String queueThing;
 
-                                                    for(int8_t i=4; i>indexExcludeSlot; i--)
+                                                    for(int8_t i=4; i>=indexFrom; i--)
                                                     {
-                                                        if(!isExistConsonant(KorSlots[i]))
-                                                            continue;
+                                                        queueThing = "";
 
-                                                        if(i-1>indexExcludeSlot && isExistVowel(KorSlots[i-1]))
+                                                        if(!isExistConsonant(KorSlots[i]))
                                                         {
-                                                            // Hangeul to Kana (exclude nn, cc Kana)
-                                                            fillWith(KorSlots[i],   isEquals(KorSlots[i],"z") ? "k" :
-                                                                                    isEquals(KorSlots[i],"t") ? "s" :
-                                                                                    isEquals(KorSlots[i],"c") ? "t" :
-                                                                                    isEquals(KorSlots[i],"x") ? "t" :
-                                                                                    isEquals(KorSlots[i],"s") ? "n" :
-                                                                                    isEquals(KorSlots[i],"g") ? "h" :
-                                                                                    isEquals(KorSlots[i],"a") ? "m" :
-                                                                                    isEquals(KorSlots[i],"f") ? "r" :
-                                                                                    isEquals(KorSlots[i],"r") ? "g" :
-                                                                                    isEquals(KorSlots[i],"w") ? "z" :
-                                                                                    isEquals(KorSlots[i],"e") ? "d" :
-                                                                                    isEquals(KorSlots[i],"q") ? "b" :
-                                                                                    isEquals(KorSlots[i],"v") ? "p" : "" );
-                                                            fillWith(KorSlots[i-1], isEquals(KorSlots[i-1],"k") ? "a" :
-                                                                                    isEquals(KorSlots[i-1],"o") ? "a" :
-                                                                                    isEquals(KorSlots[i-1],"l") ? "i" :
-                                                                                    isEquals(KorSlots[i-1],"n") ? "u" :
-                                                                                    isEquals(KorSlots[i-1],"m") ? "u" :
-                                                                                    isEquals(KorSlots[i-1],"p") ? "e" :
-                                                                                    isEquals(KorSlots[i-1],"h") ? "o" :
-                                                                                    isEquals(KorSlots[i-1],"i") ? "ya" :
-                                                                                    isEquals(KorSlots[i-1],"u") ? "ya" :
-                                                                                    isEquals(KorSlots[i-1],"b") ? "yu" :
-                                                                                    isEquals(KorSlots[i-1],"y") ? "yo" :
-                                                                                    isEquals(KorSlots[i-1],"hk")? "wa" :
-                                                                                    isEquals(KorSlots[i-1],"j") ? "wo" : "wo");
-                                                            queueThing = String("") + KorSlots[i] + KorSlots[i-1];
+                                                            // Hangeul to Kana(Chōonpu)
+                                                            if
+                                                            (isEquals(KorSlots[i],"m"))
+                                                            {
+                                                                queueKana.push_back( "-" );
+                                                                logBeQueued.push_back( 1 );
+                                                            }
+                                                            // Hangeul to Kana(ExtendedKatakana)
+                                                            // ExtendedKatakana is... https://en.wikipedia.org/wiki/Katakana#Extended_katakana
+                                                            else if
+                                                            (isEquals(KorSlots[i],"k") || isEquals(KorSlots[i],"l") || isEquals(KorSlots[i],"n") || isEquals(KorSlots[i],"p") || isEquals(KorSlots[i],"h"))
+                                                            {
+                                                                String queuedLatest = (queueKana.empty() ? "" : queueKana.back());
+
+                                                                if(queuedLatest[0]=='~' || queuedLatest[0]=='`' || queuedLatest[0]=='?')
+                                                                {
+                                                                    queuedLatest =  isContains(queuedLatest,"~~")? (isEquals(KorSlots[i],"l") ? "wi" :
+                                                                                                                    isEquals(KorSlots[i],"p") ? "we" :
+                                                                                                                    isEquals(KorSlots[i],"h") ? "uxo": "") :
+                                                                                    isContains(queuedLatest,"ch")? (isEquals(KorSlots[i],"k") ? "tsa":
+                                                                                                                    isEquals(KorSlots[i],"l") ? "tsi":
+                                                                                                                    isEquals(KorSlots[i],"p") ? "tse":
+                                                                                                                    isEquals(KorSlots[i],"h") ? "tso": "") :
+                                                                                    isContains(queuedLatest,'t') ? (isEquals(KorSlots[i],"l") ? "thi":
+                                                                                                                    isEquals(KorSlots[i],"n") ? "twu": "") :
+                                                                                    isContains(queuedLatest,'d') ? (isEquals(KorSlots[i],"l") ? "dhi":
+                                                                                                                    isEquals(KorSlots[i],"n") ? "dwu": "") :
+                                                                                    isContains(queuedLatest,'s') ? (isEquals(KorSlots[i],"p") ? "she": "") :
+                                                                                    isContains(queuedLatest,'j') ? (isEquals(KorSlots[i],"p") ? "je" : "") :
+                                                                                    isContains(queuedLatest,'h') ? (isEquals(KorSlots[i],"k") ? "fa" :
+                                                                                                                    isEquals(KorSlots[i],"l") ? "fi" :
+                                                                                                                    isEquals(KorSlots[i],"p") ? "fe" :
+                                                                                                                    isEquals(KorSlots[i],"h") ? "fo" : "") :
+                                                                                    isContains(queuedLatest,'p') ? (isEquals(KorSlots[i],"k") ? "fa" :
+                                                                                                                    isEquals(KorSlots[i],"l") ? "fi" :
+                                                                                                                    isEquals(KorSlots[i],"p") ? "fe" :
+                                                                                                                    isEquals(KorSlots[i],"h") ? "fo" : "") :
+                                                                                    isContains(queuedLatest,'b') ? (isEquals(KorSlots[i],"k") ? "va" :
+                                                                                                                    isEquals(KorSlots[i],"l") ? "vi" :
+                                                                                                                    isEquals(KorSlots[i],"n") ? "vu" :
+                                                                                                                    isEquals(KorSlots[i],"p") ? "ve" :
+                                                                                                                    isEquals(KorSlots[i],"h") ? "vo" : "") : "";
+
+                                                                    // Dequeue the latest and Enqueue both an empty and the fixed
+                                                                    queueKana.pop_back(); queueKana.push_back("");
+                                                                    queueKana.push_back(queuedLatest);
+                                                                    logBeQueued.push_back( 1 );
+                                                                }
+                                                                else
+                                                                {
+                                                                    queuedLatest = (isEquals(KorSlots[i],"k") ? "la" :
+                                                                                    isEquals(KorSlots[i],"l") ? "li" :
+                                                                                    isEquals(KorSlots[i],"n") ? "lu" :
+                                                                                    isEquals(KorSlots[i],"p") ? "le" :
+                                                                                    isEquals(KorSlots[i],"h") ? "lo" : "");
+
+                                                                    queueKana.push_back(queuedLatest);
+                                                                    logBeQueued.push_back( 1 );
+                                                                }
+                                                            }
+                                                            else if
+                                                            (!isEquals(KorSlots[i],""))
+                                                            {
+                                                                logBeQueued.push_back( 0 );
+                                                            }
+
+                                                            // Clear KorSlots
+                                                            fillWith(KorSlots[i],"");
+
+                                                            continue;
+                                                        }
+                                                        else if(i-1>=indexFrom && isExistVowel(KorSlots[i-1]))
+                                                        {
+                                                            // Hangeul to Kana(a, e, i, o, u, ya, yu, yo)
+                                                            queueThing += ( isEquals(KorSlots[i],   "d") ? ""   :
+                                                                            isEquals(KorSlots[i],   "z") ? "k"  :
+                                                                            isEquals(KorSlots[i],   "t") ? "s"  :
+                                                                            isEquals(KorSlots[i],   "c") ? "ch" :
+                                                                            isEquals(KorSlots[i],   "x") ? "t"  :
+                                                                            isEquals(KorSlots[i],   "s") ? "n"  :
+                                                                            isEquals(KorSlots[i],   "g") ? "h"  :
+                                                                            isEquals(KorSlots[i],   "a") ? "m"  :
+                                                                            isEquals(KorSlots[i],   "f") ? "r"  :
+                                                                            isEquals(KorSlots[i],   "r") ? "g"  :
+                                                                            isEquals(KorSlots[i],   "w") ? "z"  :
+                                                                            isEquals(KorSlots[i],   "e") ? "d"  :
+                                                                            isEquals(KorSlots[i],   "q") ? "b"  :
+                                                                            isEquals(KorSlots[i],   "v") ? "p"  : "_" );
+                                                            queueThing += ( isEquals(KorSlots[i-1], "k") ? "a"  :
+                                                                            isEquals(KorSlots[i-1], "l") ? "i"  :
+                                                                            isEquals(KorSlots[i-1], "n") ? "u"  :
+                                                                            isEquals(KorSlots[i-1], "m") ? "u"  :
+                                                                            isEquals(KorSlots[i-1], "p") ? "e"  :
+                                                                            isEquals(KorSlots[i-1], "o") ? "e"  :
+                                                                            isEquals(KorSlots[i-1], "h") ? "o"  :
+                                                                            isEquals(KorSlots[i-1], "i") ? "ya" :
+                                                                            isEquals(KorSlots[i-1], "u") ? "ya" :
+                                                                            isEquals(KorSlots[i-1], "b") ? "yu" :
+                                                                            isEquals(KorSlots[i-1], "y") ? "yo" : "_" );
+
+                                                            // Hangeul to Kana(ch fix)
+                                                            if(isContains(queueThing,"ch"))
+                                                            {
+                                                                queueThing = (  isContains(queueThing,"chu")  ? "tu" :
+                                                                                isContains(queueThing,"chya") ? "tya":
+                                                                                isContains(queueThing,"chyu") ? "tyu":
+                                                                                isContains(queueThing,"chyo") ? "tyo": queueThing  );
+                                                            }
+
+                                                            // Hangeul to Kana(wa, wo) and Error Characters to ""
+                                                            if(isContains(queueThing,"_"))
+                                                            {
+                                                                queueThing = (String("")+KorSlots[i]+KorSlots[i-1]);
+                                                                queueThing = (  isEquals(queueThing.c_str(),"dhk") ? "wa" :
+                                                                                isEquals(queueThing.c_str(),"dj")  ? "wo" :
+                                                                                isEquals(queueThing.c_str(),"dnj") ? "wo" : ""  );
+                                                            }
 
                                                             // Clear KorSlots
                                                             fillWith(KorSlots[i],"");
@@ -512,12 +667,21 @@ void KeyboardHijacker::MODULE_KOREAN_KEYPAD_EVOLUTION()
                                                         }
                                                         else
                                                         {
-                                                            // Hangeul to Kana (nn, cc Kana)
-                                                            fillWith(KorSlots[i],   isEquals(KorSlots[i],"s") ? "nn" :
-                                                                                    isEquals(KorSlots[i],"d") ? "nn" :
-                                                                                    isEquals(KorSlots[i],"a") ? "nn" :
-                                                                                    isEquals(KorSlots[i],"t") ? "cc" : "cc");
-                                                            queueThing = String("") + KorSlots[i];
+                                                            // Hangeul to Kana(kana n, Sokuon)
+                                                            queueThing = (  isEquals(KorSlots[i],   "d") ? "~~" : // kana n
+                                                                            isEquals(KorSlots[i],   "s") ? "~n" :
+                                                                            isEquals(KorSlots[i],   "a") ? "~m" :
+                                                                            isEquals(KorSlots[i],   "r") ? "`g" : // Sokuon
+                                                                            isEquals(KorSlots[i],   "e") ? "`d" :
+                                                                            isEquals(KorSlots[i],   "q") ? "`b" :
+                                                                            isEquals(KorSlots[i],   "t") ? "`s" :
+                                                                            isEquals(KorSlots[i],   "z") ? "?k" : // unknown
+                                                                            isEquals(KorSlots[i],   "c") ? "?ch":
+                                                                            isEquals(KorSlots[i],   "x") ? "?t" :
+                                                                            isEquals(KorSlots[i],   "g") ? "?h" :
+                                                                            isEquals(KorSlots[i],   "f") ? "?r" :
+                                                                            isEquals(KorSlots[i],   "w") ? "?z" :
+                                                                            isEquals(KorSlots[i],   "v") ? "?p" : ""  );
 
                                                             // Clear KorSlots
                                                             fillWith(KorSlots[i],"");
@@ -525,11 +689,9 @@ void KeyboardHijacker::MODULE_KOREAN_KEYPAD_EVOLUTION()
                                                         queueKana.push_back( queueThing );
                                                         lenBeQueued++;
                                                     }
-
-                                                    if(lenBeQueued > 0)
-                                                        logBeQueued.push_back( lenBeQueued );
+                                                    if(lenBeQueued > 0) logBeQueued.push_back( lenBeQueued );
                                                 };
-    auto KORPAD_undoQueueingKana =              [&]() -> void
+    auto KORPAD_undoEnqueueKana =               [&]() -> void
                                                 {
                                                     if(queueKana.empty())
                                                         return;
@@ -539,7 +701,7 @@ void KeyboardHijacker::MODULE_KOREAN_KEYPAD_EVOLUTION()
                                                     
                                                     logBeQueued.pop_back();
                                                 };
-    auto KORPAD_clearQueuedKana =               [&]() -> void
+    auto KORPAD_clearAllQueuedKana =            [&]() -> void
                                                 {
                                                     queueKana.clear();
                                                     logBeQueued.clear();
@@ -547,34 +709,36 @@ void KeyboardHijacker::MODULE_KOREAN_KEYPAD_EVOLUTION()
 
     auto KORPAD_surveillanceKorSlotsForKana =   [&]() -> void
                                                 {
-                                                    if(KORPAD_MODE != MODE_KANA)
-                                                        return;
-
-
                                                     if(isKorSlotUpdated)
                                                     {
-                                                        if(isExistConsonant(KorSlot0))
+                                                        if      (isEquals(KorSlot0,""))
                                                         {
-                                                            if(!isExistVowel(KorSlot1) && !KORPAD_isHeldDualConsonant(KorSlot1,KorSlot0))
+                                                            KORPAD_enqueueKana(1);
+                                                        }
+                                                        else if (isExistConsonant(KorSlot0))
+                                                        {
+                                                            if  (!isExistVowel(KorSlot1) && !KORPAD_isHeldDualConsonant(KorSlot1,KorSlot0))
                                                             {
-                                                                KORPAD_doQueueingKana(0);
+                                                                KORPAD_enqueueKana(1);
                                                             }
                                                         }
-                                                        else if(isExistVowel(KorSlot0))
+                                                        else if (isExistVowel(KorSlot0))
                                                         {
-                                                            if(isExistConsonant(KorSlot1) && isExistVowel(KorSlot2))
+                                                            // Prevent enqueue DokkaebiBul errored character
+                                                            // DokkaebiBul is... https://namu.wiki/w/%EB%8F%84%EA%B9%A8%EB%B9%84%EB%B6%88%20%ED%98%84%EC%83%81
+                                                            if  (isExistConsonant(KorSlot1) && isExistVowel(KorSlot2))
                                                             {
-                                                                KORPAD_doQueueingKana(1);
+                                                                KORPAD_enqueueKana(2);
                                                             }
                                                         }
                                                     }
                                                     if(isKorSlotUnderflowed)
                                                     {
-                                                        KORPAD_undoQueueingKana();
+                                                        KORPAD_undoEnqueueKana();
                                                     }
                                                     if(isKorSlotReset)
                                                     {
-                                                        KORPAD_clearQueuedKana();
+                                                        KORPAD_clearAllQueuedKana();
                                                     }
                                                 };
 
@@ -587,87 +751,125 @@ void KeyboardHijacker::MODULE_KOREAN_KEYPAD_EVOLUTION()
                                                         COMPLETE_THE_IN_PROGRESS_HANGEUL_IMMEDIATELY;
 
 
-                                                        KORPAD_doQueueingKana(-1);
-                                                        if(logBeQueued.size()==0)
+                                                        KORPAD_enqueueKana(0);
+                                                        if(logBeQueued.empty())
                                                             return false;
 
 
                                                         // Clear Outputs
-                                                        for(uint8_t i=0; i<logBeQueued.size(); i++){
-                                                            KBD_HIJACKER.pressandreleaseKey(KEY_BACKSPACE); delay(11);
-                                                        }
+                                                        for(uint8_t i=0; i<logBeQueued.size(); i++)
+                                                        {   DO_BACKSPACE;   }
 
-                                                        // Change to GJI IME
-                                                        KBD_HIJACKER.pressandreleaseMultiKey( {KEY_ALT,KEY_SHIFT,KEY_2} ); delay(11);
+                                                        // Set to GJI IME
+                                                        SET_IME_TO_GJI;
 
                                                         // ReType Outputs
-                                                        for(String strKana : queueKana){
-                                                            KBD_HIJACKER.pressandreleaseKeys(strKana);
-                                                            if( strcmp(strKana.c_str(),"cc")==0 ) KBD_HIJACKER.pressandreleaseKey(KEY_BACKSPACE);
-                                                        }
-
-                                                        // Open GJI IME's Kana Selector
-                                                        KBD_HIJACKER.pressandreleaseKey(KEY_TAB); delay(11);
-
-                                                        // Now... Select Kana
-                                                        int32_t keyJustLatestPressed;
-                                                        while(numDN)
+                                                        bool isTyped = false;
+                                                        for(String strKana : queueKana)
                                                         {
-                                                            delay(1);
-                                                            if((keyJustLatestPressed=KBD_PARSER.KeyLogger.peek_key(0)) == KEYPAD_ENTER)
-                                                                continue;
-
-                                                            switch(keyJustLatestPressed)
+                                                            if(strKana.length() > 0)
                                                             {
-                                                                case KEYPAD_8:
-                                                                {
-                                                                    KBD_HIJACKER.pressandreleaseKey(KEY_UP_ARROW);
-                                                                }
-                                                                break;
-                                                                case KEYPAD_2:
-                                                                {
-                                                                    KBD_HIJACKER.pressandreleaseKey(KEY_DOWN_ARROW);
-                                                                }
-                                                                break;
-                                                                case KEYPAD_9:
-                                                                {
-                                                                    KBD_HIJACKER.pressandreleaseKey(KEY_PAGE_UP);
-                                                                }
-                                                                break;
-                                                                case KEYPAD_3:
-                                                                {
-                                                                    KBD_HIJACKER.pressandreleaseKey(KEY_PAGE_DOWN);
-                                                                }
-                                                                break;
-                                                                case KEY_TAB:
-                                                                {
-                                                                    KBD_HIJACKER.pressandreleaseKey(KEY_TAB);
-                                                                }
-                                                                break;
+                                                                delay(11);
+
+                                                                if      (strKana[0]=='~') // kana n
+                                                                {   KBD_HIJACKER.pressandreleaseKeys("nn");   }
+                                                                else if (strKana[0]=='`') // Sokuon
+                                                                {   KBD_HIJACKER.pressandreleaseKeys("cc"); DO_BACKSPACE;   }
+                                                                else if (strKana[0]!='?')
+                                                                {   KBD_HIJACKER.pressandreleaseKeys(strKana);   }
+
+                                                                isTyped = true;
+
+                                                                delay(11);
                                                             }
-                                                            KBD_PARSER.KeyLogger.pop();
                                                         }
 
-                                                        // Close GJI IME's Kana Selector
-                                                        KBD_HIJACKER.pressandreleaseKey(KEY_ENTER); delay(11);
+                                                        // Select Kana
+                                                        if(isTyped)
+                                                        {
+                                                            // Open GJI IME's Kana Selector
+                                                            KBD_HIJACKER.pressandreleaseKey(KEY_TAB); delay(10);
 
-                                                        // Change Back Kor IME
-                                                        KBD_HIJACKER.pressandreleaseMultiKey( {KEY_ALT,KEY_SHIFT,KEY_1} );
+                                                            // Now... Selecting...
+                                                            int32_t keyJustLatestPressed;
+                                                            while(numDN)
+                                                            {
+                                                                delay(1);
+                                                                if((keyJustLatestPressed=KBD_PARSER.KeyLogger.peek_key(0)) == KEYPAD_ENTER)
+                                                                    continue;
 
-                                                        // Serial.println("###################");
-                                                        // Serial.println("###################");
-                                                        // Serial.println("HANGEUL LEN   : " + String(logBeQueued.size()));
-                                                        // for(uint8_t num : logBeQueued){
-                                                        //     Serial.print("_");
-                                                        //     Serial.print(num);
-                                                        // } Serial.println("");
-                                                        // Serial.println("NOW QUEUE HAS : " + String(queueKana.size()));
-                                                        // for(String str : queueKana){
-                                                        //     Serial.print("_");
-                                                        //     Serial.print(str);
-                                                        // } Serial.println("");
+                                                                switch(keyJustLatestPressed)
+                                                                {
+                                                                    case KEYPAD_ASTERIX:
+                                                                    {
+                                                                        KBD_HIJACKER.pressandreleaseKey(KEY_ESC);
+                                                                    }
+                                                                    break;
 
-                                                        KORPAD_clearQueuedKana();
+                                                                    case KEYPAD_8:
+                                                                    {
+                                                                        KBD_HIJACKER.pressandreleaseKey(KEY_UP_ARROW);
+                                                                    }
+                                                                    break;
+                                                                    case KEYPAD_2:
+                                                                    {
+                                                                        KBD_HIJACKER.pressandreleaseKey(KEY_DOWN_ARROW);
+                                                                    }
+                                                                    break;
+
+                                                                    case KEYPAD_9:
+                                                                    {
+                                                                        KBD_HIJACKER.pressandreleaseKey(KEY_PAGE_UP);
+                                                                    }
+                                                                    break;
+                                                                    case KEYPAD_3:
+                                                                    {
+                                                                        KBD_HIJACKER.pressandreleaseKey(KEY_PAGE_DOWN);
+                                                                    }
+                                                                    break;
+
+                                                                    case KEY_TAB:
+                                                                    {
+                                                                        KBD_HIJACKER.pressandreleaseKey(KEY_TAB);
+                                                                    }
+                                                                    break;
+                                                                    case KEYPAD_PERIOD:
+                                                                    {
+                                                                        KBD_HIJACKER.pressandreleaseMultiKey( {KEY_CTRL,KEY_DELETE} );
+                                                                    }
+                                                                    break;
+                                                                }
+                                                                KBD_PARSER.KeyLogger.pop();
+                                                            }
+
+                                                            // Close GJI IME's Kana Selector
+                                                            KBD_HIJACKER.pressandreleaseKey(KEY_ENTER); delay(10);
+                                                        }
+
+                                                        // Back to Kor IME
+                                                        SET_IME_TO_KOR;
+
+
+                                                        if(isSerial)
+                                                        {
+                                                            Serial.println("##########################");
+                                                            Serial.println("##### ALL KANA TYPED #####");
+                                                            Serial.println("HANGEUL LEN   : " + String(logBeQueued.size()));
+                                                            for(uint8_t num : logBeQueued){
+                                                                Serial.print("_");
+                                                                Serial.print(num);
+                                                            } Serial.println("_");
+                                                            Serial.println("NOW QUEUE HAS : " + String(queueKana.size()));
+                                                            for(String str : queueKana){
+                                                                Serial.print("_");
+                                                                Serial.print(str);
+                                                            } Serial.println("_");
+                                                            Serial.println("##### ALL KANA TYPED #####");
+                                                            Serial.println("##########################");
+                                                        }
+
+
+                                                        KORPAD_clearAllQueuedKana();
 
                                                         return true;
                                                     };
@@ -683,66 +885,18 @@ void KeyboardHijacker::MODULE_KOREAN_KEYPAD_EVOLUTION()
 
     if (key == KEY_NUM_LOCK)
     {
-        if(KoreanKeypadToggle)
+        if(KORPAD_MODE > MODE_NONE)
         {
-            //Turn Off KoreanKeypadToggle
-            KoreanKeypadToggle = false;
-            
-            Buzzzzer::reserveBuzz   ( { NOTE_D3 }
-                                    , { 181     } );
+            // Exit the KORPAD MODE
+            KORPAD_switchMODE( MODE_NONE );
         }
         else if(MILLIS_FROM_PRESSED_UNTIL_RELEASE > 400)
         {
-            KBD_HIJACKER.releaseAllBeingHoldDownKey(); // KEY_NUM_LOCK release needed
+            // KEY_NUM_LOCK release needed
+            KBD_HIJACKER.releaseAllBeingHoldDownKey();
 
-
-            // Turn On  KoreanKeypadToggle
-            KoreanKeypadToggle = true;
-
-            // Reset ConvertMode
-            KORPAD_MODE = MODE_HANGEUL;
-
-            KORPAD_resetConfirmedInputs();
-
-            if(!KBD_HIJACKER.getStateNumLockToggle()) // While KoreanKeypadToggle is on, Numlock is always on
-                KBD_HIJACKER.pressandreleaseKey(KEY_NUM_LOCK);
-
-            Buzzzzer::reserveBuzz   ( { NOTE_G5 }
-                                    , { 333     } );
-
-
-            // Reverse KorEng state IMMEDIATELY, if NumLock pressed more than 1200 millis
-            if(MILLIS_FROM_PRESSED_UNTIL_RELEASE > 1000)
-                KBD_HIJACKER.pressandreleaseKey(KEY_KORENG);
-            // Otherwise,
-            // In order to reverse KorEng state, Dependent on KorEngStatus.exe...
-            // If your system supports KorEngStatus.exe (Maker's Blog:https://blog.naver.com/breeze4me/140056743544)
-            else
-            {
-                KBD_HIJACKER.pressandreleaseKey(KEY_SCROLL_LOCK); // For, Update ScrollLock state with THE LATEST
-                delay(77); KBD_HIJACKER.syncToggleKeyStates();
-
-                if(!KBD_HIJACKER.getStateScrollLockToggle())
-                {
-                    bool stateBeforeReverse = KBD_HIJACKER.getStateScrollLockToggle();
-
-                    KBD_HIJACKER.pressandreleaseKey(KEY_SCROLL_LOCK); // For, Monitor the changes in the ScrollLock state
-                    delay(77); KBD_HIJACKER.syncToggleKeyStates();
-
-                    bool stateAfterReverse  = KBD_HIJACKER.getStateScrollLockToggle();
-
-                    // Switch KorEng state, If the KorEngStatus.exe's feature that reflects the KORENG state on the ScrollLock state is running
-                    if(stateBeforeReverse == stateAfterReverse)
-                        KBD_HIJACKER.pressandreleaseKey(KEY_KORENG);
-                }
-                // rollback ScrollLock state
-                else
-                    KBD_HIJACKER.pressandreleaseKey(KEY_SCROLL_LOCK); // For, Rollback ScrollLock's state
-            }
-
-
-            KBD_HIJACKER.reserveSyncToggleKeyStates();
-            isActivatedKeyEvent=false; key=0;
+            // Enter the KORPAD MODE
+            KORPAD_switchMODE( MODE_HANGEUL );
         }
 
         return;
@@ -750,7 +904,7 @@ void KeyboardHijacker::MODULE_KOREAN_KEYPAD_EVOLUTION()
 
 
 
-    if(!KoreanKeypadToggle)
+    if(KORPAD_MODE == MODE_NONE)
         return;
 
 
@@ -762,13 +916,13 @@ void KeyboardHijacker::MODULE_KOREAN_KEYPAD_EVOLUTION()
             if(event){
                 KORPAD_resetConfirmedInputs();
     
-                KBD_HIJACKER.pressandreleaseKey(KEY_F2); delay(11);
+                KBD_HIJACKER.pressandreleaseKey(KEY_F2); delay(50);
                 KBD_HIJACKER.pressandreleaseMultiKey( {KEY_CTRL,KEY_C} );
             }
             else if(MILLIS_FROM_PRESSED_UNTIL_RELEASE > 400){
                 KBD_HIJACKER.pressandreleaseMultiKey( {KEY_CTRL,KEY_F} );
             }
-            isActivatedKeyEvent=false; key=0;
+            isActivatedKeyEvent=false; key=KEY_NONE;
         }
         break;
 
@@ -777,13 +931,13 @@ void KeyboardHijacker::MODULE_KOREAN_KEYPAD_EVOLUTION()
             if(event){
                 KORPAD_resetConfirmedInputs();
     
-                KBD_HIJACKER.pressandreleaseKey(KEY_F2); delay(11);
+                KBD_HIJACKER.pressandreleaseKey(KEY_F2); delay(50);
                 KBD_HIJACKER.pressandreleaseMultiKey( {KEY_CTRL,KEY_V} );
             }
             else if(MILLIS_FROM_PRESSED_UNTIL_RELEASE > 400){
                 KBD_HIJACKER.pressandreleaseMultiKey( {KEY_CTRL,KEY_H} );
             }
-            isActivatedKeyEvent=false; key=0;
+            isActivatedKeyEvent=false; key=KEY_NONE;
         }
         break;
 
@@ -800,7 +954,7 @@ void KeyboardHijacker::MODULE_KOREAN_KEYPAD_EVOLUTION()
             else if(MILLIS_FROM_PRESSED_UNTIL_RELEASE > 400){
                 KBD_HIJACKER.pressandreleaseMultiKey( {KEY_CTRL,KEY_Z} );
             }
-            isActivatedKeyEvent=false; key=0;
+            isActivatedKeyEvent=false; key=KEY_NONE;
         }
         break;
 
@@ -808,11 +962,15 @@ void KeyboardHijacker::MODULE_KOREAN_KEYPAD_EVOLUTION()
         {
             if(event){
                 KORPAD_undoConfirmedInputs();
+
+                Keyboard.press(KEY_BACKSPACE);
+                KBD_HIJACKER.setLogicalState(KEY_BACKSPACE,true);
+                KBD_HIJACKER.reserveReleaseAllBeingHoldDownKey();
             }
             else if(MILLIS_FROM_PRESSED_UNTIL_RELEASE > 400){
                 KORPAD_resetConfirmedInputs();
             }
-            key = KEY_BACKSPACE;
+            isActivatedKeyEvent=false; key=KEY_NONE;
         }
         break;
 
@@ -821,8 +979,12 @@ void KeyboardHijacker::MODULE_KOREAN_KEYPAD_EVOLUTION()
             if(event){
                 KORPAD_resetConfirmedInputs();
                 fillWith(KorSlot0," ");
+
+                Keyboard.press(KEY_SPACE);
+                KBD_HIJACKER.setLogicalState(KEY_SPACE,true);
+                KBD_HIJACKER.reserveReleaseAllBeingHoldDownKey();
             }
-            key = KEY_SPACE;
+            isActivatedKeyEvent=false; key=KEY_NONE;
         }
         break;
 
@@ -838,42 +1000,42 @@ void KeyboardHijacker::MODULE_KOREAN_KEYPAD_EVOLUTION()
                 (   isEquals(KorSlot0,"*")   ){
                     fillWith(KorSlot0,"j");
 
-                    KBD_HIJACKER.pressandreleaseKey(KEY_BACKSPACE); KORPAD_correctAraeAVowelError();
+                    DO_BACKSPACE;               KORPAD_correctAraeAVowelError();
                     Keyboard.write('j');
                 }
                 else if
                 (   isEquals(KorSlot0,":")   ){
                     fillWith(KorSlot0,"u");
 
-                    KBD_HIJACKER.pressandreleaseKey(KEY_BACKSPACE); KORPAD_correctAraeAVowelError();
+                    DO_BACKSPACE;               KORPAD_correctAraeAVowelError();
                     Keyboard.write('u');
                 }
                 else if
                 (   isEquals(KorSlot0,"k")   ){
                     fillWith(KorSlot0,"o");
 
-                    KBD_HIJACKER.pressandreleaseKey(KEY_BACKSPACE);
+                    DO_BACKSPACE;
                     Keyboard.write('o');
                 }
                 else if
                 (   isEquals(KorSlot0,"i")   ){
                     fillWith(KorSlot0,"O");
 
-                    KBD_HIJACKER.pressandreleaseKey(KEY_BACKSPACE);
+                    DO_BACKSPACE;
                     Keyboard.write('O');
                 }
                 else if
                 (   isEquals(KorSlot0,"j")   ){
                     fillWith(KorSlot0,"p");
 
-                    KBD_HIJACKER.pressandreleaseKey(KEY_BACKSPACE);
+                    DO_BACKSPACE;
                     Keyboard.write('p');
                 }
                 else if
                 (   isEquals(KorSlot0,"u")   ){
                     fillWith(KorSlot0,"P");
 
-                    KBD_HIJACKER.pressandreleaseKey(KEY_BACKSPACE);
+                    DO_BACKSPACE;
                     Keyboard.write('P');
                 }
                 else if
@@ -898,21 +1060,21 @@ void KeyboardHijacker::MODULE_KOREAN_KEYPAD_EVOLUTION()
                 (   isEquals(KorSlot0,"hk")   ){
                     fillWith(KorSlot0,"ho");
 
-                    KBD_HIJACKER.pressandreleaseKey(KEY_BACKSPACE);
+                    DO_BACKSPACE;
                     Keyboard.write('o');
                 }
                 else if
                 (   isEquals(KorSlot0,"b")   ){
                     fillWith(KorSlot0,"nj");
 
-                    KBD_HIJACKER.pressandreleaseKey(KEY_BACKSPACE);
+                    DO_BACKSPACE;
                     Keyboard.write('n'); Keyboard.write('j');
                 }
                 else if
                 (   isEquals(KorSlot0,"nj")   ){
                     fillWith(KorSlot0,"np");
 
-                    KBD_HIJACKER.pressandreleaseKey(KEY_BACKSPACE);
+                    DO_BACKSPACE;
                     Keyboard.write('p');
                 }
                 else
@@ -924,12 +1086,13 @@ void KeyboardHijacker::MODULE_KOREAN_KEYPAD_EVOLUTION()
                 }
             }
             else if(MILLIS_FROM_PRESSED_UNTIL_RELEASE > 400){
+                KORPAD_resetConfirmedInputs();
                 fillWith(KorSlot0,"7");
 
-                KBD_HIJACKER.pressandreleaseKey(KEY_BACKSPACE);
+                DO_BACKSPACE;
                 Keyboard.write('7');
             }
-            isActivatedKeyEvent=false; key=0;
+            isActivatedKeyEvent=false; key=KEY_NONE;
         }
         break;
 
@@ -940,49 +1103,49 @@ void KeyboardHijacker::MODULE_KOREAN_KEYPAD_EVOLUTION()
                 (   isEquals(KorSlot0,"l")   ){
                     fillWith(KorSlot0,"k");
 
-                    KBD_HIJACKER.pressandreleaseKey(KEY_BACKSPACE);
+                    DO_BACKSPACE;
                     Keyboard.write('k');
                 }
                 else if
                 (   isEquals(KorSlot0,"k")   ){
                     fillWith(KorSlot0,"i");
 
-                    KBD_HIJACKER.pressandreleaseKey(KEY_BACKSPACE);
+                    DO_BACKSPACE;
                     Keyboard.write('i');
                 }
                 else if
                 (   isEquals(KorSlot0,"m")   ){
                     fillWith(KorSlot0,"n");
 
-                    KBD_HIJACKER.pressandreleaseKey(KEY_BACKSPACE);
+                    DO_BACKSPACE;
                     Keyboard.write('n');
                 }
                 else if
                 (   isEquals(KorSlot0,"n")   ){
                     fillWith(KorSlot0,"b");
 
-                    KBD_HIJACKER.pressandreleaseKey(KEY_BACKSPACE);
+                    DO_BACKSPACE;
                     Keyboard.write('b');
                 }
                 else if
                 (   isEquals(KorSlot0,"hl")   ){
                     fillWith(KorSlot0,"hk");
 
-                    KBD_HIJACKER.pressandreleaseKey(KEY_BACKSPACE);
+                    DO_BACKSPACE;
                     Keyboard.write('k');
                 }
                 else if
                 (   isEquals(KorSlot0,"*")   ){
                     fillWith(KorSlot0,":");
 
-                    KBD_HIJACKER.pressandreleaseKey(KEY_BACKSPACE);
+                    DO_BACKSPACE;
                     Keyboard.write(':');
                 }
                 else if
                 (   isEquals(KorSlot0,":")   ){
                     fillWith(KorSlot0,"*");
 
-                    KBD_HIJACKER.pressandreleaseKey(KEY_BACKSPACE);
+                    DO_BACKSPACE;
                     Keyboard.write('*');
                 }
                 else
@@ -994,12 +1157,13 @@ void KeyboardHijacker::MODULE_KOREAN_KEYPAD_EVOLUTION()
                 }
             }
             else if(MILLIS_FROM_PRESSED_UNTIL_RELEASE > 400){
+                KORPAD_resetConfirmedInputs();
                 fillWith(KorSlot0,"8");
 
-                KBD_HIJACKER.pressandreleaseKey(KEY_BACKSPACE);
+                DO_BACKSPACE;
                 Keyboard.write('8');
             }
-            isActivatedKeyEvent=false; key=0;
+            isActivatedKeyEvent=false; key=KEY_NONE;
         }
         break;
 
@@ -1010,14 +1174,14 @@ void KeyboardHijacker::MODULE_KOREAN_KEYPAD_EVOLUTION()
                 (   isEquals(KorSlot0,"*")   ){
                     fillWith(KorSlot0,"h");
 
-                    KBD_HIJACKER.pressandreleaseKey(KEY_BACKSPACE); KORPAD_correctAraeAVowelError();
+                    DO_BACKSPACE;               KORPAD_correctAraeAVowelError();
                     Keyboard.write('h');
                 }
                 else if
                 (   isEquals(KorSlot0,":")   ){
                     fillWith(KorSlot0,"y");
 
-                    KBD_HIJACKER.pressandreleaseKey(KEY_BACKSPACE); KORPAD_correctAraeAVowelError();
+                    DO_BACKSPACE;               KORPAD_correctAraeAVowelError();
                     Keyboard.write('y');
                 }
                 else
@@ -1029,12 +1193,13 @@ void KeyboardHijacker::MODULE_KOREAN_KEYPAD_EVOLUTION()
                 }
             }
             else if(MILLIS_FROM_PRESSED_UNTIL_RELEASE > 400){
+                KORPAD_resetConfirmedInputs();
                 fillWith(KorSlot0,"9");
 
-                KBD_HIJACKER.pressandreleaseKey(KEY_BACKSPACE);
+                DO_BACKSPACE;
                 Keyboard.write('9');
             }
-            isActivatedKeyEvent=false; key=0;
+            isActivatedKeyEvent=false; key=KEY_NONE;
         }
         break;
 
@@ -1045,21 +1210,21 @@ void KeyboardHijacker::MODULE_KOREAN_KEYPAD_EVOLUTION()
                 (   isEquals(KorSlot0,"r")   ){
                     fillWith(KorSlot0,"z");
 
-                    KBD_HIJACKER.pressandreleaseKey(KEY_BACKSPACE);
+                    DO_BACKSPACE;
                     Keyboard.write('z');
                 }
                 else if
                 (   isEquals(KorSlot0,"z")   ){
                     fillWith(KorSlot0,"R");
 
-                    KBD_HIJACKER.pressandreleaseKey(KEY_BACKSPACE);
+                    DO_BACKSPACE;
                     Keyboard.write('R');
                 }
                 else if
                 (   isEquals(KorSlot0,"R")   ){
                     fillWith(KorSlot0,"r");
 
-                    KBD_HIJACKER.pressandreleaseKey(KEY_BACKSPACE); KORPAD_correctBottomDualConsonantError();
+                    DO_BACKSPACE;               KORPAD_correctBottomDualConsonantError();
                     Keyboard.write('r');
                 }
                 else
@@ -1071,12 +1236,13 @@ void KeyboardHijacker::MODULE_KOREAN_KEYPAD_EVOLUTION()
                 }
             }
             else if(MILLIS_FROM_PRESSED_UNTIL_RELEASE > 400){
+                KORPAD_resetConfirmedInputs();
                 fillWith(KorSlot0,"4");
 
-                KBD_HIJACKER.pressandreleaseKey(KEY_BACKSPACE);
+                DO_BACKSPACE;
                 Keyboard.write('4');
             }
-            isActivatedKeyEvent=false; key=0;
+            isActivatedKeyEvent=false; key=KEY_NONE;
         }
         break;
 
@@ -1087,14 +1253,14 @@ void KeyboardHijacker::MODULE_KOREAN_KEYPAD_EVOLUTION()
                 (   isEquals(KorSlot0,"s")   ){
                     fillWith(KorSlot0,"f");
 
-                    KBD_HIJACKER.pressandreleaseKey(KEY_BACKSPACE);
+                    DO_BACKSPACE;
                     Keyboard.write('f');
                 }
                 else if
                 (   isEquals(KorSlot0,"f")   ){
                     fillWith(KorSlot0,"s");
 
-                    KBD_HIJACKER.pressandreleaseKey(KEY_BACKSPACE);
+                    DO_BACKSPACE;
                     Keyboard.write('s');
                 }
                 else
@@ -1106,12 +1272,13 @@ void KeyboardHijacker::MODULE_KOREAN_KEYPAD_EVOLUTION()
                 }
             }
             else if(MILLIS_FROM_PRESSED_UNTIL_RELEASE > 400){
+                KORPAD_resetConfirmedInputs();
                 fillWith(KorSlot0,"5");
 
-                KBD_HIJACKER.pressandreleaseKey(KEY_BACKSPACE);
+                DO_BACKSPACE;
                 Keyboard.write('5');
             }
-            isActivatedKeyEvent=false; key=0;
+            isActivatedKeyEvent=false; key=KEY_NONE;
         }
         break;
 
@@ -1122,21 +1289,21 @@ void KeyboardHijacker::MODULE_KOREAN_KEYPAD_EVOLUTION()
                 (   isEquals(KorSlot0,"e")   ){
                     fillWith(KorSlot0,"x");
 
-                    KBD_HIJACKER.pressandreleaseKey(KEY_BACKSPACE); KORPAD_correctBottomDualConsonantError();
+                    DO_BACKSPACE;               KORPAD_correctBottomDualConsonantError();
                     Keyboard.write('x');
                 }
                 else if
                 (   isEquals(KorSlot0,"x")   ){
                     fillWith(KorSlot0,"E");
 
-                    KBD_HIJACKER.pressandreleaseKey(KEY_BACKSPACE);
+                    DO_BACKSPACE;
                     Keyboard.write('E');
                 }
                 else if
                 (   isEquals(KorSlot0,"E")   ){
                     fillWith(KorSlot0,"e");
 
-                    KBD_HIJACKER.pressandreleaseKey(KEY_BACKSPACE); KORPAD_correctBottomSingleConsonantError();
+                    DO_BACKSPACE;               KORPAD_correctBottomSingleConsonantError();
                     Keyboard.write('e');
                 }
                 else
@@ -1148,12 +1315,13 @@ void KeyboardHijacker::MODULE_KOREAN_KEYPAD_EVOLUTION()
                 }
             }
             else if(MILLIS_FROM_PRESSED_UNTIL_RELEASE > 400){
+                KORPAD_resetConfirmedInputs();
                 fillWith(KorSlot0,"6");
 
-                KBD_HIJACKER.pressandreleaseKey(KEY_BACKSPACE);
+                DO_BACKSPACE;
                 Keyboard.write('6');
             }
-            isActivatedKeyEvent=false; key=0;
+            isActivatedKeyEvent=false; key=KEY_NONE;
         }
         break;
 
@@ -1164,22 +1332,22 @@ void KeyboardHijacker::MODULE_KOREAN_KEYPAD_EVOLUTION()
                 (   isEquals(KorSlot0,"q")   ){
                     fillWith(KorSlot0,"v");
 
-                    KBD_HIJACKER.pressandreleaseKey(KEY_BACKSPACE);
+                    DO_BACKSPACE;
                     Keyboard.write('v');
                 }
                 else if
                 (   isEquals(KorSlot0,"v")   ){
                     fillWith(KorSlot0,"Q");
 
-                    KBD_HIJACKER.pressandreleaseKey(KEY_BACKSPACE);
+                    DO_BACKSPACE;
                     Keyboard.write('Q');
                 }
                 else if
                 (   isEquals(KorSlot0,"Q")   ){
                     fillWith(KorSlot0,"q");
 
-                    KBD_HIJACKER.pressandreleaseKey(KEY_BACKSPACE); KORPAD_correctBottomSingleConsonantError();
-                                                                    KORPAD_correctBottomDualConsonantError();
+                    DO_BACKSPACE;               KORPAD_correctBottomSingleConsonantError();
+                                                KORPAD_correctBottomDualConsonantError();
                     Keyboard.write('q');
                 }
                 else
@@ -1191,12 +1359,13 @@ void KeyboardHijacker::MODULE_KOREAN_KEYPAD_EVOLUTION()
                 }
             }
             else if(MILLIS_FROM_PRESSED_UNTIL_RELEASE > 400){
+                KORPAD_resetConfirmedInputs();
                 fillWith(KorSlot0,"1");
 
-                KBD_HIJACKER.pressandreleaseKey(KEY_BACKSPACE);
+                DO_BACKSPACE;
                 Keyboard.write('1');
             }
-            isActivatedKeyEvent=false; key=0;
+            isActivatedKeyEvent=false; key=KEY_NONE;
         }
         break;
 
@@ -1207,21 +1376,21 @@ void KeyboardHijacker::MODULE_KOREAN_KEYPAD_EVOLUTION()
                 (   isEquals(KorSlot0,"t")   ){
                     fillWith(KorSlot0,"g");
 
-                    KBD_HIJACKER.pressandreleaseKey(KEY_BACKSPACE); KORPAD_correctBottomDualConsonantError();
+                    DO_BACKSPACE;               KORPAD_correctBottomDualConsonantError();
                     Keyboard.write('g');
                 }
                 else if
                 (   isEquals(KorSlot0,"g")   ){
                     fillWith(KorSlot0,"T");
 
-                    KBD_HIJACKER.pressandreleaseKey(KEY_BACKSPACE);
+                    DO_BACKSPACE;
                     Keyboard.write('T');
                 }
                 else if
                 (   isEquals(KorSlot0,"T")   ){
                     fillWith(KorSlot0,"t");
 
-                    KBD_HIJACKER.pressandreleaseKey(KEY_BACKSPACE); KORPAD_correctBottomDualConsonantError();
+                    DO_BACKSPACE;               KORPAD_correctBottomDualConsonantError();
                     Keyboard.write('t');
                 }
                 else
@@ -1233,12 +1402,13 @@ void KeyboardHijacker::MODULE_KOREAN_KEYPAD_EVOLUTION()
                 }
             }
             else if(MILLIS_FROM_PRESSED_UNTIL_RELEASE > 400){
+                KORPAD_resetConfirmedInputs();
                 fillWith(KorSlot0,"2");
 
-                KBD_HIJACKER.pressandreleaseKey(KEY_BACKSPACE);
+                DO_BACKSPACE;
                 Keyboard.write('2');
             }
-            isActivatedKeyEvent=false; key=0;
+            isActivatedKeyEvent=false; key=KEY_NONE;
         }
         break;
 
@@ -1249,22 +1419,22 @@ void KeyboardHijacker::MODULE_KOREAN_KEYPAD_EVOLUTION()
                 (   isEquals(KorSlot0,"w")   ){
                     fillWith(KorSlot0,"c");
 
-                    KBD_HIJACKER.pressandreleaseKey(KEY_BACKSPACE);
+                    DO_BACKSPACE;
                     Keyboard.write('c');
                 }
                 else if
                 (   isEquals(KorSlot0,"c")   ){
                     fillWith(KorSlot0,"W");
 
-                    KBD_HIJACKER.pressandreleaseKey(KEY_BACKSPACE);
+                    DO_BACKSPACE;
                     Keyboard.write('W');
                 }
                 else if
                 (   isEquals(KorSlot0,"W")   ){
                     fillWith(KorSlot0,"w");
 
-                    KBD_HIJACKER.pressandreleaseKey(KEY_BACKSPACE); KORPAD_correctBottomSingleConsonantError();
-                                                                    KORPAD_correctBottomDualConsonantError();
+                    DO_BACKSPACE;               KORPAD_correctBottomSingleConsonantError();
+                                                KORPAD_correctBottomDualConsonantError();
                     Keyboard.write('w');
                 }
                 else
@@ -1276,12 +1446,13 @@ void KeyboardHijacker::MODULE_KOREAN_KEYPAD_EVOLUTION()
                 }
             }
             else if(MILLIS_FROM_PRESSED_UNTIL_RELEASE > 400){
+                KORPAD_resetConfirmedInputs();
                 fillWith(KorSlot0,"3");
 
-                KBD_HIJACKER.pressandreleaseKey(KEY_BACKSPACE);
+                DO_BACKSPACE;
                 Keyboard.write('3');
             }
-            isActivatedKeyEvent=false; key=0;
+            isActivatedKeyEvent=false; key=KEY_NONE;
         }
         break;
 
@@ -1292,14 +1463,14 @@ void KeyboardHijacker::MODULE_KOREAN_KEYPAD_EVOLUTION()
                 (   isEquals(KorSlot0,"d")   ){
                     fillWith(KorSlot0,"a");
 
-                    KBD_HIJACKER.pressandreleaseKey(KEY_BACKSPACE); KORPAD_correctBottomDualConsonantError();
+                    DO_BACKSPACE;               KORPAD_correctBottomDualConsonantError();
                     Keyboard.write('a');
                 }
                 else if
                 (   isEquals(KorSlot0,"a")   ){
                     fillWith(KorSlot0,"d");
 
-                    KBD_HIJACKER.pressandreleaseKey(KEY_BACKSPACE);
+                    DO_BACKSPACE;
                     Keyboard.write('d');
                 }
                 else
@@ -1311,12 +1482,13 @@ void KeyboardHijacker::MODULE_KOREAN_KEYPAD_EVOLUTION()
                 }
             }
             else if(MILLIS_FROM_PRESSED_UNTIL_RELEASE > 400){
+                KORPAD_resetConfirmedInputs();
                 fillWith(KorSlot0,"0");
 
-                KBD_HIJACKER.pressandreleaseKey(KEY_BACKSPACE);
+                DO_BACKSPACE;
                 Keyboard.write('0');
             }
-            isActivatedKeyEvent=false; key=0;
+            isActivatedKeyEvent=false; key=KEY_NONE;
         }
         break;
 
@@ -1337,12 +1509,13 @@ void KeyboardHijacker::MODULE_KOREAN_KEYPAD_EVOLUTION()
                 Keyboard.write('r');
             }
             else if(MILLIS_FROM_PRESSED_UNTIL_RELEASE > 400){
+                KORPAD_resetConfirmedInputs();
                 fillWith(KorSlot0,"7");
 
-                KBD_HIJACKER.pressandreleaseKey(KEY_BACKSPACE);
+                DO_BACKSPACE;
                 Keyboard.write('7');
             }
-            isActivatedKeyEvent=false; key=0;
+            isActivatedKeyEvent=false; key=KEY_NONE;
         }
         break;
 
@@ -1355,12 +1528,13 @@ void KeyboardHijacker::MODULE_KOREAN_KEYPAD_EVOLUTION()
                 Keyboard.write('s');
             }
             else if(MILLIS_FROM_PRESSED_UNTIL_RELEASE > 400){
+                KORPAD_resetConfirmedInputs();
                 fillWith(KorSlot0,"8");
 
-                KBD_HIJACKER.pressandreleaseKey(KEY_BACKSPACE);
+                DO_BACKSPACE;
                 Keyboard.write('8');
             }
-            isActivatedKeyEvent=false; key=0;
+            isActivatedKeyEvent=false; key=KEY_NONE;
         }
         break;
 
@@ -1371,14 +1545,14 @@ void KeyboardHijacker::MODULE_KOREAN_KEYPAD_EVOLUTION()
                 (   isEquals(KorSlot0,"k")   ){
                     fillWith(KorSlot0,"j");
 
-                    KBD_HIJACKER.pressandreleaseKey(KEY_BACKSPACE);
+                    DO_BACKSPACE;
                     Keyboard.write('j');
                 }
                 else if
                 (   isEquals(KorSlot0,"j")   ){
                     fillWith(KorSlot0,"k");
 
-                    KBD_HIJACKER.pressandreleaseKey(KEY_BACKSPACE);
+                    DO_BACKSPACE;
                     Keyboard.write('k');
                 }
                 else if
@@ -1402,12 +1576,13 @@ void KeyboardHijacker::MODULE_KOREAN_KEYPAD_EVOLUTION()
                 }
             }
             else if(MILLIS_FROM_PRESSED_UNTIL_RELEASE > 400){
+                KORPAD_resetConfirmedInputs();
                 fillWith(KorSlot0,"9");
 
-                KBD_HIJACKER.pressandreleaseKey(KEY_BACKSPACE);
+                DO_BACKSPACE;
                 Keyboard.write('9');
             }
-            isActivatedKeyEvent=false; key=0;
+            isActivatedKeyEvent=false; key=KEY_NONE;
         }
         break;
 
@@ -1420,12 +1595,13 @@ void KeyboardHijacker::MODULE_KOREAN_KEYPAD_EVOLUTION()
                 Keyboard.write('f');
             }
             else if(MILLIS_FROM_PRESSED_UNTIL_RELEASE > 400){
+                KORPAD_resetConfirmedInputs();
                 fillWith(KorSlot0,"4");
 
-                KBD_HIJACKER.pressandreleaseKey(KEY_BACKSPACE);
+                DO_BACKSPACE;
                 Keyboard.write('4');
             }
-            isActivatedKeyEvent=false; key=0;
+            isActivatedKeyEvent=false; key=KEY_NONE;
         }
         break;
 
@@ -1438,12 +1614,13 @@ void KeyboardHijacker::MODULE_KOREAN_KEYPAD_EVOLUTION()
                 Keyboard.write('a');
             }
             else if(MILLIS_FROM_PRESSED_UNTIL_RELEASE > 400){
+                KORPAD_resetConfirmedInputs();
                 fillWith(KorSlot0,"5");
 
-                KBD_HIJACKER.pressandreleaseKey(KEY_BACKSPACE);
+                DO_BACKSPACE;
                 Keyboard.write('5');
             }
-            isActivatedKeyEvent=false; key=0;
+            isActivatedKeyEvent=false; key=KEY_NONE;
         }
         break;
 
@@ -1454,14 +1631,14 @@ void KeyboardHijacker::MODULE_KOREAN_KEYPAD_EVOLUTION()
                 (   isEquals(KorSlot0,"h")   ){
                     fillWith(KorSlot0,"n");
 
-                    KBD_HIJACKER.pressandreleaseKey(KEY_BACKSPACE);
+                    DO_BACKSPACE;
                     Keyboard.write('n');
                 }
                 else if
                 (   isEquals(KorSlot0,"n")   ){
                     fillWith(KorSlot0,"h");
 
-                    KBD_HIJACKER.pressandreleaseKey(KEY_BACKSPACE);
+                    DO_BACKSPACE;
                     Keyboard.write('h');
                 }
                 else
@@ -1473,12 +1650,13 @@ void KeyboardHijacker::MODULE_KOREAN_KEYPAD_EVOLUTION()
                 }
             }
             else if(MILLIS_FROM_PRESSED_UNTIL_RELEASE > 400){
+                KORPAD_resetConfirmedInputs();
                 fillWith(KorSlot0,"6");
 
-                KBD_HIJACKER.pressandreleaseKey(KEY_BACKSPACE);
+                DO_BACKSPACE;
                 Keyboard.write('6');
             }
-            isActivatedKeyEvent=false; key=0;
+            isActivatedKeyEvent=false; key=KEY_NONE;
         }
         break;
 
@@ -1491,12 +1669,13 @@ void KeyboardHijacker::MODULE_KOREAN_KEYPAD_EVOLUTION()
                 Keyboard.write('t');
             }
             else if(MILLIS_FROM_PRESSED_UNTIL_RELEASE > 400){
+                KORPAD_resetConfirmedInputs();
                 fillWith(KorSlot0,"1");
 
-                KBD_HIJACKER.pressandreleaseKey(KEY_BACKSPACE);
+                DO_BACKSPACE;
                 Keyboard.write('1');
             }
-            isActivatedKeyEvent=false; key=0;
+            isActivatedKeyEvent=false; key=KEY_NONE;
         }
         break;
 
@@ -1509,12 +1688,13 @@ void KeyboardHijacker::MODULE_KOREAN_KEYPAD_EVOLUTION()
                 Keyboard.write('d');
             }
             else if(MILLIS_FROM_PRESSED_UNTIL_RELEASE > 400){
+                KORPAD_resetConfirmedInputs();
                 fillWith(KorSlot0,"2");
 
-                KBD_HIJACKER.pressandreleaseKey(KEY_BACKSPACE);
+                DO_BACKSPACE;
                 Keyboard.write('2');
             }
-            isActivatedKeyEvent=false; key=0;
+            isActivatedKeyEvent=false; key=KEY_NONE;
         }
         break;
 
@@ -1525,28 +1705,28 @@ void KeyboardHijacker::MODULE_KOREAN_KEYPAD_EVOLUTION()
                 (   isEquals(KorSlot0,"k")   ){
                     fillWith(KorSlot0,"o");
 
-                    KBD_HIJACKER.pressandreleaseKey(KEY_BACKSPACE);
+                    DO_BACKSPACE;
                     Keyboard.write('o');
                 }
                 else if
                 (   isEquals(KorSlot0,"i")   ){
                     fillWith(KorSlot0,"O");
 
-                    KBD_HIJACKER.pressandreleaseKey(KEY_BACKSPACE);
+                    DO_BACKSPACE;
                     Keyboard.write('O');
                 }
                 else if
                 (   isEquals(KorSlot0,"j")   ){
                     fillWith(KorSlot0,"p");
 
-                    KBD_HIJACKER.pressandreleaseKey(KEY_BACKSPACE);
+                    DO_BACKSPACE;
                     Keyboard.write('p');
                 }
                 else if
                 (   isEquals(KorSlot0,"u")   ){
                     fillWith(KorSlot0,"P");
 
-                    KBD_HIJACKER.pressandreleaseKey(KEY_BACKSPACE);
+                    DO_BACKSPACE;
                     Keyboard.write('P');
                 }
                 else if
@@ -1571,14 +1751,14 @@ void KeyboardHijacker::MODULE_KOREAN_KEYPAD_EVOLUTION()
                 (   isEquals(KorSlot0,"hk")   ){
                     fillWith(KorSlot0,"ho");
 
-                    KBD_HIJACKER.pressandreleaseKey(KEY_BACKSPACE);
+                    DO_BACKSPACE;
                     Keyboard.write('o');
                 }
                 else if
                 (   isEquals(KorSlot0,"nj")   ){
                     fillWith(KorSlot0,"np");
 
-                    KBD_HIJACKER.pressandreleaseKey(KEY_BACKSPACE);
+                    DO_BACKSPACE;
                     Keyboard.write('p');
                 }
                 else
@@ -1590,12 +1770,13 @@ void KeyboardHijacker::MODULE_KOREAN_KEYPAD_EVOLUTION()
                 }
             }
             else if(MILLIS_FROM_PRESSED_UNTIL_RELEASE > 400){
+                KORPAD_resetConfirmedInputs();
                 fillWith(KorSlot0,"3");
 
-                KBD_HIJACKER.pressandreleaseKey(KEY_BACKSPACE);
+                DO_BACKSPACE;
                 Keyboard.write('3');
             }
-            isActivatedKeyEvent=false; key=0;
+            isActivatedKeyEvent=false; key=KEY_NONE;
         }
         break;
 
@@ -1608,12 +1789,13 @@ void KeyboardHijacker::MODULE_KOREAN_KEYPAD_EVOLUTION()
                 Keyboard.write('m');
             }
             else if(MILLIS_FROM_PRESSED_UNTIL_RELEASE > 400){
+                KORPAD_resetConfirmedInputs();
                 fillWith(KorSlot0,"0");
 
-                KBD_HIJACKER.pressandreleaseKey(KEY_BACKSPACE);
+                DO_BACKSPACE;
                 Keyboard.write('0');
             }
-            isActivatedKeyEvent=false; key=0;
+            isActivatedKeyEvent=false; key=KEY_NONE;
         }
         break;
 
@@ -1622,162 +1804,160 @@ void KeyboardHijacker::MODULE_KOREAN_KEYPAD_EVOLUTION()
 
 
 
-
-
         case KEY_TAB:
         {
             if(event){
-                #if (KEYPAD_KOREAN_LAYOUT == 2) //NaRatGeul
+                #if (KEYPAD_KOREAN_LAYOUT == 2) // NaRatGeul
 
                 if
                 (   isEquals(KorSlot0,"r")   ){
                     fillWith(KorSlot0,"z");
 
-                    KBD_HIJACKER.pressandreleaseKey(KEY_BACKSPACE);
+                    DO_BACKSPACE;
                     Keyboard.write('z');
                 }
                 else if
                 (   isEquals(KorSlot0,"z")   ){
                     fillWith(KorSlot0,"r");
 
-                    KBD_HIJACKER.pressandreleaseKey(KEY_BACKSPACE); KORPAD_correctBottomDualConsonantError();
+                    DO_BACKSPACE;               KORPAD_correctBottomDualConsonantError();
                     Keyboard.write('r');
                 }
                 else if
                 (   isEquals(KorSlot0,"s")   ){
                     fillWith(KorSlot0,"e");
 
-                    KBD_HIJACKER.pressandreleaseKey(KEY_BACKSPACE);
+                    DO_BACKSPACE;
                     Keyboard.write('e');
                 }
                 else if
                 (   isEquals(KorSlot0,"e")   ){
                     fillWith(KorSlot0,"x");
 
-                    KBD_HIJACKER.pressandreleaseKey(KEY_BACKSPACE); KORPAD_correctBottomDualConsonantError();
+                    DO_BACKSPACE;               KORPAD_correctBottomDualConsonantError();
                     Keyboard.write('x');
                 }
                 else if
                 (   isEquals(KorSlot0,"x")   ){
                     fillWith(KorSlot0,"s");
 
-                    KBD_HIJACKER.pressandreleaseKey(KEY_BACKSPACE);
+                    DO_BACKSPACE;
                     Keyboard.write('s');
                 }
                 else if
                 (   isEquals(KorSlot0,"a")   ){
                     fillWith(KorSlot0,"q");
 
-                    KBD_HIJACKER.pressandreleaseKey(KEY_BACKSPACE);
+                    DO_BACKSPACE;
                     Keyboard.write('q');
                 }
                 else if
                 (   isEquals(KorSlot0,"q")   ){
                     fillWith(KorSlot0,"v");
 
-                    KBD_HIJACKER.pressandreleaseKey(KEY_BACKSPACE);
+                    DO_BACKSPACE;
                     Keyboard.write('v');
                 }
                 else if
                 (   isEquals(KorSlot0,"v")   ){
                     fillWith(KorSlot0,"a");
 
-                    KBD_HIJACKER.pressandreleaseKey(KEY_BACKSPACE);
+                    DO_BACKSPACE;
                     Keyboard.write('a');
                 }
                 else if
                 (   isEquals(KorSlot0,"t")   ){
                     fillWith(KorSlot0,"w");
 
-                    KBD_HIJACKER.pressandreleaseKey(KEY_BACKSPACE); KORPAD_correctBottomDualConsonantError();
+                    DO_BACKSPACE;               KORPAD_correctBottomDualConsonantError();
                     Keyboard.write('w');
                 }
                 else if
                 (   isEquals(KorSlot0,"w")   ){
                     fillWith(KorSlot0,"c");
 
-                    KBD_HIJACKER.pressandreleaseKey(KEY_BACKSPACE);
+                    DO_BACKSPACE;
                     Keyboard.write('c');
                 }
                 else if
                 (   isEquals(KorSlot0,"c")   ){
                     fillWith(KorSlot0,"t");
 
-                    KBD_HIJACKER.pressandreleaseKey(KEY_BACKSPACE); KORPAD_correctBottomDualConsonantError();
+                    DO_BACKSPACE;               KORPAD_correctBottomDualConsonantError();
                     Keyboard.write('t');
                 }
                 else if
                 (   isEquals(KorSlot0,"d")   ){
                     fillWith(KorSlot0,"g");
 
-                    KBD_HIJACKER.pressandreleaseKey(KEY_BACKSPACE); KORPAD_correctBottomDualConsonantError();
+                    DO_BACKSPACE;               KORPAD_correctBottomDualConsonantError();
                     Keyboard.write('g');
                 }
                 else if
                 (   isEquals(KorSlot0,"g")   ){
                     fillWith(KorSlot0,"d");
 
-                    KBD_HIJACKER.pressandreleaseKey(KEY_BACKSPACE);
+                    DO_BACKSPACE;
                     Keyboard.write('d');
                 }
                 else if
                 (   isEquals(KorSlot0,"k")   ){
                     fillWith(KorSlot0,"i");
 
-                    KBD_HIJACKER.pressandreleaseKey(KEY_BACKSPACE);
+                    DO_BACKSPACE;
                     Keyboard.write('i');
                 }
                 else if
                 (   isEquals(KorSlot0,"i")   ){
                     fillWith(KorSlot0,"k");
 
-                    KBD_HIJACKER.pressandreleaseKey(KEY_BACKSPACE);
+                    DO_BACKSPACE;
                     Keyboard.write('k');
                 }
                 else if
                 (   isEquals(KorSlot0,"j")   ){
                     fillWith(KorSlot0,"u");
 
-                    KBD_HIJACKER.pressandreleaseKey(KEY_BACKSPACE);
+                    DO_BACKSPACE;
                     Keyboard.write('u');
                 }
                 else if
                 (   isEquals(KorSlot0,"u")   ){
                     fillWith(KorSlot0,"j");
 
-                    KBD_HIJACKER.pressandreleaseKey(KEY_BACKSPACE);
+                    DO_BACKSPACE;
                     Keyboard.write('j');
                 }
                 else if
                 (   isEquals(KorSlot0,"h")   ){
                     fillWith(KorSlot0,"y");
 
-                    KBD_HIJACKER.pressandreleaseKey(KEY_BACKSPACE);
+                    DO_BACKSPACE;
                     Keyboard.write('y');
                 }
                 else if
                 (   isEquals(KorSlot0,"y")   ){
                     fillWith(KorSlot0,"h");
 
-                    KBD_HIJACKER.pressandreleaseKey(KEY_BACKSPACE);
+                    DO_BACKSPACE;
                     Keyboard.write('h');
                 }
                 else if
                 (   isEquals(KorSlot0,"n")   ){
                     fillWith(KorSlot0,"b");
 
-                    KBD_HIJACKER.pressandreleaseKey(KEY_BACKSPACE);
+                    DO_BACKSPACE;
                     Keyboard.write('b');
                 }
                 else if
                 (   isEquals(KorSlot0,"b")   ){
                     fillWith(KorSlot0,"n");
 
-                    KBD_HIJACKER.pressandreleaseKey(KEY_BACKSPACE);
+                    DO_BACKSPACE;
                     Keyboard.write('n');
                 }
 
-                #endif                          //NaRatGeul End
+                #endif                          // NaRatGeul End
             }
             else 
             if(isEquals(KorSlot0,"") || isEquals(KorSlot0," "))
@@ -1786,45 +1966,50 @@ void KeyboardHijacker::MODULE_KOREAN_KEYPAD_EVOLUTION()
                 {
                     if(KORPAD_MODE != MODE_KANA)
                     {
-                        KORPAD_resetConfirmedInputs();
-                        
-                        //Turn On MODE_KANA
-                        KORPAD_MODE = MODE_KANA;
-        
-                        Buzzzzer::reserveBuzz   ( { NOTE_E7,    NOTE_E7,0,  NOTE_E7,0,  NOTE_C7,    NOTE_E7,0,  NOTE_G7,0   }
-                                                , { 200,        130,50,     100,50,     100,        130,50,     300,444,    } );
+                        // Preclude about GJI malfunction
+                        SET_IME_TO_KOR;
+
+                        // Turn On MODE_KANA
+                        KORPAD_switchMODE( MODE_KANA );
+
+                        // Clear the KANA Queue
+                        KORPAD_clearAllQueuedKana();
                     }
                     else
                     {
-                        KORPAD_resetConfirmedInputs();
-                        
-                        //Back To MODE_HANGEUL
-                        KORPAD_MODE = MODE_HANGEUL;
-                                                
-                        Buzzzzer::reserveBuzz   ( { NOTE_G6 }
-                                                , { 222     } );
-                    }
+                        // Preclude about GJI malfunction
+                        SET_IME_TO_KOR;
 
-                    //If CAPSLOCK was On, Turn Off BY FORCE
-                    if(KBD_HIJACKER.getStateCapsLockToggle())
-                        KBD_HIJACKER.pressandreleaseKey(KEY_CAPS_LOCK);
-                    KBD_HIJACKER.reserveSyncToggleKeyStates();
+                        // Back To MODE_HANGEUL
+                        KORPAD_switchMODE( MODE_HANGEUL );
+                    }
                 }
                 else
                 {
-                    KBD_HIJACKER.pressandreleaseKey(KEY_TAB);
-
                     KORPAD_resetConfirmedInputs();
+
+                    KBD_HIJACKER.pressandreleaseKey(KEY_TAB);
                 }
             }
-            isActivatedKeyEvent=false; key=0;
+            isActivatedKeyEvent=false; key=KEY_NONE;
         }
         break;
 
         case KEYPAD_PERIOD:
         {
             if(event){
-                #if (KEYPAD_KOREAN_LAYOUT == 1) //CheonJiIn
+                // When MODE_KANA, Prevent other Conversions
+                if
+                (   KORPAD_MODE == MODE_KANA   ){
+                    if(KBD_PARSER.KeyLogger.peek_key(1)!=KEYPAD_PERIOD) // Prevent duplicated updates
+                    {   
+                        KORPAD_updateConfirmedInputs();
+                        COMPLETE_THE_IN_PROGRESS_HANGEUL_IMMEDIATELY;
+                    }
+                }
+                else
+
+                #if (KEYPAD_KOREAN_LAYOUT == 1) // CheonJiIn
 
                 if
                 (   isEquals(KorSlot0,"") || isEquals(KorSlot0," ")   ){
@@ -1832,83 +2017,84 @@ void KeyboardHijacker::MODULE_KOREAN_KEYPAD_EVOLUTION()
                 }
                 else 
 
-                #endif                          //CheonJiIn End
+                #endif // CheonJiIn End
 
-                #if (KEYPAD_KOREAN_LAYOUT == 2) //NaRatGeul
+                #if (KEYPAD_KOREAN_LAYOUT == 2) // NaRatGeul
 
+                // NaRatGeul's Double Consonent Conversions
                 if
                 (   isEquals(KorSlot0,"r")   ){
                     fillWith(KorSlot0,"R");
 
-                    KBD_HIJACKER.pressandreleaseKey(KEY_BACKSPACE);
+                    DO_BACKSPACE;
                     Keyboard.write('R');
                 }
                 else if
                 (   isEquals(KorSlot0,"R")   ){
                     fillWith(KorSlot0,"r");
 
-                    KBD_HIJACKER.pressandreleaseKey(KEY_BACKSPACE); KORPAD_correctBottomDualConsonantError();
+                    DO_BACKSPACE;               KORPAD_correctBottomDualConsonantError();
                     Keyboard.write('r');
                 }
                 else if
                 (   isEquals(KorSlot0,"e")   ){
                     fillWith(KorSlot0,"E");
 
-                    KBD_HIJACKER.pressandreleaseKey(KEY_BACKSPACE);
+                    DO_BACKSPACE;
                     Keyboard.write('E');
                 }
                 else if
                 (   isEquals(KorSlot0,"E")   ){
                     fillWith(KorSlot0,"e");
 
-                    KBD_HIJACKER.pressandreleaseKey(KEY_BACKSPACE); KORPAD_correctBottomSingleConsonantError();
+                    DO_BACKSPACE;               KORPAD_correctBottomSingleConsonantError();
                     Keyboard.write('e');
                 }
                 else if
                 (   isEquals(KorSlot0,"q")   ){
                     fillWith(KorSlot0,"Q");
 
-                    KBD_HIJACKER.pressandreleaseKey(KEY_BACKSPACE);
+                    DO_BACKSPACE;
                     Keyboard.write('Q');
                 }
                 else if
                 (   isEquals(KorSlot0,"Q")   ){
                     fillWith(KorSlot0,"q");
 
-                    KBD_HIJACKER.pressandreleaseKey(KEY_BACKSPACE); KORPAD_correctBottomSingleConsonantError();
-                                                                    KORPAD_correctBottomDualConsonantError();
+                    DO_BACKSPACE;               KORPAD_correctBottomSingleConsonantError();
+                                                KORPAD_correctBottomDualConsonantError();
                     Keyboard.write('q');
                 }
                 else if
                 (   isEquals(KorSlot0,"t")   ){
                     fillWith(KorSlot0,"T");
 
-                    KBD_HIJACKER.pressandreleaseKey(KEY_BACKSPACE);
+                    DO_BACKSPACE;
                     Keyboard.write('T');
                 }
                 else if
                 (   isEquals(KorSlot0,"T")   ){
                     fillWith(KorSlot0,"t");
 
-                    KBD_HIJACKER.pressandreleaseKey(KEY_BACKSPACE);  KORPAD_correctBottomDualConsonantError();
+                    DO_BACKSPACE;               KORPAD_correctBottomDualConsonantError();
                     Keyboard.write('t');
                 }
                 else if
                 (   isEquals(KorSlot0,"w")   ){
                     fillWith(KorSlot0,"W");
 
-                    KBD_HIJACKER.pressandreleaseKey(KEY_BACKSPACE);
+                    DO_BACKSPACE;
                     Keyboard.write('W');
                 }
                 else if
                 (   isEquals(KorSlot0,"W")   ){
                     fillWith(KorSlot0,"w");
 
-                    KBD_HIJACKER.pressandreleaseKey(KEY_BACKSPACE); KORPAD_correctBottomSingleConsonantError();
-                                                                    KORPAD_correctBottomDualConsonantError();
+                    DO_BACKSPACE;               KORPAD_correctBottomSingleConsonantError();
+                                                KORPAD_correctBottomDualConsonantError();
                     Keyboard.write('w');
 
-                // Special Characters
+                // NaRatGeul's Special Character Conversions
                 }
                 else if
                 (   isEquals(KorSlot0,"") || isEquals(KorSlot0," ")   ){
@@ -1920,68 +2106,68 @@ void KeyboardHijacker::MODULE_KOREAN_KEYPAD_EVOLUTION()
                 (   isEquals(KorSlot0,";")   ){
                     fillWith(KorSlot0,"()");
 
-                    KBD_HIJACKER.pressandreleaseKey(KEY_BACKSPACE);
+                    DO_BACKSPACE;
                     Keyboard.write('('); Keyboard.write(')');
                 }
                 else if
                 (   isEquals(KorSlot0,"()")   ){
                     fillWith(KorSlot0,"{}");
 
-                    KBD_HIJACKER.pressandreleaseKey(KEY_BACKSPACE); KBD_HIJACKER.pressandreleaseKey(KEY_BACKSPACE);
+                    DO_BACKSPACE; DO_BACKSPACE;
                     Keyboard.write('{'); Keyboard.write('}');
                 }
                 else if
                 (   isEquals(KorSlot0,"{}")   ){
                     fillWith(KorSlot0,"?");
 
-                    KBD_HIJACKER.pressandreleaseKey(KEY_BACKSPACE); KBD_HIJACKER.pressandreleaseKey(KEY_BACKSPACE);
+                    DO_BACKSPACE; DO_BACKSPACE;
                     Keyboard.write('?');
                 }
                 else if
                 (   isEquals(KorSlot0,"?")   ){
                     fillWith(KorSlot0,"!");
 
-                    KBD_HIJACKER.pressandreleaseKey(KEY_BACKSPACE);
+                    DO_BACKSPACE;
                     Keyboard.write('!');
                 }
                 else if
                 (   isEquals(KorSlot0,"!")   ){
                     fillWith(KorSlot0,".");
 
-                    KBD_HIJACKER.pressandreleaseKey(KEY_BACKSPACE);
+                    DO_BACKSPACE;
                     Keyboard.write('.');
                 }
                 else if
                 (   isEquals(KorSlot0,".")   ){
                     fillWith(KorSlot0,"~");
 
-                    KBD_HIJACKER.pressandreleaseKey(KEY_BACKSPACE);
+                    DO_BACKSPACE;
                     Keyboard.write('~');
                 }
                 else if
                 (   isEquals(KorSlot0,"~")   ){
                     fillWith(KorSlot0,"^^");
 
-                    KBD_HIJACKER.pressandreleaseKey(KEY_BACKSPACE);
+                    DO_BACKSPACE;
                     Keyboard.write('^'); Keyboard.write('^');
                 }
                 else if
                 (   isEquals(KorSlot0,"^^")   ){
                     fillWith(KorSlot0,"\\ ");
 
-                    KBD_HIJACKER.pressandreleaseKey(KEY_BACKSPACE); KBD_HIJACKER.pressandreleaseKey(KEY_BACKSPACE);
+                    DO_BACKSPACE; DO_BACKSPACE;
                     Keyboard.write(' ');
                 }
                 else if
                 (   isEquals(KorSlot0,"\\ ")   ){
                     fillWith(KorSlot0,";");
 
-                    KBD_HIJACKER.pressandreleaseKey(KEY_BACKSPACE);
+                    DO_BACKSPACE;
                     Keyboard.write(';');
                 }
                 else 
 
-                #endif                          //NaRatGeul End
+                #endif // NaRatGeul End
 
                 // MODE_ALPHABET
                 if
@@ -1992,10 +2178,10 @@ void KeyboardHijacker::MODULE_KOREAN_KEYPAD_EVOLUTION()
 
                 else
                 {
-                    COMPLETE_THE_IN_PROGRESS_HANGEUL_IMMEDIATELY;
-
                     KORPAD_updateConfirmedInputs();
                     fillWith(KorSlot0,"");
+
+                    COMPLETE_THE_IN_PROGRESS_HANGEUL_IMMEDIATELY;
                 }
             }
             else 
@@ -2005,65 +2191,55 @@ void KeyboardHijacker::MODULE_KOREAN_KEYPAD_EVOLUTION()
                 {
                     if(KORPAD_MODE != MODE_ALPHABET)
                     {
-                        KORPAD_resetConfirmedInputs();
-                        
-                        //Turn On MODE_ALPHABET
-                        KORPAD_MODE = MODE_ALPHABET;
-        
-                        Buzzzzer::reserveBuzz   ( { NOTE_FS5,0, NOTE_GS5,0, NOTE_AS5,0, NOTE_DS6,0, NOTE_CS6    }
-                                                , { 200,30,     100,150,    120,200,    150,150,    450         } );
+                        // Turn On MODE_ALPHABET
+                        KORPAD_switchMODE( MODE_ALPHABET );
                     }
                     else
                     {
-                        KORPAD_resetConfirmedInputs();
-                        
-                        //Back To MODE_HANGEUL
-                        KORPAD_MODE = MODE_HANGEUL;
-                                                
-                        Buzzzzer::reserveBuzz   ( { NOTE_AS5,0, NOTE_GS5,0, NOTE_FS5,0, NOTE_FS5    }
-                                                , { 300,50,     230,50,     170,100,    350         } );
+                        // Back To MODE_HANGEUL
+                        KORPAD_switchMODE( MODE_HANGEUL );
                     }
-
-                    //If CAPSLOCK was On, Turn Off BY FORCE
-                    if(KBD_HIJACKER.getStateCapsLockToggle())
-                        KBD_HIJACKER.pressandreleaseKey(KEY_CAPS_LOCK);
-                    KBD_HIJACKER.reserveSyncToggleKeyStates();
                 }
                 else
                 {
-                    #if (KEYPAD_KOREAN_LAYOUT == 1) //CheonJiIn
+                    #if (KEYPAD_KOREAN_LAYOUT == 1) // CheonJiIn
 
-                    if(isEquals(KorSlot0,"\\ ")){
+                    if
+                    (   isEquals(KorSlot0,"\\ ")   ){
                         KORPAD_resetConfirmedInputs();
-                        KBD_HIJACKER.pressandreleaseKey(KEY_SPACE);
+
+                        DO_SPACE;
                     }
 
-                    #endif                          //CheonJiIn End
+                    #endif // CheonJiIn End
 
-                    #if (KEYPAD_KOREAN_LAYOUT == 2) //NaRatGeul
+                    #if (KEYPAD_KOREAN_LAYOUT == 2) // NaRatGeul
 
-                    if(isEquals(KorSlot0," ")){
-                        KBD_HIJACKER.pressandreleaseKey(KEY_BACKSPACE);
-                        Keyboard.write(';');
+                    if
+                    (   isEquals(KorSlot0," ")   ){
                         fillWith(KorSlot0,";");
+
+                        DO_BACKSPACE;
+                        Keyboard.write(';');
                     }
 
-                    #endif                          //NaRatGeul End
+                    #endif // NaRatGeul End
                 }
             }
-            isActivatedKeyEvent=false; key=0;
+            isActivatedKeyEvent=false; key=KEY_NONE;
         }
         break;
 
         case KEYPAD_ENTER:
         {
             if(event){
-                // both MODES, [ " " + ENTER ] means [ SHIFT + ENTER ]
+                // both MODEs, [ " " + ENTER ] means [ SHIFT + ENTER ]
                 if(isEquals(KorSlot0," "))
                 {
-                    KBD_HIJACKER.pressandreleaseKey(KEY_BACKSPACE);
-                    KBD_HIJACKER.pressandreleaseMultiKey( {KEY_SHIFT,KEY_ENTER} );
                     KORPAD_resetConfirmedInputs();
+
+                    DO_BACKSPACE;
+                    KBD_HIJACKER.pressandreleaseMultiKey( {KEY_SHIFT,KEY_ENTER} );
                 }
 
                 // MODE_ALPHABET
@@ -2078,21 +2254,23 @@ void KeyboardHijacker::MODULE_KOREAN_KEYPAD_EVOLUTION()
                     /* Already typed Kana By Hangeul Pronounce */
                 }
 
-                // MODE_HANGEUL
+                // MODE_HANGEUL and also, When typing is disallowed on other MODEs
                 else
                 {
-                    KBD_HIJACKER.pressandreleaseKey(KEY_ENTER);
                     KORPAD_resetConfirmedInputs();
+
+                    KBD_HIJACKER.pressandreleaseKey(KEY_ENTER);
                 }
             }
-            isActivatedKeyEvent=false; key=0;
+            isActivatedKeyEvent=false; key=KEY_NONE;
         }
         break;
     }
 
 
 
-    KORPAD_surveillanceKorSlotsForKana();
+    if(KORPAD_MODE == MODE_KANA)
+        KORPAD_surveillanceKorSlotsForKana();
 
 #endif
 /* ------------------------------------------------------ KEYPAD_KOREAN_LAYOUT COMMON ------------------------------------------------------ */

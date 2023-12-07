@@ -19,6 +19,8 @@
 /**⦓   For, HARDWARE   ⦔**/
 
 // Teensy® 4.1's PIN MAP !
+
+//      ____GND____
 //      PIN_                00
 //      PIN_                01
 //      PIN_                02
@@ -32,19 +34,7 @@
 //      PIN_                10
 //      PIN_                11
 //      PIN_                12
-
-#define PIN_LED_BUILTIN     13
-//      PIN_                A0
-//      PIN_                A1
-//      PIN_                A2
-//      PIN_                A3
-//      PIN_                A4
-//      PIN_                A5
-//      PIN_                A6
-//      PIN_                A7
-//      PIN_                A8
-//      PIN_                A9
-
+//      ____3.3____
 //      PIN_                A10
 //      PIN_                A11
 //      PIN_                A12
@@ -55,15 +45,30 @@
 //      PIN_                31
 //      PIN_                32
 
-//      PIN_                33
-//      PIN_                34
-//      PIN_                35
-//      PIN_                36
-//      PIN_                37
-//      PIN_                A14
+//      ____Vin____ (3.6 to 5.5)
+//      ____GND____
+//      ____3.3____ (250mA max)
+#define PIN_BIDIRECTIONAL   A9 // 23
+#define PIN_WAKEUP_ESP      A8 // 22
+#define PIN_RX_TO_ESP       A7 // 21
+#define PIN_TX_TO_ESP       A6 // 20
+//      PIN_                A5
+//      PIN_                A4
+//      PIN_                A3
+//      PIN_                A2
+//      PIN_                A1
+//      PIN_                A0
+#define PIN_LED_BUILTIN     13
+//      ____GND____
+#define PIN_BUZZER          A17 // 41
+#define PIN_RANDOMSEED      A16 // 40
 //      PIN_                A15
-#define PIN_RANDOMSEED      A16
-#define PIN_BUZZER          A17
+//      PIN_                A14
+//      PIN_                37
+//      PIN_                36
+//      PIN_                35
+//      PIN_                34
+//      PIN_                33
 
 #ifdef __cplusplus
 extern "C"
@@ -126,19 +131,25 @@ extern "C"
 }
 #endif
 
+bool isReservedReboot = false;
 void REBOOT() { SCB_AIRCR = 0x05FA0004; asm volatile ("dsb"); while(true){} }
 
 
 
 
 
-#include <map>
+#include <vector>
 #include <list>
+#include <map>
+#include <algorithm>
 
 #include <USBHost_t36.h>
 
 #include <SD.h>
 File textfile;
+
+#include <SoftwareSerial.h>
+#include <CRC32.h>
 
 #include "res_Buzzzzer.h"
 
@@ -150,7 +161,7 @@ File textfile;
 
 
 
-/**⦓ For, SLAVE KEYBOARD ⦔**/
+/**⦓ For, SNATCH FROM SLAVE KEYBOARD ⦔**/
 
 volatile uint8_t rawKeycode;
 
@@ -197,7 +208,7 @@ public:
         } *top, *bottom;
         uint32_t len;
 
-        DoublyLinkedStackKeyLogger() //Initialize
+        DoublyLinkedStackKeyLogger() // Initialize
         {
             top = bottom = NULL;
             len = 0;
@@ -225,7 +236,7 @@ public:
             }
             len++;
 
-            //if overflowed, delete oldest node
+            // if overflowed, delete oldest node
             if(isOverflow()){
                 nodeKeycode* delNode = bottom;
                 bottom = bottom->prev;
@@ -267,7 +278,7 @@ public:
             return (readNode->millis);
         }
 
-        void PrintAll() //For, Debugging
+        void PrintAll() // For, Debugging
         {
             uint32_t num=0;
             Serial.println();
@@ -293,7 +304,7 @@ public:
         }
     } KeyLogger;
 
-    void begin(auto OnRawPress, auto OnRawRelease)
+    void begin(auto OnRawPress, auto OnRawRelease) // Initialize
     {
         this->attachRawPress(OnRawPress);
         this->attachRawRelease(OnRawRelease);
@@ -348,6 +359,7 @@ private:
     uint32_t msExtraDelayMax    = +50;
 
 public:
+    bool isExistHoldingDownKey                  (void) { return (numBeingHoldDownKey>0); }
     void setLogicalState                        (int32_t key, bool state) { stateLogical[TeensyLayout_To_keycode(key)] = state; }
     bool getLogicalState                        (int32_t key) { return stateLogical[TeensyLayout_To_keycode(key)]; }
     void printKeyInfo                           (uint8_t keycode);
@@ -358,12 +370,14 @@ public:
     bool getStateCapsLockToggle()               { return stateCapsLockToggle; }
     bool getStateScrollLockToggle()             { return stateScrollLockToggle; }
     bool getStateNumLockToggle()                { return stateNumLockToggle; }
+
+    void syncToggleKeyStates                    (void);
     bool isReservedSyncToggleKeyStates          = false;
     void reserveSyncToggleKeyStates             (void) { isReservedSyncToggleKeyStates = true; }
-    void syncToggleKeyStates                    (void);
 
-    bool isExistHoldingDownKey                  (void) { return (numBeingHoldDownKey>0); }
     void releaseAllBeingHoldDownKey             (void);
+    bool isReservedReleaseAllBeingHoldDownKey   = false;
+    void reserveReleaseAllBeingHoldDownKey      (void) { isReservedReleaseAllBeingHoldDownKey = true; }
 
     void pressandreleaseKey                     (int32_t key);
     void pressandreleaseKeys                    (String str);
@@ -378,26 +392,28 @@ public:
     void pressandreleaseKey_LikeHuman           (int32_t key);
     void pressandreleaseKeys_LikeHuman          (String str);
     void pressandreleaseKeys_LikeHuman          (std::initializer_list<int32_t> keys);
-    void pressandreleaseMultiKey_LikeHuman      (std::initializer_list<int32_t> keys); // ex) ctrl+c, gui+r, ctrl+shift+esc
 
     // THE C.O.R.E. of HIJACKER
     void TRANSMIT_AFTER_HIJACK                  (void);
 
+    // MODULE_KORPAD.ino
     void MODULE_KOREAN_KEYPAD_EVOLUTION         (void);
 
+    // MODULE_MACRO.ino
     void MODULE_MACRO_START_PLAYER_OR_RECORDER  (const char* fname);
-    void MODULE_MACRO_REC_PRESSED               (uint8_t keycode, uint32_t delayed);
-    void MODULE_MACRO_REC_RELEASED              (uint8_t keycode, uint32_t delayed);
+    void MODULE_MACRO_PROCEED_RECORDER          (uint8_t keycode, uint32_t delayed, bool isPressed);
     void MODULE_MACRO_END_RECORDER              (const char* filename);
-    void MODULE_MACRO_PLAY_ONGOING              (void);
+    void MODULE_MACRO_PROCEED_PLAYER            (void);
     void MODULE_MACRO_END_PLAYER                (void);
-    void MODULE_MACRO_BLOCK_EVENTS_WHEN_JUST_STARTED (volatile bool *flag);
     void MODULE_MACRO_CHECK_FOR_SHUTDOWN_PLAYER (void);
+    void MODULE_MACRO_BLOCK_EVENTS_WHEN_JUST_STARTED (volatile bool *flag);
     void MODULE_MACRO_MANUAL_EVENT_DETECTED     (void);
-    void MODULE_MACRO_PRINT                     (const char* filename);
 
+    // MODULE_KEYMAPPER.ino
     void MODULE_KEYMAPPER_INITIALIZE            (void);
     void MODULE_KEYMAPPER_HIJACK                (void);
+    void MODULE_KEYMAPPER_RAPIDFIRE             (void);
+    void MODULE_KEYMAPPER_SHUTDOWN_RAPIDFIRE    (void);
 
     void begin()
     {
@@ -407,6 +423,129 @@ public:
     }
 }
 &KBD_HIJACKER = KeyboardHijacker::getInstance(); // refers to the SINGLETON
+
+
+
+
+
+/**⦓ For, UPLOAD AND DOWNLOAD FILES ⦔**/
+
+namespace DarkJunction
+{
+    SoftwareSerial  S3r14l (PIN_RX_TO_ESP,      PIN_TX_TO_ESP);         // 21, 20
+    //              S3r14l (RX_TO_HIJACKER_PIN, TX_TO_HIJACKER_PIN);    // 12, 13
+
+
+    /***(( About, Digital Communication ))***/
+    bool PIN_BIDIRECTIONAL_readForXXms(uint16_t msSearch)
+    {
+        pinMode(PIN_BIDIRECTIONAL,INPUT);
+
+        int8_t msValidate = 10;
+        msValidate = msSearch>msValidate ? msValidate : msSearch*1;
+
+        int8_t isValid = 0-msValidate;
+        for(uint16_t i=0; i<msSearch; i++)
+        {   delay(1); if((isValid=(digitalRead(PIN_BIDIRECTIONAL)==HIGH ? isValid+1 : 0-msValidate)) > 0) return true;   }
+
+        return false;
+    }
+    void PIN_BIDIRECTIONAL_writeHIGHForXXms(uint16_t msWrite)
+    {
+        pinMode(PIN_BIDIRECTIONAL,OUTPUT);
+
+        digitalWrite(PIN_BIDIRECTIONAL,HIGH); delay(msWrite);
+        digitalWrite(PIN_BIDIRECTIONAL,LOW); delay(1);
+    }
+    #define PIN_BIDIRECTIONAL_MODE_WRITE    { pinMode(PIN_BIDIRECTIONAL,OUTPUT); digitalWrite(PIN_BIDIRECTIONAL,LOW); }
+    #define PIN_BIDIRECTIONAL_MODE_READ     { pinMode(PIN_BIDIRECTIONAL,INPUT); }
+
+
+
+    /***(( About, RX / TX ))***/
+    String strMessages;
+    void clearMessages() { strMessages=""; }
+    String getMessages() { return strMessages; }
+
+    bool download(int countLeftRetry = 5)
+    {
+        if(countLeftRetry == 0)
+            return false;
+
+
+        PIN_BIDIRECTIONAL_MODE_WRITE;
+
+
+        while(S3r14l.available() == 0){ delay(1); }
+        String strMerged = S3r14l.readStringUntil('\0');
+
+
+        // if invalidate, redownload
+        int indexSeparator;
+        if((indexSeparator=strMerged.indexOf('|')) < 0)
+        {
+            PIN_BIDIRECTIONAL_writeHIGHForXXms(5);
+            download(countLeftRetry - 1);
+        }
+
+
+        String strReceived = strMerged.substring(0, indexSeparator);
+
+        uint32_t crcReceived = atoll( strMerged.substring(indexSeparator+1).c_str() );
+        uint32_t crcCalculated = CRC32::calculate( strReceived.c_str(), strReceived.length() );
+
+
+                Serial.println("Received Data  : " + strReceived);
+                Serial.println("Received   CRC : " + String(crcReceived));
+                Serial.println("Calculated CRC : " + String(crcCalculated));
+
+
+        // if invalidate, redownload
+        if(crcReceived != crcCalculated)
+        {
+            PIN_BIDIRECTIONAL_writeHIGHForXXms(5);
+            download(countLeftRetry - 1);
+        }
+        else
+        {
+            strMessages += strReceived;
+        }
+
+
+        return true;
+    }
+
+    bool upload(String strSend, int countLeftRetry = 5)
+    {
+        if(countLeftRetry == 0)
+            return false;
+
+
+        PIN_BIDIRECTIONAL_MODE_READ;
+
+
+        uint32_t crcCalculated = CRC32::calculate(strSend.c_str(),strSend.length());
+        S3r14l.println( strSend + "|" + String(crcCalculated) );
+        bool hasChecksumError = PIN_BIDIRECTIONAL_readForXXms(10);
+
+
+        Serial.println("dataToSend Data : " + strSend);
+        Serial.println("Calculated CRC  : " + String(crcCalculated));
+
+
+        if(hasChecksumError)
+            upload(strSend);
+
+
+        return true;
+    }
+
+
+
+
+
+
+}
 
 
 
@@ -423,6 +562,7 @@ void setup()
     /* -------------------------------------- Initializing of Teensy® 4.1's Physical Modules -------------------------------------- */
     {
         pinMode(PIN_LED_BUILTIN, OUTPUT);
+        pinMode(PIN_WAKEUP_ESP,OUTPUT);
         randomSeed(analogRead(PIN_RANDOMSEED));
 
         // SERIAL CHECK
@@ -472,13 +612,28 @@ void setup()
                                 isExistWaitingEvent_Press = true;
                                 numDN++;
 
-                                //MODULE_MACRO
+                                // REBOOT COMMAND [ KEYPAD_SLASH + KEYPAD_0 + KEYPAD_8 ]
+                                if(numDN==3)
                                 {
-                                    //if MACRO is PLAYING
+                                    if( keycode==KEYCODE_KEYPAD_8 &&
+                                        (   (KBD_PARSER.KeyLogger.peek_key(1)==KEYPAD_SLASH && KBD_PARSER.KeyLogger.peek_key(2)==KEYPAD_0) ||
+                                            (KBD_PARSER.KeyLogger.peek_key(1)==KEYPAD_0     && KBD_PARSER.KeyLogger.peek_key(2)==KEYPAD_SLASH)   ) )
+                                    {
+                                        KBD_HIJACKER.releaseAllBeingHoldDownKey();
+                                        isExistWaitingEvent_Press = false;
+
+                                        pinMode(PIN_WAKEUP_ESP,OUTPUT); digitalWrite(PIN_WAKEUP_ESP,HIGH); // REBOOT HIJACKER & ACCOMPLICE TOGETHER!
+                                        isReservedReboot = true;
+                                    }
+                                }
+
+                                // MODULE_MACRO
+                                {
+                                    // if MACRO is PLAYING
                                     KBD_HIJACKER.MODULE_MACRO_MANUAL_EVENT_DETECTED();
 
-                                    //if MACRO is RECORDING
-                                    KBD_HIJACKER.MODULE_MACRO_REC_PRESSED(keycode, MILLIS_SINCE_LATEST_EVENT);
+                                    // if MACRO is RECORDING
+                                    KBD_HIJACKER.MODULE_MACRO_PROCEED_RECORDER(keycode, MILLIS_SINCE_LATEST_EVENT, true);
 
                                     //BLOCK several events when MACRO JUST STARTED
                                     KBD_HIJACKER.MODULE_MACRO_BLOCK_EVENTS_WHEN_JUST_STARTED(&isExistWaitingEvent_Press);
@@ -496,19 +651,22 @@ void setup()
                             {
                                 rawKeycode = keycode;
 
-                                isExistWaitingEvent_Release = true;
-                                numDN--; //if(numDN) numDN-=1;
-
-                                //MODULE_MACRO
+                                if(numDN>0) // NO KEY DN, prevent Event
                                 {
-                                    //if MACRO is PLAYING
-                                    KBD_HIJACKER.MODULE_MACRO_MANUAL_EVENT_DETECTED();
+                                    isExistWaitingEvent_Release = true;
+                                    numDN--;
 
-                                    //if MACRO is RECORDING
-                                    KBD_HIJACKER.MODULE_MACRO_REC_RELEASED(keycode, MILLIS_SINCE_LATEST_EVENT);
+                                    // MODULE_MACRO
+                                    {
+                                        // if MACRO is PLAYING
+                                        KBD_HIJACKER.MODULE_MACRO_MANUAL_EVENT_DETECTED();
 
-                                    //BLOCK several events when MACRO JUST STARTED
-                                    KBD_HIJACKER.MODULE_MACRO_BLOCK_EVENTS_WHEN_JUST_STARTED(&isExistWaitingEvent_Release);
+                                        // if MACRO is RECORDING
+                                        KBD_HIJACKER.MODULE_MACRO_PROCEED_RECORDER(keycode, MILLIS_SINCE_LATEST_EVENT, false);
+
+                                        //BLOCK several events when MACRO JUST STARTED
+                                        KBD_HIJACKER.MODULE_MACRO_BLOCK_EVENTS_WHEN_JUST_STARTED(&isExistWaitingEvent_Release);
+                                    }   
                                 }
 
                                 if(isSerial)
@@ -532,11 +690,16 @@ void setup()
                                         {
                                             static bool isDormancy = false;
                                             
-                                            //per1ms!
+                                            // per1ms!
                                             {
                                                 Buzzzzer::playBuzz();
-                                                
-                                                KBD_HIJACKER.MODULE_MACRO_PLAY_ONGOING();
+
+
+                                                KBD_HIJACKER.MODULE_MACRO_PROCEED_PLAYER();
+
+
+                                                KBD_HIJACKER.MODULE_KEYMAPPER_RAPIDFIRE();
+
 
                                                 static int8_t countdownSyncTKS = -1;
                                                 if(countdownSyncTKS>-1)
@@ -552,18 +715,23 @@ void setup()
                                             }
 
                                             /*
-                                            //per100ms!
+                                            // per100ms!
                                             if( !(millis()%100) ) {}
-                                            //per1000ms!
+                                            // per1000ms!
                                             if( !(millis()%1000) ) {}
                                             */
 
-                                            //per10000ms!
+                                            // per10000ms!
                                             if( !(millis()%10000) )
                                             {
                                                 isDormancy = (MILLIS_SINCE_LATEST_EVENT)>33333 ? true : false;
 
                                                 if(isDormancy) KBD_HIJACKER.syncToggleKeyStates();
+                                            }
+
+                                            if(isReservedReboot)
+                                            {
+                                                if(numDN==0 && !KBD_HIJACKER.isExistHoldingDownKey()) REBOOT();
                                             }
                                         },
                                         1000
