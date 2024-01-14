@@ -1,10 +1,6 @@
 
 struct MappedData
 {
-    bool isRequiredCleanse;
-    bool isRequiredRapidfire;
-    uint32_t* millisPressedTime;
-
     uint8_t stateNCS_CSAG;
     // stateNCS_CSAG's each bits represents...
     #define MASK_NL     0b10000000
@@ -18,6 +14,11 @@ struct MappedData
 
     uint8_t mappedLen;
     void* mappedThings;
+
+    uint32_t* millisPressedTime;
+
+    bool isRequiredCleanse;
+    bool isRequiredRapidfire;
 };
 std::map<uint8_t, std::list<MappedData>> MAP_KEYMAPPER;
 
@@ -29,31 +30,26 @@ struct RapidfireEvent
 std::vector<RapidfireEvent> queueActivatedRapidfire;
 bool isUpdatedActivatedRapidfire = false;
 
+bool isRapidfiring = false;
+
 
 
 
 
 void KeyboardHijacker::MODULE_KEYMAPPER_INITIALIZE()
 {
-    if(!isExistSD)
-        return;
-
-    if(!SD.exists("MAPPER.TXT"))
-    {
-        //MAPPER.TXT not exists, Create blank textfile
-        textfile = SD.open("MAPPER.TXT",FILE_WRITE); textfile.close();
-        return;
-    }
+    if(!SD.exists("MAPPER.TXT")) // MAPPER.TXT not exists, Create blank textfile, then skip mapping
+    {   textfile = SD.open("MAPPER.TXT",FILE_WRITE); textfile.close(); return;   }
+    else
+        textfile = SD.open("MAPPER.TXT");
 
 
     if(isSerial){ Serial.println("MODULE_KEYMAPPER_INITIALIZE START\n"); }
 
-    textfile = SD.open("MAPPER.TXT");
-    String readline;
 
     while(textfile.available())
     {
-        readline = textfile.readStringUntil('\n').toUpperCase();
+        String readline = textfile.readStringUntil('\n').toUpperCase();
 
 
         // Exclude COMMENT
@@ -63,38 +59,38 @@ void KeyboardHijacker::MODULE_KEYMAPPER_INITIALIZE()
 
         // Get mapKey that is both 'a key of MAP_KEYMAPPER' and 'the keycode'
         uint8_t mapKey
-         = (readline.indexOf('[') > -1 && readline.indexOf('[') < readline.indexOf(']'))
+         = (readline.indexOf('[') > -1 && (readline.indexOf('[') < readline.indexOf(']')))
             ? String_To_keycode(readline.substring(0, readline.indexOf('[')))
             : 0;
 
-        // mapKey NOT FOUNDED, maybe comment line
+        // mapKey NOT FOUNDED, invalid line
         if(mapKey == 0)
             continue;
 
 
-        // Reflect CLEANSE event
+        // Get CLEANSE event status
         bool isRequiredCleanse
          = (readline.indexOf("CLEANSE") > -1) ? true : false;
 
 
-        // Reflect RAPIDFIRE event
+        // Get RAPIDFIRE event status
         bool isRequiredRapidfire
          = (readline.indexOf("RAPIDFIRE") > -1) ? true : false;
 
 
-        // Reflect PTIME event
+        // Get PTIME event info
         bool isExistPTIME = (readline.indexOf("PTIME") > -1);
         uint32_t millisPressedTime = isExistPTIME ? StringDec_To_uint32_t( trimming_num( readline.substring(readline.indexOf("PTIME")) ) ) : 0;
 
 
-        // Reflect NLCLSL states & CSAG states
+        // Get NLCLSL & CSAG states
         uint8_t stateNCS_CSAG = 0;
         if(readline.indexOf('<') > -1 && readline.indexOf('<') < readline.indexOf('>'))
         {
             String strNCS_CSAG = readline.substring(readline.indexOf('<')+1, readline.indexOf('>'));
             int8_t index_CSAG = (strNCS_CSAG.lastIndexOf('T')>strNCS_CSAG.lastIndexOf('F') ? strNCS_CSAG.lastIndexOf('T') : strNCS_CSAG.lastIndexOf('F')) + 1;
 
-            // Reflect NumCapsScroll states
+            // Get NumCapsScroll states
             if(strNCS_CSAG.lastIndexOf('L') > -1)
             {
                 String strNLCLSL = strNCS_CSAG.substring(0, index_CSAG);
@@ -106,7 +102,7 @@ void KeyboardHijacker::MODULE_KEYMAPPER_INITIALIZE()
                 stateNCS_CSAG |= (strNLCLSL.lastIndexOf('T') > -1) ? MASK_IsLock : 0;
             }
 
-            // Reflect CtrlShiftAltGui states
+            // Get CtrlShiftAltGui states
             // Shortcut(CtrlShiftAltGui) TRIGGER EVENT and PTIME CANNOT COEXIST
             if(!isExistPTIME)
             {
@@ -207,9 +203,9 @@ void KeyboardHijacker::MODULE_KEYMAPPER_INITIALIZE()
                         strMapThings = strMapThings.substring(strMapThings.indexOf('+')+1);
                 }
 
-                // When map 'Ctrl+Shift+ESC' MultiKey event triggered by ShortcutEvent,
-                // In the case of the ShortcutEvnet that already includes Ctrl, does not require 'cleanse'. (only write 'Shift+ESC')
-                // but the ShortcutEvnet that includes Alt, must requires 'cleanse'.
+                // When map MultiKey(like 'Ctrl+Shift+ESC') event that triggered by ShortcutEvent,
+                // In the case of the ShortcutEvent that already includes Ctrl, does not require 'cleanse'. (only write 'Shift+ESC')
+                // but already includes Alt or a key other than Ctrl, requires 'cleanse'.
                 if(mappedLen > 1)
                 {
                     if((stateNCS_CSAG & 0b00001111) == 0)
@@ -247,12 +243,13 @@ void KeyboardHijacker::MODULE_KEYMAPPER_INITIALIZE()
                 }
 
                 // Create a MappedData object and assign values
-                data.isRequiredCleanse = isRequiredCleanse;
-                data.isRequiredRapidfire = isRequiredRapidfire;
-                data.millisPressedTime = new uint32_t(millisPressedTime);
                 data.stateNCS_CSAG = stateNCS_CSAG;
                 data.mappedLen = mappedLen;
                 data.mappedThings = mappedKeycodes;
+                data.millisPressedTime = new uint32_t(millisPressedTime);
+                data.isRequiredCleanse = isRequiredCleanse;
+                if((stateNCS_CSAG & 0b00001111) == 0) // only One key to One key EVENT can activate rapidfire
+                    data.isRequiredRapidfire = isRequiredRapidfire;
 
                 if(isSerial) 
                 {
@@ -268,18 +265,19 @@ void KeyboardHijacker::MODULE_KEYMAPPER_INITIALIZE()
                     for(uint8_t i=0; i<mappedLen; i++)
                     { 
                         Serial.print("    mappedThings[");Serial.print(i);Serial.print("] : ");
-                        print8bitHex( ((uint8_t*)data.mappedThings)[i] ); Serial.println();
+                        print8bitHex( ((uint8_t*)data.mappedThings)[i] );
+                        Serial.println();
                     }
 
                     Serial.println();
                 }
             }
 
-            // Shortcut(CtrlShiftAltGui) TRIGGER EVENT's priority is higher than One key to One key event's
-            if((data.stateNCS_CSAG & 0b00001111) == 0)
-                MAP_KEYMAPPER[mapKey].push_back(data);
-            else
+            // Shortcut(CtrlShiftAltGui) TRIGGER EVENT's priority is higher than One key to One key EVENT's
+            if((data.stateNCS_CSAG & 0b00001111) != 0)
                 MAP_KEYMAPPER[mapKey].push_front(data);
+            else
+                MAP_KEYMAPPER[mapKey].push_back(data);
         }
     }
     
@@ -336,7 +334,7 @@ void KeyboardHijacker::MODULE_KEYMAPPER_HIJACK()
             continue;
 
 
-        /*** This key Mapped One KEY to One KEY ***/
+        /*** This key Mapped One KEY event ***/
         if(data.mappedLen == 1)
         {
             key = keycode_To_TeensyLayout( ((uint8_t*)data.mappedThings)[0] );
@@ -357,23 +355,18 @@ void KeyboardHijacker::MODULE_KEYMAPPER_HIJACK()
             {
                 if(event)
                 {
+                    // push RapidfireEvent with this keycode
                     if(queueActivatedRapidfire.size()<=6)
-                        queueActivatedRapidfire.push_back( {keycode, key} );
+                    {   isRapidfiring=true; queueActivatedRapidfire.push_back( {keycode, key} );   }
                 }
                 else
                 {
+                    // pop only this keycode's RapidfireEvent
                     if(!queueActivatedRapidfire.empty())
-                        queueActivatedRapidfire.erase   (
-                                                            std::remove_if  (
-                                                                                queueActivatedRapidfire.begin(),
-                                                                                queueActivatedRapidfire.end(),
-                                                                                [keycode](const RapidfireEvent& item) { return item.keycode == keycode; } // Amazing Lambda
-                                                                            ),
-                                                            queueActivatedRapidfire.end()
-                                                        );
+                    {   queueActivatedRapidfire.erase( std::remove_if(queueActivatedRapidfire.begin(), queueActivatedRapidfire.end(), [keycode](const RapidfireEvent& item){ return item.keycode == keycode; }), queueActivatedRapidfire.end() );   }
                 }
-
                 isUpdatedActivatedRapidfire=true;
+
                 isActivatedKeyEvent=false; key=KEY_NONE;
             }
         }
@@ -407,7 +400,7 @@ void KeyboardHijacker::MODULE_KEYMAPPER_HIJACK()
             isActivatedKeyEvent=false; key=KEY_NONE;
         }
 
-        /*** ActivatedKeyEvent KEY to NONE And excute MACRO event ***/
+        /*** KEY to NONE And excute MACRO event ***/
         else
         {
             if(event)
@@ -439,7 +432,7 @@ void KeyboardHijacker::MODULE_KEYMAPPER_HIJACK()
             else
             {
                 for(uint8_t i=0; i<data.mappedLen; i++)
-                { 
+                {
                     Serial.print("    mappedThings[");Serial.print(i);Serial.print("] : ");
                     print8bitHex( ((uint8_t*)data.mappedThings)[i] ); Serial.println();
                 }
@@ -456,42 +449,33 @@ void KeyboardHijacker::MODULE_KEYMAPPER_HIJACK()
 
 void KeyboardHijacker::MODULE_KEYMAPPER_RAPIDFIRE()
 {
-    static int8_t msCooldown = 0;
-
-    if(msCooldown-- > 0)
+    if(!isRapidfiring)
         return;
-    else
-        msCooldown = 10;
 
+    if(numDN==0) // Rapidfire NOT EXCUTES, when no key is pressed or during MACRO events
+        queueActivatedRapidfire.clear();
 
-    static uint8_t indexRapidfire = 0;
 
     static bool isTurnPress = true;
+    static uint8_t indexRapidfire = 0;
     static int32_t keyRapidfire;
 
     if(isTurnPress)
     {
         if(queueActivatedRapidfire.empty())
-            return;
-
-
-        Keyboard.press( keyRapidfire = queueActivatedRapidfire[indexRapidfire = isUpdatedActivatedRapidfire ? (isUpdatedActivatedRapidfire=false, 0) : indexRapidfire].key );
+        {   isRapidfiring = false; return;   }
+        else
+            Keyboard.press( keyRapidfire = queueActivatedRapidfire[ indexRapidfire = isUpdatedActivatedRapidfire?(isUpdatedActivatedRapidfire=false,0):indexRapidfire ].key );
     }
     else
     {
         Keyboard.release( keyRapidfire );
 
-        indexRapidfire = (indexRapidfire + 1) % queueActivatedRapidfire.size();
+        if(queueActivatedRapidfire.empty())
+            isRapidfiring = false;
+        else
+            indexRapidfire = (indexRapidfire + 1) % queueActivatedRapidfire.size();
     }
 
     isTurnPress = !isTurnPress;
-}
-
-void KeyboardHijacker::MODULE_KEYMAPPER_SHUTDOWN_RAPIDFIRE()
-{
-    if(queueActivatedRapidfire.empty())
-        return;
-
-    queueActivatedRapidfire.clear();
-    isUpdatedActivatedRapidfire=true;
 }

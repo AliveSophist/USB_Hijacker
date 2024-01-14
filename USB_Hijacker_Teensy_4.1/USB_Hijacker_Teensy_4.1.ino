@@ -157,6 +157,12 @@ File textfile;
 #include "res_utility.h"
 #include "res_pitches.h"
 
+// Programmer can determine whether to use Serial&SD or not.
+// false : if you DO NOT WANT TO USE IT any circumstances
+bool isSerial = true, isExistSD = true;
+
+IntervalTimer IntervalTimer_per1ms;
+
 
 
 
@@ -382,8 +388,8 @@ public:
     void pressandreleaseKey                     (int32_t key);
     void pressandreleaseKeys                    (String str);
     void pressandreleaseKeys                    (std::initializer_list<int32_t> keys);
-    void pressandreleaseMultiKey                (std::initializer_list<int32_t> keys); // ex) ctrl+c, gui+r, ctrl+shift+esc
     void pressandreleaseKeys                    (int32_t* keys, int32_t len);
+    void pressandreleaseMultiKey                (std::initializer_list<int32_t> keys); // ex) ctrl+c, gui+r, ctrl+shift+esc
     void pressandreleaseMultiKey                (int32_t* keys, int32_t len); // ex) ctrl+c, gui+r, ctrl+shift+esc
 
     void randomDelayChanger                     (int32_t based, int32_t extraMax) { msBasedDelay = based; msExtraDelayMax = extraMax; }
@@ -399,25 +405,25 @@ public:
     // MODULE_KORPAD.ino
     void MODULE_KOREAN_KEYPAD_EVOLUTION         (void);
 
+    // MODULE_KEYMAPPER.ino
+    void MODULE_KEYMAPPER_INITIALIZE            (void);
+    void MODULE_KEYMAPPER_HIJACK                (void);
+    void MODULE_KEYMAPPER_RAPIDFIRE             (void);
+
     // MODULE_MACRO.ino
     void MODULE_MACRO_START_PLAYER_OR_RECORDER  (const char* fname);
+    void MODULE_MACRO_BLOCK_SEVERAL_EVENTS_WHEN_READONLY_STARTED (volatile bool *flag);
     void MODULE_MACRO_PROCEED_RECORDER          (uint8_t keycode, uint32_t delayed, bool isPressed);
     void MODULE_MACRO_END_RECORDER              (const char* filename);
     void MODULE_MACRO_PROCEED_PLAYER            (void);
     void MODULE_MACRO_END_PLAYER                (void);
     void MODULE_MACRO_CHECK_FOR_SHUTDOWN_PLAYER (void);
-    void MODULE_MACRO_BLOCK_EVENTS_WHEN_JUST_STARTED (volatile bool *flag);
     void MODULE_MACRO_MANUAL_EVENT_DETECTED     (void);
-
-    // MODULE_KEYMAPPER.ino
-    void MODULE_KEYMAPPER_INITIALIZE            (void);
-    void MODULE_KEYMAPPER_HIJACK                (void);
-    void MODULE_KEYMAPPER_RAPIDFIRE             (void);
-    void MODULE_KEYMAPPER_SHUTDOWN_RAPIDFIRE    (void);
 
     void begin()
     {
-        MODULE_KEYMAPPER_INITIALIZE();
+        if(isExistSD)
+            MODULE_KEYMAPPER_INITIALIZE();
 
         reserveSyncToggleKeyStates();
     }
@@ -434,6 +440,8 @@ namespace DarkJunction
 {
     SoftwareSerial  S3r14l (PIN_RX_TO_ESP,      PIN_TX_TO_ESP);         // 21, 20
     //              S3r14l (RX_TO_HIJACKER_PIN, TX_TO_HIJACKER_PIN);    // 12, 13
+
+    #define RESET_ACCOMPLICE()      digitalWrite(PIN_WAKEUP_ESP,HIGH); delay(100); digitalWrite(PIN_WAKEUP_ESP,LOW); delay(100);
 
 
     /***(( About, Digital Communication ))***/
@@ -455,7 +463,7 @@ namespace DarkJunction
         pinMode(PIN_BIDIRECTIONAL,OUTPUT);
 
         digitalWrite(PIN_BIDIRECTIONAL,HIGH); delay(msWrite);
-        digitalWrite(PIN_BIDIRECTIONAL,LOW); delay(1);
+        digitalWrite(PIN_BIDIRECTIONAL,LOW); delay(1);        
     }
     #define PIN_BIDIRECTIONAL_MODE_WRITE    { pinMode(PIN_BIDIRECTIONAL,OUTPUT); digitalWrite(PIN_BIDIRECTIONAL,LOW); }
     #define PIN_BIDIRECTIONAL_MODE_READ     { pinMode(PIN_BIDIRECTIONAL,INPUT); }
@@ -551,12 +559,6 @@ namespace DarkJunction
 
 
 
-/**⦓   For, COMMON   ⦔**/
-
-bool isSerial = true, isExistSD = true;  // false : if you DO NOT WANT TO USE any circumstances
-
-IntervalTimer IntervalTimer_per1ms;
-
 void setup()
 {
     /* -------------------------------------- Initializing of Teensy® 4.1's Physical Modules -------------------------------------- */
@@ -564,6 +566,7 @@ void setup()
         pinMode(PIN_LED_BUILTIN, OUTPUT);
         pinMode(PIN_WAKEUP_ESP,OUTPUT);
         randomSeed(analogRead(PIN_RANDOMSEED));
+
 
         // SERIAL CHECK
         if(isSerial)
@@ -575,9 +578,11 @@ void setup()
         }
         if(isSerial) Serial.println(F("SERIAL IS ONLINE\n"));
 
+
         // USB HOST on Teensy® 4.1
         USBHostOnTeensy.begin();
         if(isSerial) Serial.println(F("USB HOST IS ONLINE\n"));
+
 
         // SD CARD
         if(isExistSD)
@@ -587,6 +592,11 @@ void setup()
             else
             { isExistSD = false; if(isSerial) Serial.println(F("SD CARD IS NOT AVAILABLE :(\n")); }
         }
+
+
+        // ESP8266 a.k.a. ACCOMPLICE
+        RESET_ACCOMPLICE();
+
 
         // PIEZO BUZZER
         Buzzzzer::reserveBuzz   ( { NOTE_B6,0,  NOTE_E7,0   }
@@ -603,31 +613,29 @@ void setup()
     {
         // ATTACH Lamda Functions that calls when PRESS / RELEASE interrupt occurs
         KBD_PARSER.begin(
-                            [](uint8_t keycode)
+                            /*  function OnRawPress  */ [](uint8_t keycode)
                             {
-                                KBD_PARSER.KeyLogger.push(keycode);
+                                isExistWaitingEvent_Press = true;
 
                                 rawKeycode = keycode;
-
-                                isExistWaitingEvent_Press = true;
                                 numDN++;
 
-                                // REBOOT COMMAND [ KEYPAD_SLASH + KEYPAD_0 + KEYPAD_8 ]
-                                if(numDN==3)
-                                {
-                                    if( keycode==KEYCODE_KEYPAD_8 &&
-                                        (   (KBD_PARSER.KeyLogger.peek_key(1)==KEYPAD_SLASH && KBD_PARSER.KeyLogger.peek_key(2)==KEYPAD_0) ||
-                                            (KBD_PARSER.KeyLogger.peek_key(1)==KEYPAD_0     && KBD_PARSER.KeyLogger.peek_key(2)==KEYPAD_SLASH)   ) )
-                                    {
-                                        KBD_HIJACKER.releaseAllBeingHoldDownKey();
-                                        isExistWaitingEvent_Press = false;
 
-                                        pinMode(PIN_WAKEUP_ESP,OUTPUT); digitalWrite(PIN_WAKEUP_ESP,HIGH); // REBOOT HIJACKER & ACCOMPLICE TOGETHER!
-                                        isReservedReboot = true;
-                                    }
+                                // LOG physical keycode
+                                KBD_PARSER.KeyLogger.push(keycode);
+
+
+                                // REBOOT COMMAND [ KEYPAD_SLASH + KEYPAD_0 + KEYPAD_8 ] or [ KEYPAD_0 + KEYPAD_SLASH + KEYPAD_8 ]
+                                if(keycode==KEYCODE_KEYPAD_8 && numDN==3)
+                                {
+                                    if( (KBD_PARSER.KeyLogger.peek_key(1)==KEYPAD_SLASH && KBD_PARSER.KeyLogger.peek_key(2)==KEYPAD_0) ||
+                                        (KBD_PARSER.KeyLogger.peek_key(1)==KEYPAD_0     && KBD_PARSER.KeyLogger.peek_key(2)==KEYPAD_SLASH) )
+                                    {   isReservedReboot=true; isExistWaitingEvent_Press=false; return;   }
                                 }
 
-                                // MODULE_MACRO
+
+                                // MODULE_MACRO's
+                                if(isExistSD)
                                 {
                                     // if MACRO is PLAYING
                                     KBD_HIJACKER.MODULE_MACRO_MANUAL_EVENT_DETECTED();
@@ -635,10 +643,12 @@ void setup()
                                     // if MACRO is RECORDING
                                     KBD_HIJACKER.MODULE_MACRO_PROCEED_RECORDER(keycode, MILLIS_SINCE_LATEST_EVENT, true);
 
-                                    //BLOCK several events when MACRO JUST STARTED
-                                    KBD_HIJACKER.MODULE_MACRO_BLOCK_EVENTS_WHEN_JUST_STARTED(&isExistWaitingEvent_Press);
+                                    // block several events when READONLY MACRO just started
+                                    KBD_HIJACKER.MODULE_MACRO_BLOCK_SEVERAL_EVENTS_WHEN_READONLY_STARTED(&isExistWaitingEvent_Press);
                                 }
 
+
+                                // For, Debugging
                                 if(isSerial)
                                 {
                                     MEASURE_FREE_MEMORY();
@@ -647,28 +657,33 @@ void setup()
                                     Serial.println();
                                 }
                             },
-                            [](uint8_t keycode)
+                            /* function OnRawRelease */ [](uint8_t keycode)
                             {
+                                if(numDN==0) // invalid Event
+                                    return;
+
+
+                                isExistWaitingEvent_Release = true;
+
                                 rawKeycode = keycode;
+                                numDN--;
 
-                                if(numDN>0) // NO KEY DN, prevent Event
+
+                                // MODULE_MACRO's
+                                if(isExistSD)
                                 {
-                                    isExistWaitingEvent_Release = true;
-                                    numDN--;
+                                    // if MACRO is PLAYING
+                                    KBD_HIJACKER.MODULE_MACRO_MANUAL_EVENT_DETECTED();
 
-                                    // MODULE_MACRO
-                                    {
-                                        // if MACRO is PLAYING
-                                        KBD_HIJACKER.MODULE_MACRO_MANUAL_EVENT_DETECTED();
+                                    // if MACRO is RECORDING
+                                    KBD_HIJACKER.MODULE_MACRO_PROCEED_RECORDER(keycode, MILLIS_SINCE_LATEST_EVENT, false);
 
-                                        // if MACRO is RECORDING
-                                        KBD_HIJACKER.MODULE_MACRO_PROCEED_RECORDER(keycode, MILLIS_SINCE_LATEST_EVENT, false);
-
-                                        //BLOCK several events when MACRO JUST STARTED
-                                        KBD_HIJACKER.MODULE_MACRO_BLOCK_EVENTS_WHEN_JUST_STARTED(&isExistWaitingEvent_Release);
-                                    }   
+                                    // block several events when READONLY MACRO just started
+                                    KBD_HIJACKER.MODULE_MACRO_BLOCK_SEVERAL_EVENTS_WHEN_READONLY_STARTED(&isExistWaitingEvent_Release);
                                 }
 
+
+                                // For, Debugging
                                 if(isSerial)
                                 {
                                     MEASURE_FREE_MEMORY();
@@ -680,25 +695,26 @@ void setup()
                         );
         if(isSerial) Serial.println(F("KEYBOARD PARSER's INTERRUPTS HAVE BEEN CONFIGURED\n"));
 
+
         // GET READY FOR HIJACKING
         KBD_HIJACKER.begin();
         if(isSerial) Serial.println(F("KEYBOARD HIJACKER IS ON STANDBY\n"));
+
 
         // CONFIGURE 1ms INTERVAL TIMER INTERRUPT
         IntervalTimer_per1ms.begin  (
                                         []
                                         {
                                             static bool isDormancy = false;
-                                            
+
+
                                             // per1ms!
                                             {
                                                 Buzzzzer::playBuzz();
 
 
-                                                KBD_HIJACKER.MODULE_MACRO_PROCEED_PLAYER();
-
-
-                                                KBD_HIJACKER.MODULE_KEYMAPPER_RAPIDFIRE();
+                                                if(isExistSD)
+                                                    KBD_HIJACKER.MODULE_MACRO_PROCEED_PLAYER();
 
 
                                                 static int8_t countdownSyncTKS = -1;
@@ -714,12 +730,13 @@ void setup()
                                                 }
                                             }
 
-                                            /*
-                                            // per100ms!
-                                            if( !(millis()%100) ) {}
-                                            // per1000ms!
-                                            if( !(millis()%1000) ) {}
-                                            */
+
+                                            // per10ms!
+                                            if( !(millis()%10) )
+                                            {
+                                                KBD_HIJACKER.MODULE_KEYMAPPER_RAPIDFIRE();
+                                            }
+
 
                                             // per10000ms!
                                             if( !(millis()%10000) )
@@ -728,15 +745,11 @@ void setup()
 
                                                 if(isDormancy) KBD_HIJACKER.syncToggleKeyStates();
                                             }
-
-                                            if(isReservedReboot)
-                                            {
-                                                if(numDN==0 && !KBD_HIJACKER.isExistHoldingDownKey()) REBOOT();
-                                            }
                                         },
                                         1000
                                     );
         if(isSerial) Serial.println(F("1ms INTERVAL TIMER INTERRUPT HAS BEEN CONFIGURED\n"));
+
 
         if(isSerial) Serial.println(F("ALL OBJECTS ARE INITIALIZED !!\n\n\n"));
     }
@@ -751,6 +764,15 @@ void loop()
 {
     USBHostOnTeensy.Task();
 
+
+    if(isReservedReboot)
+    {
+        KBD_HIJACKER.releaseAllBeingHoldDownKey();
+        while(numDN){ delay(1); }
+        REBOOT();
+    }
+
+
     if(isExistWaitingEvent_Press)
     {
         key   = keycode_To_TeensyLayout( rawKeycode );
@@ -762,6 +784,7 @@ void loop()
         isExistWaitingEvent_Press   = false;
     }
 
+
     if(isExistWaitingEvent_Release)
     {
         key   = keycode_To_TeensyLayout( rawKeycode );
@@ -772,6 +795,7 @@ void loop()
         
         isExistWaitingEvent_Release = false;
     }
+
 
     numDN>0 ? digitalWrite(PIN_LED_BUILTIN, HIGH) : digitalWrite(PIN_LED_BUILTIN, LOW);
 }

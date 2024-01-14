@@ -5,7 +5,7 @@ void KeyboardHijacker::TRANSMIT_AFTER_HIJACK()
 
 
 
-    // LockState Keys,
+    // LockState Toggles
     if(key == KEY_NUM_LOCK || key == KEY_CAPS_LOCK || key == KEY_SCROLL_LOCK)
     {
         if(event)
@@ -23,11 +23,11 @@ void KeyboardHijacker::TRANSMIT_AFTER_HIJACK()
 
 
 
-    // HIJACKER's function Keys,
+    // HIJACKER's function Key Events,
     if(!stateNumLockToggle && numDN==3)
     {
         if( (KBD_PARSER.KeyLogger.peek_key(1)==KEYPAD_SLASH && KBD_PARSER.KeyLogger.peek_key(2)==KEYPAD_0) ||
-            (KBD_PARSER.KeyLogger.peek_key(1)==KEYPAD_0 && KBD_PARSER.KeyLogger.peek_key(2)==KEYPAD_SLASH) )
+            (KBD_PARSER.KeyLogger.peek_key(1)==KEYPAD_0     && KBD_PARSER.KeyLogger.peek_key(2)==KEYPAD_SLASH) )
         {
             #define HIJACKER_OPENS_WEBPAGE__OS_WINDOWS(URL) { pressandreleaseMultiKey({KEY_GUI,KEY_R}); delay(1000); pressandreleaseKeys(URL); delay(1000); pressandreleaseKey(KEY_ENTER); }
             #define HIJACKER_OPENS_NOTEPAD__OS_WINDOWS(STR) { pressandreleaseMultiKey({KEY_GUI,KEY_R}); delay(1000); pressandreleaseKeys("notepad"); delay(1000); pressandreleaseKey(KEY_ENTER); delay(1000); pressandreleaseKeys_LikeHuman(STR); }
@@ -42,8 +42,7 @@ void KeyboardHijacker::TRANSMIT_AFTER_HIJACK()
 
                         // WAKE UP ACCOMPLICE !
                         {
-                            digitalWrite(PIN_WAKEUP_ESP,HIGH);  delay(100);
-                            digitalWrite(PIN_WAKEUP_ESP,LOW);   delay(100);
+                            RESET_ACCOMPLICE();
                             DarkJunction::PIN_BIDIRECTIONAL_writeHIGHForXXms(1000);
                         }
 
@@ -98,11 +97,7 @@ void KeyboardHijacker::TRANSMIT_AFTER_HIJACK()
                 }
                 break;
 
-                // case KEYPAD_8:
-                // {
-                //     // REBOOT COMMAND
-                // }
-                // break;
+                // case KEYPAD_8 is REBOOT COMMAND
 
                 case KEYPAD_9:
                 {
@@ -132,11 +127,12 @@ void KeyboardHijacker::TRANSMIT_AFTER_HIJACK()
 
 
     // KEY_ESC CAN IMMEDIATELY SHUTDOWN THE CURRENTLY PLAYING MACRO
-    MODULE_MACRO_CHECK_FOR_SHUTDOWN_PLAYER();
+    if(isExistSD)
+        MODULE_MACRO_CHECK_FOR_SHUTDOWN_PLAYER();
 
 
 
-    // TTRANSMIT KEY EVENT!
+    // TRANSMIT KEY EVENT!
     if(isActivatedKeyEvent)
     {
         if(event)
@@ -159,6 +155,7 @@ void KeyboardHijacker::TRANSMIT_AFTER_HIJACK()
         }
     }
 
+    // if 'ReleaseAll' reserved at the press event will be triggered at the next release event
     if(isReservedReleaseAllBeingHoldDownKey && !event)
     {
         KBD_HIJACKER.releaseAllBeingHoldDownKey();
@@ -258,10 +255,10 @@ void KeyboardHijacker::syncToggleKeyStates() //Synchronize "SLAVE" kbd LEDs to "
 
 void KeyboardHijacker::releaseAllBeingHoldDownKey()
 {
-    //Keyboard.releaseAll();
-    
+    if(isSerial){ Serial.println(F(">>>>>>>> RELEASE ALL KEYS !!! <<<<<<<<")); }
+
     numBeingHoldDownKey = 0;
-    
+
     for(uint8_t i=0; i<255; i++)
     {
         if(stateLogical[i])
@@ -271,9 +268,8 @@ void KeyboardHijacker::releaseAllBeingHoldDownKey()
         }
     }
 
-    MODULE_KEYMAPPER_SHUTDOWN_RAPIDFIRE();
-        
-    if(isSerial){ Serial.println(F(">>>>>>>> ALL KEYs ARE RELEASED !!! <<<<<<<<")); }
+    isExistWaitingEvent_Press=false;
+    isExistWaitingEvent_Release=false;
 
     return;
 }
@@ -314,6 +310,21 @@ void KeyboardHijacker::pressandreleaseKeys(std::initializer_list<int32_t> keys)
 
     return;
 }
+void KeyboardHijacker::pressandreleaseKeys(int32_t* keys, int32_t len)
+{
+    for(int32_t i=0; i<len; i++)
+    {
+        if(keys[i] == 0)
+            continue;
+
+        Keyboard.press(keys[i]); delay(5);
+        Keyboard.release(keys[i]); delay(5);
+    }
+    
+    delay(10);
+
+    return;
+}
 void KeyboardHijacker::pressandreleaseMultiKey(std::initializer_list<int32_t> keys)
 {
     for(int32_t key : keys)
@@ -327,21 +338,6 @@ void KeyboardHijacker::pressandreleaseMultiKey(std::initializer_list<int32_t> ke
     }
     
     releaseAllBeingHoldDownKey(); delay(10);
-
-    return;
-}
-void KeyboardHijacker::pressandreleaseKeys(int32_t* keys, int32_t len)
-{
-    for(int32_t i=0; i<len; i++)
-    {
-        if(keys[i] == 0)
-            continue;
-
-        Keyboard.press(keys[i]); delay(5);
-        Keyboard.release(keys[i]); delay(5);
-    }
-    
-    delay(10);
 
     return;
 }
@@ -361,10 +357,6 @@ void KeyboardHijacker::pressandreleaseMultiKey(int32_t* keys, int32_t len)
 
     return;
 }
-
-
-
-
 
 void KeyboardHijacker::pressandreleaseKey_LikeHuman(int32_t key)
 {

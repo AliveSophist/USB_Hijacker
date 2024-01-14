@@ -717,19 +717,15 @@ void KeyboardHijacker::MODULE_KOREAN_KEYPAD_EVOLUTION()
                                                         }
                                                         else if (isExistConsonant(KorSlot0))
                                                         {
-                                                            if  (!isExistVowel(KorSlot1) && !KORPAD_isHeldDualConsonant(KorSlot1,KorSlot0))
-                                                            {
+                                                            if(!isExistVowel(KorSlot1) && !KORPAD_isHeldDualConsonant(KorSlot1,KorSlot0))
                                                                 KORPAD_enqueueKana(1);
-                                                            }
                                                         }
                                                         else if (isExistVowel(KorSlot0))
                                                         {
                                                             // Prevent enqueue DokkaebiBul errored character
                                                             // DokkaebiBul is... https://namu.wiki/w/%EB%8F%84%EA%B9%A8%EB%B9%84%EB%B6%88%20%ED%98%84%EC%83%81
-                                                            if  (isExistConsonant(KorSlot1) && isExistVowel(KorSlot2))
-                                                            {
+                                                            if(isExistConsonant(KorSlot1) && isExistVowel(KorSlot2))
                                                                 KORPAD_enqueueKana(2);
-                                                            }
                                                         }
                                                     }
                                                     if(isKorSlotUnderflowed)

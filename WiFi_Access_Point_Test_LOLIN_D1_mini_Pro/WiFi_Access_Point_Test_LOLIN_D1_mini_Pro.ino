@@ -33,9 +33,11 @@
 
 
 #define RESET_EEPROM_PIN         4
-#define RX_TO_HIJACKER_PIN      12  // D6
-#define TX_TO_HIJACKER_PIN      13  // D7
-#define PIN_BIDIRECTIONAL       15  // D8
+
+#define PIN_TO_HIJACKER_SERIAL_RX   15  // D8
+#define PIN_TO_HIJACKER_SERIAL_TX   13  // D7
+#define PIN_TO_HIJACKER_DIGITAL_RX  12  // D6
+#define PIN_TO_HIJACKER_DIGITAL_TX  14  // D5
 
 
 
@@ -189,13 +191,13 @@ namespace WIFI_CONNECTOR
 
 namespace DarkJunction
 {
-    //              S3r14l (PIN_RX_TO_ESP,      PIN_TX_TO_ESP);         // 21, 20
-    SoftwareSerial  S3r14l (RX_TO_HIJACKER_PIN, TX_TO_HIJACKER_PIN);    // 12, 13
+    //              S3r14l(PIN_TO_ESP_SERIAL_RX,        PIN_TO_ESP_SERIAL_TX);
+    SoftwareSerial  S3r14l(PIN_TO_HIJACKER_SERIAL_RX,   PIN_TO_HIJACKER_SERIAL_TX);
 
 
 
     /***(( About, Digital Communication ))***/
-    bool PIN_BIDIRECTIONAL_readForXXms(uint16_t msSearch)
+    bool readDigitalForXXms(uint16_t msSearch)
     {
         pinMode(PIN_BIDIRECTIONAL,INPUT);
 
@@ -208,7 +210,7 @@ namespace DarkJunction
 
         return false;
     }
-    void PIN_BIDIRECTIONAL_writeHIGHForXXms(uint16_t msWrite)
+    void writeHIGHForXXms(uint16_t msWrite)
     {
         pinMode(PIN_BIDIRECTIONAL,OUTPUT);
 
@@ -222,8 +224,6 @@ namespace DarkJunction
         digitalWrite(PIN_BIDIRECTIONAL,LOW); delay(msWrite);
         digitalWrite(PIN_BIDIRECTIONAL,HIGH);
     }
-    #define PIN_BIDIRECTIONAL_MODE_WRITE    { pinMode(PIN_BIDIRECTIONAL,OUTPUT); digitalWrite(PIN_BIDIRECTIONAL,LOW); }
-    #define PIN_BIDIRECTIONAL_MODE_READ     { pinMode(PIN_BIDIRECTIONAL,INPUT); }
 
 
 
@@ -238,9 +238,6 @@ namespace DarkJunction
             return false;
 
 
-        PIN_BIDIRECTIONAL_MODE_WRITE;
-
-
         while(S3r14l.available() == 0){ delay(1); }
         String strMerged = S3r14l.readStringUntil('\0');
 
@@ -249,7 +246,7 @@ namespace DarkJunction
         int indexSeparator;
         if((indexSeparator=strMerged.indexOf('|')) < 0)
         {
-            PIN_BIDIRECTIONAL_writeHIGHForXXms(5);
+            writeHIGHForXXms(5);
             download(countLeftRetry - 1);
         }
 
@@ -268,7 +265,7 @@ namespace DarkJunction
         // if invalidate, redownload
         if(crcReceived != crcCalculated)
         {
-            PIN_BIDIRECTIONAL_writeHIGHForXXms(5);
+            writeHIGHForXXms(5);
             download(countLeftRetry - 1);
         }
         else
@@ -286,12 +283,9 @@ namespace DarkJunction
             return false;
 
 
-        PIN_BIDIRECTIONAL_MODE_READ;
-
-
         uint32_t crcCalculated = CRC32::calculate(strSend.c_str(),strSend.length());
         S3r14l.println( strSend + "|" + String(crcCalculated) );
-        bool hasChecksumError = PIN_BIDIRECTIONAL_readForXXms(10);
+        bool hasChecksumError = readDigitalForXXms(10);
 
 
         Serial.println("dataToSend Data : " + strSend);
@@ -318,7 +312,7 @@ void setup()
 
     // To HIJACKER, wake me up when you need me...
     {
-        if(DarkJunction::PIN_BIDIRECTIONAL_readForXXms(2222) == false)
+        if(DarkJunction::readDigitalForXXms(2222) == false)
         {   ESP.deepSleep(0); return;   }
         else
         {   digitalWrite(LED_BUILTIN, LOW);   }
@@ -565,7 +559,7 @@ void setup()
 
     // To HIJACKER, im all ready...
     if(WIFI_CONNECTOR::isConnected)
-        DarkJunction::PIN_BIDIRECTIONAL_writeHIGHForXXms(100);
+        DarkJunction::writeHIGHForXXms(100);
     // else
     //     DarkJunction::PIN_BIDIRECTIONAL_writeLOWForXXms(100);
     Serial.println(F("ACCOMPLICE ALL READY, SIR!\n\n\n\n"));
