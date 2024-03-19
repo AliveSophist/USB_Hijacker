@@ -1,64 +1,23 @@
-#define KEYCODE_NONE    0;
-#define KEY_NONE        0;
+#define KEYCODE_NONE    0
+#define KEY_NONE        0
 
 constexpr int32_t keycode_To_TeensyLayout(uint8_t keycode)
 {
-    return  (keycode <= 0x65)                       ? ( keycode | 0xF000 ) : 
-            (0x67 <= keycode && keycode <= 0x6E)    ? ( (1 << (keycode-0x67)) | 0xE000 ) :  // MODIFIERKEY_
-            (0x81 <= keycode && keycode <= 0x83)    ? ( keycode | 0xE200 ) :                // KEY_SYSTEM_
-            (0xB0 <= keycode && keycode <= 0xEA)    ? ( keycode | 0xE400 ) :                // KEY_MEDIA_
-            (keycode == 0x90)                       ? ( MODIFIERKEY_RIGHT_ALT ) :           // KEY_KORENG
-            KEY_NONE;
-    
-/*  if      (keycode <= 0x65)
-        return ( keycode | 0xF000 );
-
-    // MODIFIERKEY_
-    else if (0x67 <= keycode && keycode <= 0x6E)
-        return ( (1 << (keycode-0x67)) | 0xE000 );
-
-    // KEY_SYSTEM_
-    else if (0x81 <= keycode && keycode <= 0x83)
-        return ( keycode | 0xE200 );
-
-    // KEY_MEDIA_
-    else if (0xB0 <= keycode && keycode <= 0xEA)
-        return ( keycode | 0xE400 );
-
-    // KEY_KORENG
-    else if (keycode == 0x90)
-        return ( MODIFIERKEY_RIGHT_ALT );
-
-    return 0;  */
+    return  (keycode <= 0x65)                       ?   ( keycode | 0xF000 ) :
+            (0x67 <= keycode && keycode <= 0x6E)    ?   ( (1 << (keycode-0x67)) | 0xE000 ) :    // MODIFIERKEY_
+            (0x81 <= keycode && keycode <= 0x83)    ?   ( keycode | 0xE200 ) :                  // KEY_SYSTEM_
+            (0xB0 <= keycode && keycode <= 0xEA)    ?   ( keycode | 0xE400 ) :                  // KEY_MEDIA_
+            (keycode == 0x90)                       ?   ( MODIFIERKEY_RIGHT_ALT ) :             // KEY_KORENG
+                                                        ( KEY_NONE );
 }
-
 constexpr uint8_t TeensyLayout_To_keycode(int32_t key)
 {
-    return  (0xF000 <= key && key <= 0xF065)        ? ( key & ~(0xF000) ) : 
-            (0xE001 <= key && key <= 0xE080)        ? ( __builtin_ctz(key) + 0x67 ) :   // MODIFIERKEY_
-            (0xE281 <= key && key <= 0xE283)        ? ( key & ~(0xE200) ) :             // KEY_SYSTEM_
-            (0xE4B0 <= key && key <= 0xE4EA)        ? ( key & ~(0xE400) ) :             // KEY_MEDIA_
-            KEY_NONE;
-
-/*  if      (0xF000 <= key && key <= 0xF065)
-        return ( key & ~(0xF000) );
-
-    // MODIFIERKEY_
-    else if (0xE001 <= key && key <= 0xE080)
-        return ( __builtin_ctz(key) + 0x67 );
-
-    // KEY_SYSTEM_
-    else if (0xE281 <= key && key <= 0xE283)
-        return ( key & ~(0xE200) );
-
-    // KEY_MEDIA_
-    else if (0xE4B0 <= key && key <= 0xE4EA)
-        return ( key & ~(0xE400) );
-
-    return 0;  */
+    return  (0xF000 <= key && key <= 0xF065)        ?   ( key & ~(0xF000) ) :
+            (0xE001 <= key && key <= 0xE080)        ?   ( __builtin_ctz(key) + 0x67 ) :         // MODIFIERKEY_
+            (0xE281 <= key && key <= 0xE283)        ?   ( key & ~(0xE200) ) :                   // KEY_SYSTEM_
+            (0xE4B0 <= key && key <= 0xE4EA)        ?   ( key & ~(0xE400) ) :                   // KEY_MEDIA_
+                                                        ( KEY_NONE );
 }
-
-
 
 
 
@@ -113,20 +72,20 @@ constexpr uint8_t TeensyLayout_To_keycode(int32_t key)
 #define KEYCODE_KEY_BACKSPACE       0x2A
 #define KEYCODE_KEY_TAB             0x2B
 #define KEYCODE_KEY_SPACE           0x2C
-#define KEYCODE_KEY_MINUS           0x2D //   '-'
-#define KEYCODE_KEY_EQUAL           0x2E //   '='
-#define KEYCODE_KEY_LEFT_BRACE      0x2F //   '['
-#define KEYCODE_KEY_RIGHT_BRACE     0x30 //   ']'
-#define KEYCODE_KEY_BACKSLASH       0x31 //   '\'
-#define KEYCODE_KEY_NON_US_NUM      0x32 //   Don't Know 1
-#define KEYCODE_KEY_SEMICOLON       0x33 //   ';'
-#define KEYCODE_KEY_QUOTE           0x34 //   '''
-#define KEYCODE_KEY_TILDE           0x35 //   '`'
-#define KEYCODE_KEY_COMMA           0x36 //   ','
-#define KEYCODE_KEY_PERIOD          0x37 //   '.'
-#define KEYCODE_KEY_SLASH           0x38 //   '/'
+#define KEYCODE_KEY_MINUS           0x2D // '-'
+#define KEYCODE_KEY_EQUAL           0x2E // '='
+#define KEYCODE_KEY_LEFT_BRACE      0x2F // '['
+#define KEYCODE_KEY_RIGHT_BRACE     0x30 // ']'
+#define KEYCODE_KEY_BACKSLASH       0x31 // '\'
+#define KEYCODE_KEY_NON_US_NUM      0x32 // Don't Know 1
+#define KEYCODE_KEY_SEMICOLON       0x33 // ';'
+#define KEYCODE_KEY_QUOTE           0x34 // '''
+#define KEYCODE_KEY_TILDE           0x35 // '`'
+#define KEYCODE_KEY_COMMA           0x36 // ','
+#define KEYCODE_KEY_PERIOD          0x37 // '.'
+#define KEYCODE_KEY_SLASH           0x38 // '/'
 #define KEYCODE_KEY_CAPS_LOCK       0x39
-#define KEYCODE_KEY_CAPSLOCK        0x39 //   Alias
+#define KEYCODE_KEY_CAPSLOCK        0x39 // Alias
 #define KEYCODE_KEY_F1              0x3A
 #define KEYCODE_KEY_F2              0x3B
 #define KEYCODE_KEY_F3              0x3C
@@ -141,7 +100,7 @@ constexpr uint8_t TeensyLayout_To_keycode(int32_t key)
 #define KEYCODE_KEY_F12             0x45
 #define KEYCODE_KEY_PRINTSCREEN     0x46
 #define KEYCODE_KEY_SCROLL_LOCK     0x47
-#define KEYCODE_KEY_SCROLLLOCK      0x47 //   Alias
+#define KEYCODE_KEY_SCROLLLOCK      0x47 // Alias
 #define KEYCODE_KEY_PAUSE           0x48
 #define KEYCODE_KEY_INSERT          0x49
 #define KEYCODE_KEY_HOME            0x4A
@@ -150,19 +109,23 @@ constexpr uint8_t TeensyLayout_To_keycode(int32_t key)
 #define KEYCODE_KEY_END             0x4D
 #define KEYCODE_KEY_PAGE_DOWN       0x4E
 #define KEYCODE_KEY_RIGHT_ARROW     0x4F
+#define KEYCODE_KEY_RIGHT           0x4F // Alias
 #define KEYCODE_KEY_LEFT_ARROW      0x50
+#define KEYCODE_KEY_LEFT            0x50 // Alias
 #define KEYCODE_KEY_DOWN_ARROW      0x51
+#define KEYCODE_KEY_DOWN            0x51 // Alias
 #define KEYCODE_KEY_UP_ARROW        0x52
-#define KEYCODE_KEY_RIGHT           0x4F //   Alias
-#define KEYCODE_KEY_LEFT            0x50 //   Alias
-#define KEYCODE_KEY_DOWN            0x51 //   Alias
-#define KEYCODE_KEY_UP              0x52 //   Alias
+#define KEYCODE_KEY_UP              0x52 // Alias
 #define KEYCODE_KEY_NUM_LOCK        0x53
-#define KEYCODE_KEY_NUMLOCK         0x53 //   Alias
-#define KEYCODE_KEYPAD_DIVIDE       0x54 //   '/'
-#define KEYCODE_KEYPAD_MULTIPLY     0x55 //   '*'
-#define KEYCODE_KEYPAD_SUBTRACT     0x56 //   '-'
-#define KEYCODE_KEYPAD_ADD          0x57 //   '+'
+#define KEYCODE_KEY_NUMLOCK         0x53 // Alias
+#define KEYCODE_KEYPAD_DIVIDE       0x54 // '/'
+#define KEYCODE_KEYPAD_SLASH        0x54 // Alias
+#define KEYCODE_KEYPAD_MULTIPLY     0x55 // '*'
+#define KEYCODE_KEYPAD_ASTERIX      0x55 // Alias
+#define KEYCODE_KEYPAD_SUBTRACT     0x56 // '-'
+#define KEYCODE_KEYPAD_MINUS        0x56 // Alias
+#define KEYCODE_KEYPAD_ADD          0x57 // '+'
+#define KEYCODE_KEYPAD_PLUS         0x57 // Alias
 #define KEYCODE_KEYPAD_ENTER        0x58
 #define KEYCODE_KEYPAD_1            0x59
 #define KEYCODE_KEYPAD_2            0x5A
@@ -174,31 +137,30 @@ constexpr uint8_t TeensyLayout_To_keycode(int32_t key)
 #define KEYCODE_KEYPAD_8            0x60
 #define KEYCODE_KEYPAD_9            0x61
 #define KEYCODE_KEYPAD_0            0x62
-#define KEYCODE_KEYPAD_DOT          0x63 //   '.'
-#define KEYCODE_KEY_NON_US          0x64 //   Don't Know 2
+#define KEYCODE_KEYPAD_DOT          0x63 // '.'
+#define KEYCODE_KEYPAD_PERIOD       0x63 // Alias
+#define KEYCODE_KEY_NON_US          0x64 // Don't Know 2
 #define KEYCODE_KEY_APPLICATION     0x65
-#define KEYCODE_KEY_CONTEXT         0x65 //   Alias
-#define KEYCODE_KEY_MENU            0x65 //   Alias
+#define KEYCODE_KEY_CONTEXT         0x65 // Alias
+#define KEYCODE_KEY_MENU            0x65 // Alias
 
 #define KEYCODE_KEY_CTRL            0x67
 #define KEYCODE_KEY_SHIFT           0x68
 #define KEYCODE_KEY_ALT             0x69
 #define KEYCODE_KEY_GUI             0x6A
-#define KEYCODE_KEY_WINDOWS         0x6A //   Alias
-#define KEYCODE_KEY_LEFT_CTRL       0x67 //   Alias
-#define KEYCODE_KEY_LEFT_SHIFT      0x68 //   Alias
-#define KEYCODE_KEY_LEFT_ALT        0x69 //   Alias
-#define KEYCODE_KEY_LEFT_GUI        0x6A //   Alias
-#define KEYCODE_KEY_LEFT_WINDOWS    0x6A //   Alias
+#define KEYCODE_KEY_WINDOWS         0x6A // Alias
+#define KEYCODE_KEY_LEFT_CTRL       0x67 // Alias
+#define KEYCODE_KEY_LEFT_SHIFT      0x68 // Alias
+#define KEYCODE_KEY_LEFT_ALT        0x69 // Alias
+#define KEYCODE_KEY_LEFT_GUI        0x6A // Alias
+#define KEYCODE_KEY_LEFT_WINDOWS    0x6A // Alias
 #define KEYCODE_KEY_RIGHT_CTRL      0x6B
 #define KEYCODE_KEY_RIGHT_SHIFT     0x6C
 #define KEYCODE_KEY_RIGHT_ALT       0x6D
 #define KEYCODE_KEY_RIGHT_GUI       0x6E
-#define KEYCODE_KEY_RIGHT_WINDOWS   0x6E //   Alias
+#define KEYCODE_KEY_RIGHT_WINDOWS   0x6E // Alias
 
-#define KEYCODE_KEY_KORENG          0x90 //   KOR-ENG Swap
-
-
+#define KEYCODE_KEY_KORENG          0x90 // KOR-ENG Swap
 
 
 

@@ -1,3 +1,13 @@
+#define DISABLE_INTERRUPTS cli()
+#define ENABLE_INTERRUPTS sei()
+
+
+
+bool isReservedReboot = false;
+void REBOOT() { SCB_AIRCR = 0x05FA0004; asm volatile ("dsb"); while(true){} }
+
+
+
 extern unsigned long _heap_end; //extern char *__brkval;
 void MEASURE_FREE_MEMORY() // for Teensy® 4.1 =32bit!!
 {
@@ -7,29 +17,22 @@ void MEASURE_FREE_MEMORY() // for Teensy® 4.1 =32bit!!
     Serial.print("\nNow Measured FreeMemory : "); Serial.println(freeMemory); //=__brkval;
 }
 
+
+
 volatile uint32_t msMeasuredForDebugging;
-void MEASURE_MILLIS_START_POINT()
-{
-    msMeasuredForDebugging=millis();
-}
-void MEASURE_MILLIS_END_POINT()
-{
-    Serial.print(F("\nMeasured Time : ")); Serial.println(millis()-msMeasuredForDebugging);
-}
-
-void print8bitHex(uint8_t hexcode)
-{
-    Serial.print("0x");
-    Serial.print((hexcode<16) ? "0" : ""); Serial.print(hexcode, HEX);
-}
-
-void print8bitBin(uint8_t bincode)
-{
-    Serial.print("0b");
-    for(int i=7; i>=0;i--) Serial.print( (bincode & (1<<i)) ? '1' : '0' );
-}
+#define MEASURE_MILLIS_START_POINT()    { msMeasuredForDebugging=millis(); }
+#define MEASURE_MILLIS_END_POINT()      { Serial.println("\n#\nMeasured Time : " + String(millis()-msMeasuredForDebugging)); Serial.println("#\n"); }
 
 
+
+#define isEquals(STRX,STRY)     (strcmp(STRX,STRY)==0)
+#define fillWith(STRX,STRY)     strcpy(STRX,STRY)
+#define isContains(STR,CHSTR)   ((STR).indexOf(CHSTR)>-1)
+
+
+
+void print8bitHex(uint8_t hexcode)      {   Serial.print("0x"); Serial.print((hexcode<16) ? "0" : ""); Serial.print(hexcode, HEX);   }
+void print8bitBin(uint8_t bincode)      {   Serial.print("0b"); for(int i=7; i>=0;i--) Serial.print( (bincode & (1<<i)) ? '1' : '0' );   }
 
 
 
@@ -57,7 +60,6 @@ String trimming_str(String str)
     
     return "0"; // Invalid str !!
 }
-
 String trimming_num(String str)
 {
     int8_t index_Num = -1;
@@ -82,7 +84,6 @@ String trimming_num(String str)
     
     return "0"; // Invalid str !!
 }
-
 String trimming_keycodeStr(String str)
 {
     str = str.substring(str.indexOf("KEY"));
@@ -99,8 +100,6 @@ String trimming_keycodeStr(String str)
     
     return str.substring(0,end_num);
 }
-
-
 
 
 
@@ -125,8 +124,7 @@ uint32_t StringDec_To_uint32_t(String str)
     }
     return x;
 }
-
-uint8_t StringHex_To_uint8_t(String str) 
+uint8_t StringHex_To_uint8_t(String str)
 {
     str = str.substring(str.indexOf("0X"));
     
@@ -139,13 +137,17 @@ uint8_t StringHex_To_uint8_t(String str)
     {
         char c = *s;
         
-        if ('0' <= c && c <= '9'){
+        if  ('0' <= c && c <= '9'){
             x *= 16;
             x += c - '0'; 
-        } else if ('A' <= c && c <= 'F'){
+        }
+        else
+        if  ('A' <= c && c <= 'F'){
             x *= 16;
             x += (c - 'A')+10;
-        } else if ('a' <= c && c <= 'f'){
+        }
+        else
+        if  ('a' <= c && c <= 'f'){
             x *= 16;
             x += (c - 'a')+10;
         }
@@ -156,6 +158,8 @@ uint8_t StringHex_To_uint8_t(String str)
     
     return x;
 }
+
+
 
 uint8_t keycodeStr_To_uint8_t(String str)
 {
@@ -328,7 +332,6 @@ uint8_t keycodeStr_To_uint8_t(String str)
 
     return MAP_keycodeStr[ trimming_keycodeStr(str) ];
 }
-
 uint8_t String_To_keycode(String str)
 {
     if (str.indexOf("0X") > -1)

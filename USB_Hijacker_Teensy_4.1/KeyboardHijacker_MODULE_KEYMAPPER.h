@@ -1,4 +1,6 @@
 
+#include "KeyboardHijacker.h"
+
 struct MappedData
 {
     uint8_t stateNCS_CSAG;
@@ -29,22 +31,21 @@ struct RapidfireEvent
 };
 std::vector<RapidfireEvent> queueActivatedRapidfire;
 bool isUpdatedActivatedRapidfire = false;
-
 bool isRapidfiring = false;
 
-
+const char MAPPER[] PROGMEM = "MAPPER.TXT";
 
 
 
 void KeyboardHijacker::MODULE_KEYMAPPER_INITIALIZE()
 {
-    if(!SD.exists("MAPPER.TXT")) // MAPPER.TXT not exists, Create blank textfile, then skip mapping
-    {   textfile = SD.open("MAPPER.TXT",FILE_WRITE); textfile.close(); return;   }
+    if(!SD.exists(MAPPER)) // MAPPER.TXT not exists, Create blank textfile, then skip mapping
+    {   textfile = SD.open(MAPPER, FILE_WRITE); textfile.close(); return;   }
     else
-        textfile = SD.open("MAPPER.TXT");
+        textfile = SD.open(MAPPER);
 
 
-    if(isSerial){ Serial.println("MODULE_KEYMAPPER_INITIALIZE START\n"); }
+    if(isDEBUG){ Serial.println("MODULE_KEYMAPPER_INITIALIZE START\n"); }
 
 
     while(textfile.available())
@@ -135,7 +136,7 @@ void KeyboardHijacker::MODULE_KEYMAPPER_INITIALIZE()
                 // When SYNTAX ERROR occured, Go back to 'while'
                 if(index_Start < 0 || index_Start >= index_End)
                 { 
-                    if(isSerial) Serial.println("\n!!! SYNTAX ERROR !!!");
+                    if(isDEBUG) Serial.println("\n!!! SYNTAX ERROR !!!");
 
                     continue;
                 }
@@ -151,7 +152,7 @@ void KeyboardHijacker::MODULE_KEYMAPPER_INITIALIZE()
                 data.mappedLen = 0;
                 data.mappedThings = mappedFilename;
 
-                if(isSerial) 
+                if(isDEBUG) 
                 {
                     Serial.print("MAPPED keycode : ");
                     print8bitHex(mapKey); Serial.println();
@@ -212,8 +213,7 @@ void KeyboardHijacker::MODULE_KEYMAPPER_INITIALIZE()
                         isRequiredCleanse = true;
                     else
                     {
-                        auto isAlreadyExist =   [&mappedLen, &mappedKeycodes](uint8_t keycode)
-                                                { return std::find(mappedKeycodes, mappedKeycodes+mappedLen, keycode) != mappedKeycodes+mappedLen; };
+                        auto isAlreadyExist = [&mappedLen, &mappedKeycodes](uint8_t keycode){ return std::find(mappedKeycodes, mappedKeycodes+mappedLen, keycode) != mappedKeycodes+mappedLen; };
                         isRequiredCleanse =     !(
                                                     (stateNCS_CSAG & MASK_CTRL ? isAlreadyExist(KEYCODE_KEY_LEFT_CTRL) : true) &&
                                                     (stateNCS_CSAG & MASK_SHIFT? isAlreadyExist(KEYCODE_KEY_LEFT_SHIFT): true) &&
@@ -237,7 +237,7 @@ void KeyboardHijacker::MODULE_KEYMAPPER_INITIALIZE()
                 // When SYNTAX ERROR occured, Go next line
                 if(mappedKeycodes==NULL)
                 {
-                    if(isSerial) Serial.println("\n!!! SYNTAX ERROR !!!"); 
+                    if(isDEBUG) Serial.println("\n!!! SYNTAX ERROR !!!"); 
 
                     continue;
                 }
@@ -251,7 +251,7 @@ void KeyboardHijacker::MODULE_KEYMAPPER_INITIALIZE()
                 if((stateNCS_CSAG & 0b00001111) == 0) // only One key to One key EVENT can activate rapidfire
                     data.isRequiredRapidfire = isRequiredRapidfire;
 
-                if(isSerial) 
+                if(isDEBUG) 
                 {
                     Serial.print("MAPPED keycode : ");
                     print8bitHex(mapKey); Serial.println();
@@ -283,8 +283,10 @@ void KeyboardHijacker::MODULE_KEYMAPPER_INITIALIZE()
     
     textfile.close();
     
-    if(isSerial){ Serial.println("MODULE_KEYMAPPER_INITIALIZE END\n"); }
+    if(isDEBUG){ Serial.println("MODULE_KEYMAPPER_INITIALIZE END\n"); }
 }
+
+
 
 void KeyboardHijacker::MODULE_KEYMAPPER_HIJACK()
 {
@@ -410,7 +412,7 @@ void KeyboardHijacker::MODULE_KEYMAPPER_HIJACK()
         }
 
 
-        if(isSerial)
+        if(isDEBUG)
         {
             Serial.println();
             Serial.println("******************************************");
@@ -446,6 +448,8 @@ void KeyboardHijacker::MODULE_KEYMAPPER_HIJACK()
         break;
     }
 }
+
+
 
 void KeyboardHijacker::MODULE_KEYMAPPER_RAPIDFIRE()
 {

@@ -1,4 +1,6 @@
 
+#include "KeyboardHijacker.h"
+
 bool isMacroRecording   = false;
 bool isMacroPlaying     = false;
 
@@ -13,6 +15,22 @@ std::list<String> QUEUE_NOW_MINI_MACRO;
 
 
 
+void MODULE_MACRO_PRINT(const char* filename) // For, Debugging
+{
+    textfile = SD.open(filename);
+    
+    Serial.println();
+    Serial.println("\n++++++++++++++++++++++[ Now Printing ]++++++++++++++++++++++");
+    while(textfile.available())
+    {
+        String line = textfile.readStringUntil('\n');
+        Serial.println(line);
+    }
+    Serial.println("++++++++++++++++++++++++[ Complete ]++++++++++++++++++++++++\n");
+
+    textfile.close();
+}
+
 
 
 void KeyboardHijacker::MODULE_MACRO_START_PLAYER_OR_RECORDER(const char* fname)
@@ -21,8 +39,8 @@ void KeyboardHijacker::MODULE_MACRO_START_PLAYER_OR_RECORDER(const char* fname)
         return;
     if(isMacroPlaying)
         return;
-    
-    
+
+
     char filename[strlen(fname)+6] = ""; strcpy(filename,fname);
     bool isREADONLY=true;
 
@@ -30,7 +48,7 @@ void KeyboardHijacker::MODULE_MACRO_START_PLAYER_OR_RECORDER(const char* fname)
     //"_R.TXT" file is READONLY, it do not use recording function.
     if(String(filename).indexOf("_R") < 0)
         strcat(filename,"_R");
-        
+
     strcat(filename,".TXT");
 
     // CHECK READONLY
@@ -40,7 +58,7 @@ void KeyboardHijacker::MODULE_MACRO_START_PLAYER_OR_RECORDER(const char* fname)
 
 
     // there is a difference in START TRIGGER between READONLY and NON-READONLY
-    // if READONLY, START TRIGGER is pressed event. (IMMEDIATELY! without release event)
+    // if READONLY, START TRIGGER is pressed event. (IMMEDIATELY! before release event)
     // or NOT,      START TRIGGER is release event. (to select "PLAY" or "RECORD" based on the msPressed)
     uint32_t msPressed = 0;
     if(isREADONLY)
@@ -49,41 +67,50 @@ void KeyboardHijacker::MODULE_MACRO_START_PLAYER_OR_RECORDER(const char* fname)
         while(numDN){ delay(1); msPressed++; }
 
 
-    // START PLAYER
-    if(isREADONLY||msPressed<1600)
-    {
-        if(!SD.exists(filename)) // invalid file
-        {   if(isSerial) Serial.println("\n!!! MODULE_MACRO_PLAYER_START MISFIRE !!! FILE MISSING !!!"); return;   }
-
-
-        if(isSerial) MODULE_MACRO_PRINT(filename); // For, Debugging
-
-        textfile = SD.open(filename);
-
-        isMacroPlaying=true; numPlayed=0; msLeftUntilNextMacro=0;
-        MAP_MINI_MACRO.clear();
-        if(isSerial) Serial.println("MODULE_MACRO_PLAYER_START");
-    }
-    
     // START RECORDER
-    else
+    if(!isREADONLY && msPressed>1000)
     {
         //reset file
-        if(SD.exists(filename)) SD.remove(filename);
+        if( SD.exists(filename) )
+            SD.remove(filename);
         textfile = SD.open(filename,FILE_WRITE);
 
         Buzzzzer::reserveBuzz   ( { NOTE_E5,0,  NOTE_G5,0,  NOTE_E6,0,  NOTE_C6,0,  NOTE_D6,0,  NOTE_G6 }
                                 , { 170,20,     170,20,     170,20,     170,20,     170,20,     200     } );
 
         isMacroRecording=true; numRecorded=0;
-        if(isSerial) Serial.println("MODULE_MACRO_RECORDER_START");
+        if(isDEBUG) Serial.println("MODULE_MACRO_RECORDER_START");
+    }
+
+    // START PLAYER
+    else
+    {
+        if(!SD.exists(filename)){ // invalid file
+            if(isDEBUG) Serial.println("\n!!! MODULE_MACRO_PLAYER_START MISFIRE !!! FILE MISSING !!!");
+            return;
+        }
+
+
+        if(isDEBUG) MODULE_MACRO_PRINT(filename); // For, Debugging
+
+        textfile = SD.open(filename);
+
+        isMacroPlaying=true; numPlayed=0; msLeftUntilNextMacro=0; MAP_MINI_MACRO.clear();
+        if(isDEBUG) Serial.println("MODULE_MACRO_PLAYER_START");
     }
 
 
     // PREVENT entanglement of KEY states
     KBD_HIJACKER.releaseAllBeingHoldDownKey();
 }
+void KeyboardHijacker::MODULE_MACRO_MANUAL_EVENT_DETECTED()
+{
+    if(!isMacroPlaying)
+        return;
 
+
+    isEventbyMacro=false;
+}
 void KeyboardHijacker::MODULE_MACRO_BLOCK_SEVERAL_EVENTS_WHEN_READONLY_STARTED(volatile bool *flag)
 {
     if(!isReadonlyStarted)
@@ -95,8 +122,6 @@ void KeyboardHijacker::MODULE_MACRO_BLOCK_SEVERAL_EVENTS_WHEN_READONLY_STARTED(v
     if(numDN == 0)
         isReadonlyStarted = false;
 }
-
-
 
 
 
@@ -118,7 +143,7 @@ void KeyboardHijacker::MODULE_MACRO_PROCEED_RECORDER(uint8_t keycode, uint32_t d
     if(numRecorded!=0)
     {
         textfile.print(String(delayed, DEC)); textfile.println("ms");
-        if(isSerial) Serial.println("MODULE_MACRO_REC_DELAY");
+        if(isDEBUG) Serial.println("MODULE_MACRO_REC_DELAY");
         numRecorded++;
     }
 
@@ -126,80 +151,51 @@ void KeyboardHijacker::MODULE_MACRO_PROCEED_RECORDER(uint8_t keycode, uint32_t d
     // RECORD EVENT
     String strDNUP = isPressed ? "DN" : "UP";
     textfile.print(strDNUP+" 0x"); if(keycode<16)textfile.print('0'); textfile.println(String(keycode, HEX));
-    if(isSerial) Serial.println("MODULE_MACRO_REC_"+strDNUP+"KEY");
+    if(isDEBUG) Serial.println("MODULE_MACRO_REC_"+strDNUP+"KEY");
     numRecorded++;
 }
-
 void KeyboardHijacker::MODULE_MACRO_END_RECORDER(const char* filename)
 {
-    textfile.close();
-
-    File bakfile;
-    uint32_t numValidLine=0;
+    if(!isMacroRecording)
+        return;
 
 
-    //Copy textfile to bakfile
+    textfile.close(); // file saved
+
+
+    // make bakfile for excluding the end sequences, then replace the original
     {
-        //reset file
-        if(SD.exists("temp.bak")) SD.remove("temp.bak");
-
-        bakfile = SD.open("temp.bak",FILE_WRITE);
         textfile = SD.open(filename);
-    
-        uint32_t i=0;
-        while(textfile.available())
-        {
-            String line = textfile.readStringUntil('\n');
-            bakfile.println(line.indexOf('\r') > -1 ? line.substring(0,line.lastIndexOf('\r')) : line);
-    
-    
-            uint8_t lineKeycode = String_To_keycode(line.toUpperCase());
-            if(lineKeycode)
+
+        if( SD.exists("temp.bak") )
+            SD.remove("temp.bak");
+        File bakfile = SD.open("temp.bak",FILE_WRITE);
+
+        if(numRecorded > 8) {
+            for(uint32_t i=0; i<numRecorded-8; i++) // exclude the end sequences
             {
-                if(lineKeycode == KEYCODE_KEY_NUM_LOCK)
-                {
-                    if(numValidLine == 0)
-                        numValidLine = i;
-                }
-                else
-                    numValidLine = 0;
+                String line = textfile.readStringUntil('\n');
+                bakfile.println(line.indexOf('\r') > -1 ? line.substring(0,line.lastIndexOf('\r')) : line);
             }
-            
-            i++;
         }
-        textfile.close();
+
         bakfile.close();
+        textfile.close();
+
         SD.remove(filename);
+        SD.rename("temp.bak", filename);
     }
 
 
-    //Copy bakfile to textfile, except for the MODULE_RECORDER's shutdown signal (KEY_NUMLOCK x3 press&release)
-    {
-        bakfile = SD.open("temp.bak");
-        textfile = SD.open(filename,FILE_WRITE);
-    
-        for(uint32_t i=0; i<numValidLine-1; i++) // numValidLine-1 meaning except last DELAY
-        {
-            String line = bakfile.readStringUntil('\n');
-            textfile.println(line.indexOf('\r') > -1 ? line.substring(0,line.lastIndexOf('\r')) : line);
-        }
-        bakfile.close();
-        textfile.close();
-        SD.remove("temp.bak");
-    }
-
-    
     // PREVENT entanglement of KEY states
     KBD_HIJACKER.releaseAllBeingHoldDownKey(); delay(10);
-                                        
+
     Buzzzzer::reserveBuzz   ( { NOTE_A4,    NOTE_E4,    NOTE_A3,0,  NOTE_A4,    NOTE_E4,    NOTE_A3,0,  NOTE_A4,    NOTE_E4,    NOTE_A3 }
                             , { 80,         80,         80,150,     80,         80,         80,150,     80,         80,         80      } );
     
-    if(isSerial){ MODULE_MACRO_PRINT(filename); Serial.print("MODULE_MACRO_END_RECORDER    RECORDED LINES : "); Serial.println(numRecorded); }
+    if(isDEBUG){ MODULE_MACRO_PRINT(filename); Serial.print("MODULE_MACRO_END_RECORDER    RECORDED LINES : "); Serial.println(numRecorded); }
     isMacroRecording=false;
 }
-
-
 
 
 
@@ -245,33 +241,33 @@ void KeyboardHijacker::MODULE_MACRO_PROCEED_PLAYER()
 
 
         // DN and UP function by Lambda
-        auto func_DN =  [](uint8_t keycode)
-                        {
-                            if(isSerial){ Serial.print(F("(*MACRO EVENT*) DN ")); KBD_HIJACKER.printKeyInfo(keycode); Serial.println(); }
-                            KBD_PARSER.KeyLogger.push(keycode);
+        auto func_DN = [](uint8_t keycode)
+        {
+            if(isDEBUG){ Serial.print(F("(*MACRO EVENT*) DN ")); KBD_HIJACKER.printKeyInfo(keycode); Serial.println(); }
+            KBD_PARSER.KeyLogger.push(keycode);
 
-                            // TRANSMIT_AFTER_HIJACK By Macro
-                            key   = keycode_To_TeensyLayout(keycode);
-                            event = true;
-                            msLatestEventCame = msLatestEventPressed = millis();
+            // TRANSMIT_AFTER_HIJACK By Macro
+            key   = keycode_To_TeensyLayout(keycode);
+            event = true;
+            msLatestEventCame = msLatestEventPressed = millis();
 
-                            KBD_HIJACKER.TRANSMIT_AFTER_HIJACK();
-                        };
-        auto func_UP =  [](uint8_t keycode)
-                        {
-                            if(isSerial){ Serial.print(F("(*MACRO EVENT*) UP ")); KBD_HIJACKER.printKeyInfo(keycode); Serial.print(F("         Pressed Time : ")); Serial.println(MILLIS_FROM_PRESSED_UNTIL_RELEASE); }
+            KBD_HIJACKER.TRANSMIT_AFTER_HIJACK();
+        };
+        auto func_UP = [](uint8_t keycode)
+        {
+            if(isDEBUG){ Serial.print(F("(*MACRO EVENT*) UP ")); KBD_HIJACKER.printKeyInfo(keycode); Serial.print(F("         Pressed Time : ")); Serial.println(MILLIS_FROM_PRESSED_UNTIL_RELEASE); }
 
-                            // TRANSMIT_AFTER_HIJACK By Macro
-                            key   = keycode_To_TeensyLayout(keycode);
-                            event = false;
-                            msLatestEventCame = millis();
+            // TRANSMIT_AFTER_HIJACK By Macro
+            key   = keycode_To_TeensyLayout(keycode);
+            event = false;
+            msLatestEventCame = millis();
 
-                            KBD_HIJACKER.TRANSMIT_AFTER_HIJACK();
-                        };
+            KBD_HIJACKER.TRANSMIT_AFTER_HIJACK();
+        };
 
 
         // Analyze MacroEvents
-        if(-1 < readline.indexOf("DNUP"))
+        if  (-1 < readline.indexOf("DNUP"))
         {
             uint8_t keycode = String_To_keycode(readline);
             
@@ -286,7 +282,8 @@ void KeyboardHijacker::MODULE_MACRO_PROCEED_PLAYER()
 
             continue;
         }
-        else if(-1 < readline.indexOf("DN"))
+        else
+        if  (-1 < readline.indexOf("DN"))
         {
             uint8_t keycode = String_To_keycode(readline);
             
@@ -300,7 +297,8 @@ void KeyboardHijacker::MODULE_MACRO_PROCEED_PLAYER()
 
             continue;
         }
-        else if(-1 < readline.indexOf("UP"))
+        else
+        if  (-1 < readline.indexOf("UP"))
         {
             uint8_t keycode = String_To_keycode(readline);
             Serial.println();
@@ -315,7 +313,8 @@ void KeyboardHijacker::MODULE_MACRO_PROCEED_PLAYER()
 
             continue;
         }
-        else if (-1 < readline.indexOf("TY"))
+        else
+        if  (-1 < readline.indexOf("TY"))
         {
             int32_t index_Start = readline.indexOf("\"");
             int32_t index_End = readline.lastIndexOf("\"");
@@ -325,13 +324,14 @@ void KeyboardHijacker::MODULE_MACRO_PROCEED_PLAYER()
 
             KBD_HIJACKER.pressandreleaseKeys(strTyping);
 
-            if(isSerial){ Serial.print(F("\n(*MACRO EVENT*) TYPE : ")); Serial.println(strTyping); }
+            if(isDEBUG){ Serial.print(F("\n(*MACRO EVENT*) TYPE : ")); Serial.println(strTyping); }
             
             numPlayed++;
 
             continue;
         }
-        else if(-1 < readline.indexOf('@'))
+        else
+        if  (-1 < readline.indexOf('@'))
         {
             String mapKey = trimming_str( readline.substring(readline.indexOf('@')+1) );
 
@@ -351,7 +351,8 @@ void KeyboardHijacker::MODULE_MACRO_PROCEED_PLAYER()
 
             continue;
         }
-        else if(-1 < readline.indexOf('$'))
+        else
+        if  (-1 < readline.indexOf('$'))
         {
             // MINI_MACRO SEARCH
             for (auto iteratorM = MAP_MINI_MACRO.begin(); iteratorM != MAP_MINI_MACRO.end(); iteratorM++)
@@ -381,7 +382,7 @@ void KeyboardHijacker::MODULE_MACRO_PROCEED_PLAYER()
             if(msLeftUntilNextMacro == 0)
                 continue;
 
-            if(isSerial){ Serial.print(F("                                            Next MacroEvent lefts : ")); Serial.println(msLeftUntilNextMacro); }
+            if(isDEBUG){ Serial.print(F("                                            Next MacroEvent lefts : ")); Serial.println(msLeftUntilNextMacro); }
 
             isEventbyMacro=true;
             numPlayed++;
@@ -390,7 +391,6 @@ void KeyboardHijacker::MODULE_MACRO_PROCEED_PLAYER()
         }
     }
 }
-
 void KeyboardHijacker::MODULE_MACRO_END_PLAYER()
 {
     if(!isMacroPlaying)
@@ -403,10 +403,9 @@ void KeyboardHijacker::MODULE_MACRO_END_PLAYER()
     // PREVENT entanglement of KEY states
     KBD_HIJACKER.releaseAllBeingHoldDownKey(); delay(10);
     
-    isMacroPlaying=false; isEventbyMacro=false;
-    if(isSerial){ Serial.print("\n\nMODULE_MACRO_END_PLAYER    PLAYED LINES : "); Serial.println(numPlayed); Serial.println(); }
+    isMacroPlaying=false; isEventbyMacro=false; MAP_MINI_MACRO.clear();
+    if(isDEBUG){ Serial.print("\n\nMODULE_MACRO_END_PLAYER    PLAYED LINES : "); Serial.println(numPlayed); Serial.println(); }
 }
-
 void KeyboardHijacker::MODULE_MACRO_CHECK_FOR_SHUTDOWN_PLAYER()
 {
     if(!isMacroPlaying)
@@ -426,33 +425,4 @@ void KeyboardHijacker::MODULE_MACRO_CHECK_FOR_SHUTDOWN_PLAYER()
         }
         isActivatedKeyEvent=false; key=KEY_NONE;
     }
-}
-
-void KeyboardHijacker::MODULE_MACRO_MANUAL_EVENT_DETECTED()
-{
-    if(!isMacroPlaying)
-        return;
-
-
-    isEventbyMacro=false;
-}
-
-
-
-
-
-void MODULE_MACRO_PRINT(const char* filename) // For, Debugging
-{
-    textfile = SD.open(filename);
-    
-    Serial.println();
-    Serial.println("\n++++++++++++++++++++++[ Now Printing ]++++++++++++++++++++++");
-    while(textfile.available())
-    {
-        String line = textfile.readStringUntil('\n');
-        Serial.println(line);
-    }
-    Serial.println("++++++++++++++++++++++++[ Complete ]++++++++++++++++++++++++\n");
-
-    textfile.close();
 }

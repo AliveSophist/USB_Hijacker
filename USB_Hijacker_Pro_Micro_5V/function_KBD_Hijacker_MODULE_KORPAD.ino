@@ -127,7 +127,7 @@ void correctAraeAVowelError(char* KorSlot1,char* KorSlot2,char* KorSlot3,char* K
 
 
 
-void MODULE_KOREAN_KEYPAD_EVOLUTION()
+void KeyboardHijacker::MODULE_KOREAN_KEYPAD_EVOLUTION()
 {
     /* -------------------------------------------------- KEYPAD_KOREAN_LAYOUT COMMON -------------------------------------------------- */
     #if (KEYPAD_KOREAN_LAYOUT > 0)

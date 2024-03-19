@@ -102,6 +102,8 @@ class KeyboardHijacker
 
     // THE C.O.R.E. of HIJACKER
     void txHijackedKeyEvent();
+
+    void MODULE_KOREAN_KEYPAD_EVOLUTION();
 } KBD_Hijacker;
 
 
