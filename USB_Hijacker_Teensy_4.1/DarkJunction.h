@@ -6,18 +6,16 @@
 #define PIN_DARKJUNCTION_DIGITAL_TX     A8 // 22
 //      PIN_DARKJUNCTION_SERIAL_RX      A7 // 21
 //      PIN_DARKJUNCTION_SERIAL_TX      A6 // 20
-#define PIN_TO_ACCOMPLICE_WAKEUP        A5 // 19
-#define DECLARE_DARKJUNCTION_PINS()     pinMode(PIN_TO_ACCOMPLICE_WAKEUP,OUTPUT); pinMode(PIN_DARKJUNCTION_DIGITAL_RX,INPUT); pinMode(PIN_DARKJUNCTION_DIGITAL_TX,OUTPUT);
-#define MODULE_ACCOMPLICE_PUTTOSLEEP()  { digitalWrite(PIN_TO_ACCOMPLICE_WAKEUP,HIGH); delay(20); digitalWrite(PIN_TO_ACCOMPLICE_WAKEUP,LOW); delay(1); }
-#define MODULE_ACCOMPLICE_WAKEUP()      { digitalWrite(PIN_TO_ACCOMPLICE_WAKEUP,HIGH); delay(20); digitalWrite(PIN_TO_ACCOMPLICE_WAKEUP,LOW); delay(1); DarkJunction::writeHIGHForXXms(1000); }
+#define PIN_TO_WIFI_ACCOMPLICE_WAKEUP   A5 // 19
+
+#define DECLARE_DARKJUNCTION_PINS()     pinMode(PIN_TO_WIFI_ACCOMPLICE_WAKEUP,OUTPUT); pinMode(PIN_DARKJUNCTION_DIGITAL_RX,INPUT); pinMode(PIN_DARKJUNCTION_DIGITAL_TX,OUTPUT);
+#define WIFI_ACCOMPLICE_PUTTOSLEEP()  { digitalWrite(PIN_TO_WIFI_ACCOMPLICE_WAKEUP,HIGH); delay(20); digitalWrite(PIN_TO_WIFI_ACCOMPLICE_WAKEUP,LOW); delay(1); }
+#define WIFI_ACCOMPLICE_WAKEUP()      { digitalWrite(PIN_TO_WIFI_ACCOMPLICE_WAKEUP,HIGH); delay(20); digitalWrite(PIN_TO_WIFI_ACCOMPLICE_WAKEUP,LOW); delay(1); DarkJunction::writeHIGHForXXms(1000); }
 
 // This function was designed with the assumption that the master module can control the slave module's power
 // slave module can use SoftwareSerial, but master module should be use HardwareSerial
 // The reason is that even if control the slave module's power, the master module's Serial must remain operational...
 #define S3R14L Serial5 // RX:21 TX:20
-
-String TRANSMISSION_COMPLETED = "7R4N5M15510N_C0MPL373D";
-String ERRORED = "3RR0R3D";
 
 namespace DarkJunction // For, Serial Communication with applied Checksum
 {
@@ -99,7 +97,7 @@ namespace DarkJunction // For, Serial Communication with applied Checksum
 
     void CONFIGURE_REQUEST_HANDLER(RequestHandler funcProcessRequest)
     {
-        if(funcProcessRequest == nullptr)
+        if (funcProcessRequest == nullptr)
             return;
 
         isEnableRequestHandler = true;
@@ -116,7 +114,7 @@ namespace DarkJunction // For, Serial Communication with applied Checksum
         msLatestFunctioned = millis();
 
         // Interrupt works only REQUEST HANDLER On.
-        if(isEnableRequestHandler)
+        if (isEnableRequestHandler)
             attachInterrupt(digitalPinToInterrupt(PIN_DARKJUNCTION_DIGITAL_RX), interruptAlarmRequest, RISING);
     }
     #else
@@ -126,7 +124,7 @@ namespace DarkJunction // For, Serial Communication with applied Checksum
         msLatestFunctioned = millis();
 
         // Interrupt works only REQUEST HANDLER On.
-        if(isEnableRequestHandler)
+        if (isEnableRequestHandler)
             attachInterrupt(digitalPinToInterrupt(PIN_DARKJUNCTION_DIGITAL_RX), [](){ DarkJunction::STATE = DarkJunction_STATE_ISREQUESTED; DarkJunction::msLatestFunctioned = millis(); }, RISING);
     }
     #endif
@@ -136,13 +134,13 @@ namespace DarkJunction // For, Serial Communication with applied Checksum
         msLatestFunctioned = millis();
 
         // Interrupt works only REQUEST HANDLER On.
-        if(isEnableRequestHandler)
+        if (isEnableRequestHandler)
             detachInterrupt(digitalPinToInterrupt(PIN_DARKJUNCTION_DIGITAL_RX));
     }
 
     void HANDLE_REQUEST()
     {
-        if(STATE != DarkJunction_STATE_ISREQUESTED)
+        if (STATE != DarkJunction_STATE_ISREQUESTED)
             return;
 
 
@@ -159,7 +157,7 @@ namespace DarkJunction // For, Serial Communication with applied Checksum
         clearMessage();
 
 
-        if(isDEBUG)
+        if (isDEBUG)
         {
             Serial.print("\n\nREQUEST RESULT : ");
             Serial.println  (   result==DarkJunction_REQUEST_ERRORED_NotConfigured  ?   "DarkJunction_REQUEST_ERRORED_NotConfigured" :
@@ -188,9 +186,9 @@ namespace DarkJunction // For, Serial Communication with applied Checksum
         for(uint16_t i=0; i<msSearch; i++)
         {
             delay(1);
-            if((isValid=(digitalRead(PIN_DARKJUNCTION_DIGITAL_RX)==HIGH ? isValid+1 : 0)) >= msValidate)
+            if ((isValid=(digitalRead(PIN_DARKJUNCTION_DIGITAL_RX)==HIGH ? isValid+1 : 0)) >= msValidate)
             {
-                if(!isWaitingForLOW)
+                if (!isWaitingForLOW)
                     return true;
                 else
                 {
@@ -228,23 +226,23 @@ namespace DarkJunction // For, Serial Communication with applied Checksum
         {
             delay(1);
 
-            if(millis()-millisDetectingStarted > SERIAL_READ_TIMEOUT)
+            if (millis()-millisDetectingStarted > SERIAL_READ_TIMEOUT)
             {
-                if(isDEBUG) Serial.println("S3R14L_polling TIMEOUT !!");
+                if (isDEBUG) Serial.println("S3R14L_polling TIMEOUT !!");
                 return false;
             }
         } //delay(10);
 
 
         // get Message
-        if(strRead != nullptr)
+        if (strRead != nullptr)
         {
             *strRead = S3R14L.readStringUntil('\0');
 
             while(!isContains(*strRead, '\a'))
             {
                 delay(3);
-                if(S3R14L.available())
+                if (S3R14L.available())
                     (*strRead).concat(S3R14L.readStringUntil('\0'));
             }
         }
@@ -260,11 +258,8 @@ namespace DarkJunction // For, Serial Communication with applied Checksum
     }
     bool S3R14L_download(int8_t countLeftRetry /* = CHECKSUM_PATIENCE */)
     {
-        if(isDEBUG)
-        {
-            Serial.println("***************************************");
-            Serial.println("  DOWNLOAD TRY LEFT : " + String(countLeftRetry));
-        }
+        if (isDEBUG)
+        {   Serial.println("***************************************\n  DOWNLOAD TRY LEFT : " + String(countLeftRetry));   }
 
 
         clearMessage();
@@ -272,25 +267,22 @@ namespace DarkJunction // For, Serial Communication with applied Checksum
 
         // if failed to polling, Abondon
         String strMerged = "";
-        if(!S3R14L_polling(&strMerged))
+        if (!S3R14L_polling(&strMerged))
             return false;
 
-
-        if(isDEBUG)
-        {
-            Serial.println("  strMerged : [" + strMerged + "]");
-            Serial.println("***************************************");
-        }
+        if (isDEBUG)
+        {   Serial.print("  strMerged : ["); Serial.print(strMerged); Serial.println("]\n***************************************");   }
 
 
         // if separator does not exist, redownload
-        int indexSeparator = strMerged.indexOf('\a');
-        if(indexSeparator < 0)
+        int indexSeparator = strMerged.lastIndexOf('|');
+        int indexEndIndicator = strMerged.lastIndexOf('\a');
+        if (indexSeparator < 0)
         {
             writeHIGHForXXms(5); // redownload signal
 
             // redownload
-            if(countLeftRetry > 0)
+            if (countLeftRetry > 0)
                 return S3R14L_download(countLeftRetry-1);
 
             // several counts are invalid, Abondon
@@ -300,10 +292,10 @@ namespace DarkJunction // For, Serial Communication with applied Checksum
 
 
         String strReceived = strMerged.substring(0, indexSeparator);
-        uint32_t crcReceived = atoll( strMerged.substring(indexSeparator+1).c_str() );
+        uint32_t crcReceived = atoll( strMerged.substring(indexSeparator+1, indexEndIndicator).c_str() );
         uint32_t crcCalculated = CRC32::calculate( strReceived.c_str(), strReceived.length() );
 
-        if(isDEBUG)
+        if (isDEBUG)
         {
             Serial.println("Received Data  : " + strReceived);
             Serial.println("Received   CRC : " + String(crcReceived));
@@ -312,12 +304,12 @@ namespace DarkJunction // For, Serial Communication with applied Checksum
 
 
         // if checksum does not match, redownload or abondon
-        if(crcReceived != crcCalculated)
+        if (crcReceived != crcCalculated)
         {
             writeHIGHForXXms(5); // redownload signal
 
             // redownload
-            if(countLeftRetry > 0)
+            if (countLeftRetry > 0)
                 return S3R14L_download(countLeftRetry-1);
 
             // several counts are invalid, Abondon
@@ -329,6 +321,11 @@ namespace DarkJunction // For, Serial Communication with applied Checksum
         delay(20); // skip upload's checksum check
 
 
+        // prevent duplicated checksum checker error
+        if (strReceived.lastIndexOf('\a') > -1 && strReceived.lastIndexOf('|') > -1)
+            strReceived = strReceived.substring(0, strReceived.lastIndexOf('|'));
+
+
         appendMessage(strReceived); // message received!
 
 
@@ -336,22 +333,28 @@ namespace DarkJunction // For, Serial Communication with applied Checksum
     }
     bool S3R14L_upload(String* strSend, int8_t countLeftRetry /* = CHECKSUM_PATIENCE */)
     {
-        if(isDEBUG)
-        {
-            Serial.println("***************************************");
-            Serial.println("  UPLOAD TRY LEFT : " + String(countLeftRetry));
-        }
+        if (isDEBUG)
+        {   Serial.println("***************************************\n  UPLOAD TRY LEFT : " + String(countLeftRetry));   }
+
+
+        // prevent duplicated checksum checker error
+        if (strSend->lastIndexOf('\a') > -1 && strSend->lastIndexOf('|') > -1)
+            *strSend = strSend->substring(0, strSend->lastIndexOf('|'));
 
 
         uint32_t crcCalculated = CRC32::calculate(strSend->c_str(),strSend->length());
-        strSend->concat("\a");
+        strSend->concat('|');
         strSend->concat(String(crcCalculated));
+        strSend->concat('\a');
         S3R14L.print(strSend->c_str());
+
+        if (isDEBUG)
+        {   Serial.print("  strSend : ["); Serial.print(strSend->c_str()); Serial.println("]\n***************************************");   }
 
 
         // is polling success?
         bool isUploadSuccessful = detectHIGHForXXms(SERIAL_READ_TIMEOUT*2, true);
-        if(!isUploadSuccessful) // if signal not detected, Abondon
+        if (!isUploadSuccessful) // if signal not detected, Abondon
             return false;
 
 
@@ -359,10 +362,10 @@ namespace DarkJunction // For, Serial Communication with applied Checksum
 
 
         // if checksum does not match, reupload or abondon
-        if(hasChecksumError)
+        if (hasChecksumError)
         {
             // redownload
-            if(countLeftRetry > 0)
+            if (countLeftRetry > 0)
                 return S3R14L_upload(strSend, countLeftRetry-1);
 
             // several counts are invalid, Abondon
@@ -374,3 +377,6 @@ namespace DarkJunction // For, Serial Communication with applied Checksum
         return true;
     }
 }
+
+const char TRANSMISSION_COMPLETED[] PROGMEM = "7R4N5M15510N_C0MPL373D";
+const char ERRORED[] PROGMEM = "3RR0R3D";

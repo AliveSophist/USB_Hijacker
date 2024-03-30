@@ -163,23 +163,24 @@ void KeyboardHijacker::MODULE_MACRO_END_RECORDER(const char* filename)
     textfile.close(); // file saved
 
 
-    // make bakfile for excluding the end sequences, then replace the original
+    // make tempfile for excluding the end sequences, then replace the original
     {
         textfile = SD.open(filename);
 
         if( SD.exists("temp.bak") )
             SD.remove("temp.bak");
-        File bakfile = SD.open("temp.bak",FILE_WRITE);
+        File tempfile = SD.open("temp.bak",FILE_WRITE);
 
         if(numRecorded > 8) {
             for(uint32_t i=0; i<numRecorded-8; i++) // exclude the end sequences
             {
                 String line = textfile.readStringUntil('\n');
-                bakfile.println(line.indexOf('\r') > -1 ? line.substring(0,line.lastIndexOf('\r')) : line);
+                tempfile.println(line.indexOf('\r') > -1 ? line.substring(0,line.lastIndexOf('\r')) : line);
             }
         }
+        tempfile.println();
 
-        bakfile.close();
+        tempfile.close();
         textfile.close();
 
         SD.remove(filename);
@@ -212,27 +213,28 @@ void KeyboardHijacker::MODULE_MACRO_PROCEED_PLAYER()
 
     while(true)
     {
-        if(textfile.available() || QUEUE_NOW_MINI_MACRO.size()>0)
+        if(QUEUE_NOW_MINI_MACRO.size()>0)
         {
-            if(QUEUE_NOW_MINI_MACRO.size()>0)
-            {
-                readline = QUEUE_NOW_MINI_MACRO.front();
-                QUEUE_NOW_MINI_MACRO.pop_front();
-            }
-            else
-            {
-                readline = textfile.readStringUntil('\n');
-
-                // To UPPERCASE without contents after double quotation mark
-                uint16_t index_DQM = readline.indexOf("\"");
-                if(!index_DQM)
-                    readline = readline.toUpperCase();
-                else
-                    readline = String( readline.substring(0,index_DQM).toUpperCase() + readline.substring(index_DQM) );
-            }
+            readline = QUEUE_NOW_MINI_MACRO.front();
+            QUEUE_NOW_MINI_MACRO.pop_front();
         }
         else
-        {   MODULE_MACRO_END_PLAYER(); return;   }
+        if(textfile.available())
+        {
+            readline = textfile.readStringUntil('\n');
+
+            // To UPPERCASE characters before double quotation mark
+            uint16_t index_DQM = readline.indexOf("\"");
+            if(!index_DQM)
+                readline = readline.toUpperCase();
+            else
+                readline = String( readline.substring(0,index_DQM).toUpperCase() + readline.substring(index_DQM) );
+        }
+        else
+        {
+            MODULE_MACRO_END_PLAYER();
+            return;
+        }
 
 
         // Exclude COMMENT
@@ -354,19 +356,22 @@ void KeyboardHijacker::MODULE_MACRO_PROCEED_PLAYER()
         else
         if  (-1 < readline.indexOf('$'))
         {
+            String mapKey = trimming_str( readline.substring(readline.indexOf('$')+1) );
+
             // MINI_MACRO SEARCH
-            for (auto iteratorM = MAP_MINI_MACRO.begin(); iteratorM != MAP_MINI_MACRO.end(); iteratorM++)
+            for (auto itMap = MAP_MINI_MACRO.begin(); itMap != MAP_MINI_MACRO.end(); itMap++)
             {
-                // MINI_MACRO START
-                if(readline.indexOf(iteratorM->first) > -1)
+                // MINI_MACRO FOUND !
+                if(mapKey.equals(itMap->first))
                 {
-                    for(auto iteratorL = (iteratorM->second).begin(); iteratorL != (iteratorM->second).end(); iteratorL++)
-                    {
-                        QUEUE_NOW_MINI_MACRO.push_back( *iteratorL );
-                    }
+                    // Push MINI_MACRO reversed contents to QUEUE_NOW_MINI_MACRO's front (perfectly works!)
+                    for(auto itList = (itMap->second).rbegin(); itList != (itMap->second).rend(); ++itList)
+                        QUEUE_NOW_MINI_MACRO.push_front( *itList );
+
+                    break;
                 }
             }
-            
+
             continue;
         }
         else
@@ -375,8 +380,10 @@ void KeyboardHijacker::MODULE_MACRO_PROCEED_PLAYER()
             msLeftUntilNextMacro = StringDec_To_uint32_t(trimming_num(readline));
 
             // Extra Delay
-            if(readline.indexOf('~') > -1)
-                msLeftUntilNextMacro += random( StringDec_To_uint32_t(trimming_num(readline.substring(readline.indexOf('~')))) +1 );
+            if(readline.indexOf('~') > -1) {
+                uint32_t msExtraDelay = StringDec_To_uint32_t(trimming_num(readline.substring(readline.indexOf('~'))));
+                msLeftUntilNextMacro += (msExtraDelay > msLeftUntilNextMacro) ? random(msExtraDelay - msLeftUntilNextMacro + 1) : random(msLeftUntilNextMacro - msExtraDelay + 1);
+            }
 
             // Invalid Delay !!
             if(msLeftUntilNextMacro == 0)

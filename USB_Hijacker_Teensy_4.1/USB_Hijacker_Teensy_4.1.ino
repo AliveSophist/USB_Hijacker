@@ -116,7 +116,7 @@ extern "C"
 //      PIN_DARKJUNCTION_DIGITAL_TX     A8 // 22
 //      PIN_DARKJUNCTION_SERIAL_RX      A7 // 21
 //      PIN_DARKJUNCTION_SERIAL_TX      A6 // 20
-//      PIN_TO_ACCOMPLICE_WAKEUP        A5 // 19
+//      PIN_TO_WIFI_ACCOMPLICE_WAKEUP   A5 // 19
 //      PIN_                            A4 // 18
 //      PIN_                            A3 // 17
 //      PIN_                            A2 // 16
@@ -211,9 +211,9 @@ void setup()
         }
 
 
-        // ESP8266 a.k.a. ACCOMPLICE
+        // ESP8266 a.k.a. WIFI_ACCOMPLICE
         DECLARE_DARKJUNCTION_PINS();
-        MODULE_ACCOMPLICE_PUTTOSLEEP();
+        WIFI_ACCOMPLICE_PUTTOSLEEP();
 
         DarkJunction::CONFIGURE_REQUEST_HANDLER (
                                                     /*  function PROCESS_REQUEST  */[](String strRequest) -> int8_t
@@ -297,7 +297,8 @@ void setup()
                                                             dir.close();
 
                                                             // SEND 'TRANSMISSION_COMPLETED' MESSAGE
-                                                            bool isUploadSuccessful = DarkJunction::S3R14L_upload(&TRANSMISSION_COMPLETED);
+                                                            String strEndRequestMessage = String(TRANSMISSION_COMPLETED);
+                                                            bool isUploadSuccessful = DarkJunction::S3R14L_upload(&strEndRequestMessage);
                                                             if(!isUploadSuccessful)
                                                                 return DarkJunction_REQUEST_ERRORED_FailedUpload;
 
@@ -365,7 +366,8 @@ void setup()
 
 
                                                             // SEND 'TRANSMISSION_COMPLETED' MESSAGE
-                                                            bool isUploadSuccessful = DarkJunction::S3R14L_upload(&TRANSMISSION_COMPLETED);
+                                                            String strEndRequestMessage = String(TRANSMISSION_COMPLETED);
+                                                            bool isUploadSuccessful = DarkJunction::S3R14L_upload(&strEndRequestMessage);
                                                             if(!isUploadSuccessful)
                                                                 return DarkJunction_REQUEST_ERRORED_FailedUpload;
 
@@ -494,7 +496,8 @@ void setup()
                                                         }
                                                         else // Unknown REQUEST
                                                         {
-                                                            DarkJunction::S3R14L_upload(&ERRORED);
+                                                            String strEndRequestMessage = String(ERRORED);
+                                                            DarkJunction::S3R14L_upload(&strEndRequestMessage);
                                                             return DarkJunction_REQUEST_ERRORED_UnknownRequest;
                                                         }
                                                     }
@@ -709,6 +712,6 @@ void loop()
         DarkJunction::HANDLE_REQUEST();
 
         if(millis() - DarkJunction::msLatestFunctioned > 600000)
-        {   DarkJunction::SHUTDOWN(); MODULE_ACCOMPLICE_PUTTOSLEEP();   }
+        {   DarkJunction::SHUTDOWN(); WIFI_ACCOMPLICE_PUTTOSLEEP();   }
     }
 }

@@ -39,49 +39,43 @@ void print8bitBin(uint8_t bincode)      {   Serial.print("0b"); for(int i=7; i>=
 String trimming_str(String str)
 {
     int8_t index_Num = -1;
-    uint32_t lastIndex_Num = 0;
     
     for(uint32_t i=0; i<str.length(); i++)
     {
         if(index_Num == -1){
-            if(!(str[i]==' ' || str[i]=='\'' || str[i]=='\"' || str[i]=='\t' || str[i]=='\r' || str[i]=='\n')){
+            if(!(str[i]==' ' || str[i]=='\'' || str[i]=='\"' || str[i]=='\t' || str[i]=='\r' || str[i]=='\n' || str[i]=='\0'))
                 index_Num = i;
-            }
         }
         else{
-            if( (str[i]==' ' || str[i]=='\'' || str[i]=='\"' || str[i]=='\t' || str[i]=='\r' || str[i]=='\n') ){
-                lastIndex_Num = i;
-                break;
-            }
+            if( (str[i]==' ' || str[i]=='\'' || str[i]=='\"' || str[i]=='\t' || str[i]=='\r' || str[i]=='\n' || str[i]=='\0') )
+                return str.substring(index_Num, i);
         }
     }
 
-    if(-1 < index_Num) return str.substring(index_Num, lastIndex_Num);
-    
+    if(-1 < index_Num)
+        return str.substring(index_Num);
+
     return "0"; // Invalid str !!
 }
 String trimming_num(String str)
 {
     int8_t index_Num = -1;
-    uint32_t lastIndex_Num = 0;
     
     for(uint32_t i=0; i<str.length(); i++)
     {
         if(index_Num == -1){
-            if ('0' <= str[i] && str[i] <= '9'){
+            if ( ('0' <= str[i] && str[i] <= '9') )
                 index_Num = i;
-            }
         }
         else{
-            if (!('0' <= str[i] && str[i] <= '9')){
-                lastIndex_Num = i;
-                break;
-            }
+            if (!('0' <= str[i] && str[i] <= '9'))
+                return str.substring(index_Num, i);
         }
     }
 
-    if(-1 < index_Num) return str.substring(index_Num, lastIndex_Num);
-    
+    if(-1 < index_Num)
+        return str.substring(index_Num);
+
     return "0"; // Invalid str !!
 }
 String trimming_keycodeStr(String str)
