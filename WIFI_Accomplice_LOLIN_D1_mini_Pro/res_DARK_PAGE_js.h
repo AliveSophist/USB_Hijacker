@@ -1,12 +1,16 @@
-const char raw_js_DARK_PAGE[] PROGMEM =
-R"=====(
-/**⦓ SCRIPT, ABOUT LIBRARIES ⦔**/
+const char raw_js_DARK_PAGE_INITIALIZER[] PROGMEM = R"=====(
+/**********⦓ SCRIPT, ABOUT LIBRARIES ⦔**********/
 
 // pagePiling.js
 (function(a,e,d,c){a.fn.pagepiling=function(Y){function W(f){var k=a(".pp-section.active").index(".pp-section");f=f.index(".pp-section");return k>f?"up":"down"}function am(f,k){var l={destination:f,animated:k,activeSection:a(".pp-section.active"),anchorLink:f.data("anchor"),sectionIndex:f.index(".pp-section"),toMove:f,yMovement:W(f),leavingSection:a(".pp-section.active").index(".pp-section")+1};l.activeSection.is(f)||("undefined"===typeof l.animated&&(l.animated=!0),"undefined"!==typeof l.anchorLink&&T(l.anchorLink,l.sectionIndex),l.destination.addClass("active").siblings().removeClass("active"),l.sectionsToMove=R(l),"down"===l.yMovement?(l.translate3d="vertical"!==options.direction?"translate3d(-100%, 0px, 0px)":"translate3d(0px, -100%, 0px)",l.scrolling="-100%",options.css3||l.sectionsToMove.each(function(m){m!=l.activeSection.index(".pp-section")&&a(this).css(ai(l.scrolling))}),l.animateSection=l.activeSection):(l.translate3d="translate3d(0px, 0px, 0px)",l.scrolling="0",l.animateSection=f),a.isFunction(options.onLeave)&&options.onLeave.call(this,l.leavingSection,l.sectionIndex+1,l.yMovement),s(l),o(l.anchorLink),j(l.anchorLink,l.sectionIndex),X=l.anchorLink,V=(new Date).getTime())}function s(f){options.css3?(U(f.animateSection,f.translate3d,f.animated),f.sectionsToMove.each(function(){U(a(this),f.translate3d,f.animated)}),setTimeout(function(){ag(f)},options.scrollingSpeed)):(f.scrollOptions=ai(f.scrolling),f.animated?f.animateSection.animate(f.scrollOptions,options.scrollingSpeed,options.easing,function(){S(f);ag(f)}):(f.animateSection.css(ai(f.scrolling)),setTimeout(function(){S(f);ag(f)},400)))}function ag(f){a.isFunction(options.afterLoad)&&options.afterLoad.call(this,f.anchorLink,f.sectionIndex+1)}function R(f){return"down"===f.yMovement?a(".pp-section").map(function(k){if (k<f.destination.index(".pp-section")){return a(this)}}):a(".pp-section").map(function(k){if (k>f.destination.index(".pp-section")){return a(this)}})}function S(f){"up"===f.yMovement&&f.sectionsToMove.each(function(k){a(this).css(ai(f.scrolling))})}function ai(f){return"vertical"===options.direction?{top:f}:{left:f}}function T(k,f){options.anchors.length?(location.hash=k,u(location.hash)):u(String(f))}function u(f){f=f.replace("#","");a("body")[0].className=a("body")[0].className.replace(/\b\s?pp-viewing-[^\s]+\b/g,"");a("body").addClass("pp-viewing-"+f)}function ae(){return(new Date).getTime()-V<600+options.scrollingSpeed?!0:!1}function U(k,f,l){k.toggleClass("pp-easing",l);k.css({"-webkit-transform":f,"-moz-transform":f,"-ms-transform":f,transform:f})}function al(f){if (!ae()){f=d.event||f;f=Math.max(-1,Math.min(1,f.wheelDelta||-f.deltaY||-f.detail));var k=a(".pp-section.active"),k=ah(k);0>f?ak("down",k):ak("up",k);return !1}}function ak(l,k){if ("down"==l){var n="bottom",m=ao.moveSectionDown}else{n="top",m=ao.moveSectionUp}if (0<k.length){if (n="top"===n?!k.scrollTop():"bottom"===n?k.scrollTop()+1+k.innerHeight()>=k[0].scrollHeight:void 0,n){m()}else{return !0}}else{m()}}function ah(f){return scrollable=f.filter(".pp-scrollable")}function af(){return d.PointerEvent?{down:"pointerdown",move:"pointermove",up:"pointerup"}:{down:"MSPointerDown",move:"MSPointerMove",up:"MSPointerUp"}}function ad(k){var f=[];f.y="undefined"!==typeof k.pageY&&(k.pageY||k.pageX)?k.pageY:k.touches[0].pageY;f.x="undefined"!==typeof k.pageX&&(k.pageY||k.pageX)?k.pageX:k.touches[0].pageX;return f}function ac(f){return"undefined"===typeof f.pointerType||"mouse"!=f.pointerType}function i(f){f=f.originalEvent;ac(f)&&(f=ad(f),aj=f.y,touchStartX=f.x)}function h(f){var k=f.originalEvent;!ab(f.target)&&ac(k)&&(f.preventDefault(),f=a(".pp-section.active"),f=ah(f),ae()||(k=ad(k),touchEndY=k.y,touchEndX=k.x,"horizontal"===options.direction&&Math.abs(touchStartX-touchEndX)>Math.abs(aj-touchEndY)?Math.abs(touchStartX-touchEndX)>an.width()/100*options.touchSensitivity&&(touchStartX>touchEndX?ak("down",f):touchEndX>touchStartX&&ak("up",f)):Math.abs(aj-touchEndY)>an.height()/100*options.touchSensitivity&&(aj>touchEndY?ak("down",f):touchEndY>aj&&ak("up",f))))}function ab(f,k){k=k||0;var l=a(f).parent();return k<options.normalScrollElementTouchThreshold&&l.is(options.normalScrollElements)?!0:k==options.normalScrollElementTouchThreshold?!1:ab(l,++k)}function g(){a("body").append('<div id="pp-nav"><ul></ul></div>');var f=a("#pp-nav");f.css("color",options.navigation.textColor);f.addClass(options.navigation.position);for(var l=0;l<a(".pp-section").length;l++){var m="";options.anchors.length&&(m=options.anchors[l]);if ("undefined"!==options.navigation.tooltips){var k=options.navigation.tooltips[l];"undefined"===typeof k&&(k="")}f.find("ul").append('<li data-tooltip="'+k+'"><a href="#'+m+'"><span></span></a></li>')}f.find("span").css("border-color",options.navigation.bulletsColor)}function j(f,k){options.navigation&&(a("#pp-nav").find(".active").removeClass("active"),f?a("#pp-nav").find('a[href="#'+f+'"]').addClass("active"):a("#pp-nav").find("li").eq(k).find("a").addClass("active"))}function o(f){options.menu&&(a(options.menu).find(".active").removeClass("active"),a(options.menu).find('[data-menuanchor="'+f+'"]').addClass("active"))}function b(){var k=e.createElement("p"),f,m={webkitTransform:"-webkit-transform",OTransform:"-o-transform",msTransform:"-ms-transform",MozTransform:"-moz-transform",transform:"transform"};e.body.insertBefore(k,null);for(var l in m){k.style[l]!==c&&(k.style[l]="translate3d(1px,1px,1px)",f=d.getComputedStyle(k).getPropertyValue(m[l]))}e.body.removeChild(k);return f!==c&&0<f.length&&"none"!==f}var ao=a.fn.pagepiling,an=a(this),X,V=0,Z="ontouchstart" in d||0<navigator.msMaxTouchPoints||navigator.maxTouchPoints,aj=touchStartX=touchEndY=touchEndX=0;options=a.extend(!0,{direction:"vertical",menu:null,verticalCentered:!0,sectionsColor:[],anchors:[],scrollingSpeed:700,easing:"easeInQuart",loopBottom:!1,loopTop:!1,css3:!0,navigation:{textColor:"#000",bulletsColor:"#000",position:"right",tooltips:[]},normalScrollElements:null,normalScrollElementTouchThreshold:5,touchSensitivity:5,sectionSelector:".section",animateAnchor:!1,afterLoad:null,onLeave:null,afterRender:null},Y);a.extend(a.easing,{easeInQuart:function(l,k,p,n,m){return n*(k/=m)*k*k*k+p}});ao.setScrollingSpeed=function(f){options.scrollingSpeed=f};ao.moveSectionUp=function(){var f=a(".pp-section.active").prev(".pp-section");!f.length&&options.loopTop&&(f=a(".pp-section").last());f.length&&am(f)};ao.moveSectionDown=function(){var f=a(".pp-section.active").next(".pp-section");!f.length&&options.loopBottom&&(f=a(".pp-section").first());f.length&&am(f)};ao.moveTo=function(f){var k="",k=isNaN(f)?a('[data-anchor="'+f+'"]'):a(".pp-section").eq(f-1);0<k.length&&am(k)};a(options.sectionSelector).each(function(){a(this).addClass("pp-section")});options.css3&&(options.css3=b());a(an).css({overflow:"hidden","-ms-touch-action":"none","touch-action":"none"});a.isEmptyObject(options.navigation)||g();var aa=a(".pp-section").length;a(".pp-section").each(function(f){a(this).data("data-index",f);a(this).css("z-index",aa);f||0!==a(".pp-section.active").length||a(this).addClass("active");"undefined"!==typeof options.anchors[f]&&a(this).attr("data-anchor",options.anchors[f]);"undefined"!==typeof options.sectionsColor[f]&&a(this).css("background-color",options.sectionsColor[f]);options.verticalCentered&&a(this).addClass("pp-table").wrapInner('<div class="pp-tableCell" style="height:100%" />');--aa}).promise().done(function(){options.navigation&&(a("#pp-nav").css("margin-top","-"+a("#pp-nav").height()/2+"px"),a("#pp-nav").find("li").eq(a(".pp-section.active").index(".pp-section")).find("a").addClass("active"));a(d).on("load",function(){var f=d.location.hash.replace("#",""),f=a('.pp-section[data-anchor="'+f+'"]');0<f.length&&am(f,options.animateAnchor)});a.isFunction(options.afterRender)&&options.afterRender.call(this)});a(d).on("hashchange",function(){var f=d.location.hash.replace("#","").split("/")[0];f.length&&f&&f!==X&&(f=isNaN(f)?a('[data-anchor="'+f+'"]'):a(".pp-section").eq(f-1),am(f))});a(e).on("click touchstart","#pp-nav a",function(f){f.preventDefault();f=a(this).parent().index();am(a(".pp-section").eq(f))});a(e).on({mouseenter:function(){var f=a(this).data("tooltip");a('<div class="pp-tooltip '+options.navigation.position+'">'+f+"</div>").hide().appendTo(a(this)).fadeIn(200)},mouseleave:function(){a(this).find(".pp-tooltip").fadeOut(200,function(){a(this).remove()})}},"#pp-nav li")}})(jQuery,document,window);
+
 const SECTION_EDITOR    = 0;
 const SECTION_LISTENER  = 1;
 var nowSection = SECTION_EDITOR;
+
+let timeLatestKeyEventCame = -1;
+let arrTipsForListener = [];
+
 function initializePagePiling()
 {
     $('#pagepiling').pagepiling(
@@ -22,13 +26,34 @@ function initializePagePiling()
         if (nowSection==SECTION_EDITOR && window.location.hash==="#pageListener")
         {
             nowSection = SECTION_LISTENER;
-            resetListener();
+
+            (function resetListener()
+            {
+                selectEventList.innerHTML = '';
+                selectFunctionList.innerHTML = '';
+
+                for(tip of arrTipsForListener)
+                    tip.destroy();
+                arrTipsForListener = [];
+
+                for(const e of document.querySelector('.keyboard').querySelectorAll('.pressed'))
+                    e.classList.remove('pressed');
+
+                timeLatestKeyEventCame = -1;
+            })();
 
             if (taFileContent.dataset.currentFilename.length < 1)
                 return;
 
+            // Zero, keycode to readable keyStr
+            let arrLines = taFileContent.value.split('\n');
+            for(let i = 0; i < arrLines.length; i++) {
+                if (arrLines[i].includes('0x'))
+                    arrLines[i] = arrLines[i].replace(/0x[0-9A-Fa-f]{2}/g, (match) => { return keycode_To_keyStr(match.toUpperCase()); });
+            }
 
-            const extractMacroFuncs = (arrLines) =>
+            // First, extract Funcs
+            arrLines = (function extractMacroFuncs (arrLines)
             {
                 while(true)
                 {
@@ -67,59 +92,7 @@ function initializePagePiling()
                 }
 
                 return arrLines;
-            }
-            const analyzeMacroEvent = (strLine) =>
-            {
-                let pattern;
-
-                // [DN KEY_X], [DNUP KEY_X], [UP 0x74] ...
-                pattern = /^(DN|UP).{1,4}?(KEY|0x).*?(?=\s|\0|$)/;
-                if (pattern.test(strLine))
-                    return pattern.exec(strLine)[0];
-
-                // [TY "xxxxxxxxx"]
-                pattern = /^(TY)/;
-                if (pattern.test(strLine)) {
-                    let indexStart = strLine.indexOf("\"");
-                    let indexEnd = strLine.lastIndexOf("\"");
-
-                    if (indexStart != -1 && indexStart < indexEnd)
-                        return `TY ("...")`;
-                }
-
-                // [$calledFuncName]
-                pattern = /^[$].*?(?=\s|\0|$)/;
-                if (pattern.test(strLine))
-                    return pattern.exec(strLine)[0];
-
-                // [1234], [123 ~ 1234]
-                pattern = /\d+/;
-                if (pattern.test(strLine)) {
-                    if (strLine.includes('~'))
-                        return pattern.exec(strLine)[0] + "~" + pattern.exec( strLine.slice(strLine.indexOf('~')+1) )[0] + "ms";
-                    else
-                        return pattern.exec(strLine)[0] + "ms";
-                }
-
-                // commented line & spaced line
-                pattern = /^(\s*\/{2})/;
-                if (pattern.test(strLine) || strLine === '')
-                    return '';
-
-                // unanalyzable line
-                return undefined;
-            }
-
-
-            // Zero, keycode to readable keyStr
-            let arrLines = taFileContent.value.split('\n');
-            for(let i = 0; i < arrLines.length; i++) {
-                if (arrLines[i].includes('0x'))
-                    arrLines[i] = arrLines[i].replace(/0x[0-9A-Fa-f]{2}/g, (match) => { return keycode_To_keyStr(match.toUpperCase()); });
-            }
-
-            // First, extract Funcs
-            arrLines = extractMacroFuncs(arrLines);
+            })(arrLines);
 
             // Second, tidy up top & bottom things
             while(true) {
@@ -136,6 +109,42 @@ function initializePagePiling()
             }
 
             // Third, organize EventList
+            const analyzeMacroEvent = (strLine) =>
+            {
+                // [DN KEY_X], [DNUP KEY_X], [UP 0x74] ...
+                if ((pattern = /^(DN|UP).{1,4}?(KEY|0x).*?(?=\s|\0|$)/).test(strLine)) {
+                    return pattern.exec(strLine)[0];
+                }
+
+                // [TY "xxxxxxxxx"]
+                if ((pattern = /^(TY)/).test(strLine)) {
+                    let indexStart = strLine.indexOf("\"");
+                    let indexEnd = strLine.lastIndexOf("\"");
+
+                    if (indexStart != -1 && indexStart < indexEnd)
+                        return `TY ("...")`;
+                }
+
+                // [$calledFuncName]
+                if ((pattern = /^[$].*?(?=\s|\0|$)/).test(strLine)) {
+                    return pattern.exec(strLine)[0];
+                }
+
+                // [123 ~ 1234], [1234]
+                if ((pattern = /\d+/).test(strLine)) {
+                    if (/\d+\s*~\s*\d+/.test(strLine))
+                        return pattern.exec(strLine)[0] + "~" + pattern.exec( strLine.slice(strLine.indexOf('~')+1) )[0] + "ms";
+                    else
+                        return pattern.exec(strLine)[0] + "ms";
+                }
+
+                // commented line & spaced line
+                if (/^(\s*\/{2})/.test(strLine) || strLine === '')
+                    return '';
+
+                // unanalyzable line
+                return undefined;
+            }
             for(strLine of arrLines)
             {
                 let strAnalyzed = analyzeMacroEvent(strLine);
@@ -339,7 +348,9 @@ function initializeContextMenu()
 
 
 
-/**⦓ SCRIPT, ABOUT VIEW ⦔**/
+
+
+/**********⦓ SCRIPT, ABOUT VIEW ⦔**********/
 
 const divTerminal = document.querySelector("#divTerminal");
 const tbDirectory = document.querySelector("#tbDirectory");
@@ -555,7 +566,9 @@ const getFixedDelay = () => inpStabilizeDelay.value;
 
 
 
-/**⦓ SCRIPT, ABOUT COMMUNICATION ⦔**/
+
+
+/**********⦓ SCRIPT, ABOUT COMMUNICATION ⦔**********/
 
 let resultCombined = '';
 let isProcessing = false;
@@ -1053,10 +1066,14 @@ function executeSimpleRequest(strRequest, strParam = null)
         }
     }, 100);
 }
+)=====";
 
 
 
-/**⦓ SCRIPT, ABOUT RUN ⦔**/
+
+
+const char raw_js_DARK_PAGE_RUNNER[] PROGMEM = R"=====(
+/**********⦓ SCRIPT, ABOUT RUN ⦔**********/
 
 let currentMouseX = 0;
 let currentMouseY = 0;
@@ -1064,23 +1081,6 @@ document.addEventListener('mousemove', (event) => { currentMouseX = event.client
 
 function isCursorInsideNode(node)
 {   const rect = node.getBoundingClientRect(); return (currentMouseX >= rect.left && currentMouseX <= rect.right && currentMouseY >= rect.top && currentMouseY <= rect.bottom);   }
-
-let timeLatestKeyEventCame = -1;
-let arrTipsForListener = [];
-function resetListener()
-{
-    selectEventList.innerHTML = '';
-    selectFunctionList.innerHTML = '';
-
-    for(tip of arrTipsForListener)
-        tip.destroy();
-    arrTipsForListener = [];
-
-    for(const e of document.querySelector('.keyboard').querySelectorAll('.pressed'))
-        e.classList.remove('pressed');
-
-    timeLatestKeyEventCame = -1;
-}
 
 $( document ).ready(function()
 {

@@ -1,5 +1,4 @@
-const char raw_html_SELECT_WIFI[] PROGMEM =
-R"=====(
+const char raw_html_SELECT_WIFI[] PROGMEM = R"=====(
 <!DOCTYPE HTML>
 <html>
 <head>
@@ -12,7 +11,7 @@ R"=====(
         body {font-size:1.2rem;}
         a:hover {cursor:pointer;}
 
-        #aSummary {display:none;text-decoration:underline;}
+        #aCollapsible {display:none;text-decoration:underline;}
 
         #spinner {z-index:9;position:fixed;top:0;left:0;right:0;bottom:0;background-color:rgba(0, 0, 0, 0.7);padding:0 auto;display:none;}
         #spinner .spinner-around {z-index:99;position:absolute;top:50%;left:50%;margin:-25px 0 0 -25px;width:50px;height:50px;border-radius:50%;border:7px solid rgba(0, 0, 0, 0.1);animation:none;}
@@ -26,7 +25,7 @@ R"=====(
     <div id='wifiList'>
         <ul>
             #{strWiFiList}
-            <a id='aSummary'>...</a>
+            <a id='aCollapsible'>...</a>
         </ul>
     </div>
 
@@ -47,7 +46,10 @@ R"=====(
 </body>
 <script>
     const divWifiList = document.getElementById('wifiList');
+
     const divForm = document.getElementById('divForm');
+    divForm.style.visibility = 'hidden';
+
     const arrLiApName = divWifiList.querySelectorAll('li');
     for (liApName of arrLiApName) {
         liApName.querySelector('a').addEventListener("click", function()
@@ -61,22 +63,21 @@ R"=====(
         });
     }
 
-    const aSummary = divWifiList.querySelector('#aSummary');
+    const aCollapsible = divWifiList.querySelector('#aCollapsible');
     if(arrLiApName.length > 10)
     {
         for(let i=0; i<arrLiApName.length; i++)
             arrLiApName[i].style.display = (i>7) ? 'none' : '';
 
-        aSummary.style.display='block';
-        aSummary.addEventListener("click", () =>
+        aCollapsible.style.display='block';
+        aCollapsible.addEventListener("click", () =>
         {
             for (liApName of arrLiApName)
                 liApName.style.display = '';
                 
-            aSummary.style.display = 'none';
+            aCollapsible.style.display = 'none';
         });
     }
-    divForm.style.visibility = 'hidden';
 </script>
 <script>
     let responseLatest = '';
@@ -98,8 +99,7 @@ R"=====(
 
         if(data == null)
             xhr.send();
-        else
-        {
+        else {
             xhr.setRequestHeader('Content-Type', 'application/json');
             xhr.send( JSON.stringify(data) );
         }
@@ -107,25 +107,23 @@ R"=====(
         return xhr;
     }
 
+    // for, CONNECT TO NET!
     document.querySelector('#btnConnect').addEventListener("click", function()
     {
         showSpinner();
 
-        postAjax(function()
-        {
-            window.location.href = ("/isConnected?apName=" + divForm.querySelector('[name="apName"]').value);
-        }
-        , '/connectToAP',
-        {
-            apName: divForm.querySelector('[name="apName"]').value,
-            apPw: divForm.querySelector('[name="apPw"]').value
-        });
+        postAjax(   function(){ window.location.href = ("/isConnected?apName=" + divForm.querySelector('[name="apName"]').value); }
+                    , '/connectToAP'
+                    , { apName: divForm.querySelector('[name="apName"]').value, apPw: divForm.querySelector('[name="apPw"]').value }
+                );
     });
 
     // for, the case of refresh the page
-    postAjax(function(){}, '/rescanWifiList');
+    postAjax(   function(){}
+                , '/rescanWifiList'
+            );
 
-    // params from server
+    // for, automatically select the previously chosen apName
     const params = new URLSearchParams(window.location.search);
     const param_apName = params.get("apName");
     if (param_apName !== null) {

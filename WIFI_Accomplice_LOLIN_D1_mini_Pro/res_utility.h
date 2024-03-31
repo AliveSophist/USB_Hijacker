@@ -1,10 +1,4 @@
-void MEASURE_FREE_MEMORY() // for Teensy® 4.1 =32bit!!
-{   if(!isDEBUG)
-        return;
-
-
-    Serial.print("\nNow Measured FreeMemory : "); Serial.println(ESP.getFreeHeap()); //=__brkval;
-}
+void MEASURE_FREE_MEMORY()      { if(isDEBUG){ Serial.print("\nNow Measured FreeMemory : "); Serial.println(ESP.getFreeHeap()); } }
 
 
 

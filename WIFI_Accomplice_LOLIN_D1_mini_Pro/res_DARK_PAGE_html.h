@@ -1,5 +1,4 @@
-const char raw_html_DARK_PAGE[] PROGMEM =
-R"=====(
+const char raw_html_DARK_PAGE[] PROGMEM = R"=====(
 <!DOCTYPE HTML>
 <html>
 <head>
@@ -151,11 +150,12 @@ R"=====(
 
 
     <!-- Scripts -->
-    <script src="/DarkJunction/getScripts"></script>
+    <script src="/DarkJunction/getInitializer"></script>
+    <script src="/DarkJunction/getRunner"></script>
 
 </body>
 </html>
 )=====";
 
-#include "res_css_DARK_PAGE.h"
-#include "res_js_DARK_PAGE.h"
+#include "res_DARK_PAGE_css.h"
+#include "res_DARK_PAGE_js.h"

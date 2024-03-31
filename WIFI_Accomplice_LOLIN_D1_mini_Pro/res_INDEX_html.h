@@ -1,5 +1,4 @@
-const char raw_html_INDEX[] PROGMEM =
-R"=====(
+const char raw_html_INDEX[] PROGMEM = R"=====(
 <!DOCTYPE HTML>
 <html>
 <head>

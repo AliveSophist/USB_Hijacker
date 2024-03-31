@@ -169,9 +169,9 @@ auto getArgByNameFromClient = [](String argName) -> String
 
 #include <ArduinoJson.h>
 
-#include "res_html_INDEX.h"
-#include "res_html_SELECT_WIFI.h"
-#include "res_html_DARK_PAGE.h"
+#include "res_INDEX_html.h"
+#include "res_SELECT_WIFI_html.h"
+#include "res_DARK_PAGE_html.h"
 
 #include "DarkJunction.h"
 
@@ -527,11 +527,18 @@ void setup()
                                     webServer.send(HTTP_CODE_OK, "text/css", raw_css_DARK_PAGE);
                                 }
                             );
-        webServer.on        (   "/DarkJunction/getScripts",
+        webServer.on        (   "/DarkJunction/getInitializer",
                                 HTTP_GET,
                                 []
                                 {
-                                    webServer.send(HTTP_CODE_OK, "text/javascript", raw_js_DARK_PAGE);
+                                    webServer.send(HTTP_CODE_OK, "text/javascript", raw_js_DARK_PAGE_INITIALIZER);
+                                }
+                            );
+        webServer.on        (   "/DarkJunction/getRunner",
+                                HTTP_GET,
+                                []
+                                {
+                                    webServer.send(HTTP_CODE_OK, "text/javascript", raw_js_DARK_PAGE_RUNNER);
                                 }
                             );
 

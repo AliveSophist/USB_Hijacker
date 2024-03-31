@@ -1,5 +1,4 @@
-const char raw_css_DARK_PAGE[] PROGMEM = /* <style></style> */
-R"=====(
+const char raw_css_DARK_PAGE[] PROGMEM = R"=====(
 @import url('https://fonts.cdnfonts.com/css/lcd'); /* https://www.cdnfonts.com/lcd.font */
 @font-face {
     font-family: 'D2Coding';
