@@ -160,14 +160,11 @@ void KeyboardHijacker::syncToggleKeyStates() //Synchronize "SLAVE" kbd LEDs to "
     const uint8_t LED_CAPS_LOCK   = 0b00000010;
     const uint8_t LED_SCROLL_LOCK = 0b00000100;
 
-    stateNumLockToggle = (stateLEDs & LED_NUM_LOCK);
-    KBD_PARSER.numLock( stateLEDs & LED_NUM_LOCK );
-    
-    stateCapsLockToggle = (stateLEDs & LED_CAPS_LOCK);
-    KBD_PARSER.capsLock( stateLEDs & LED_CAPS_LOCK );
-    
-    stateScrollLockToggle = (stateLEDs & LED_SCROLL_LOCK);
-    KBD_PARSER.scrollLock( stateLEDs & LED_SCROLL_LOCK );
+    KBD_PARSER.numLock( stateNumLockToggle = (stateLEDs & LED_NUM_LOCK) );
+
+    KBD_PARSER.capsLock( stateCapsLockToggle = (stateLEDs & LED_CAPS_LOCK) );
+
+    KBD_PARSER.scrollLock( stateScrollLockToggle = (stateLEDs & LED_SCROLL_LOCK) );
 }
 
 void KeyboardHijacker::releaseAllBeingHoldDownKey()

@@ -7,12 +7,25 @@
 #define PIN_DARKJUNCTION_DIGITAL_RX     13  // D7
 #define PIN_DARKJUNCTION_DIGITAL_TX     15  // D8
 
-#define DECLARE_DARKJUNCTION_PINS()     pinMode(PIN_DARKJUNCTION_DIGITAL_RX,INPUT); pinMode(PIN_DARKJUNCTION_DIGITAL_TX,OUTPUT);
+#define DECLARE_DARKJUNCTION_PINS()     { pinMode(PIN_DARKJUNCTION_DIGITAL_RX,INPUT); pinMode(PIN_DARKJUNCTION_DIGITAL_TX,OUTPUT); }
 
-// This function was designed with the assumption that the master module can control the slave module's power
-// slave module can use SoftwareSerial, but master module should be use HardwareSerial
-// The reason is that even if control the slave module's power, the master module's Serial must remain operational...
-SoftwareSerial S3R14L(PIN_DARKJUNCTION_SERIAL_RX, PIN_DARKJUNCTION_SERIAL_TX);
+
+
+#define DarkJunction_IS_DEBUG_MODE 1 // 0:FALSE, 1:TRUE
+
+// 1 : DarkJunction works Hard-Soft Serial
+#if DarkJunction_IS_DEBUG_MODE == 1
+    SoftwareSerial S3R14L(PIN_DARKJUNCTION_SERIAL_RX, PIN_DARKJUNCTION_SERIAL_TX);
+    #define S3R14L_SPEED 19200
+
+// 0 : DarkJunction works Hard-Hard Serial
+#else
+    #define S3R14L Serial // hardware Serial
+    #define S3R14L_SPEED 115200
+
+#endif
+
+
 
 namespace DarkJunction // For, Serial Communication with applied Checksum
 {
@@ -57,7 +70,7 @@ namespace DarkJunction // For, Serial Communication with applied Checksum
 
 
     /***(( About, Serial RX / TX ))***/
-    String  strMessage;
+    String  strMessage = "";
     void    appendMessage   (String append) { strMessage += append; }
     String  getMessage      (void)          { return strMessage; }
     void    clearMessage    (void)          { strMessage=""; }
@@ -77,7 +90,8 @@ namespace DarkJunction // For, Serial Communication with applied Checksum
 
     void BOOT()
     {
-        S3R14L.begin(19200); // 9600 19200 38400 57600 115200
+        S3R14L.begin(S3R14L_SPEED); // 9600 19200 38400 57600 115200
+        S3R14L.setTimeout(50);
         START_REQUEST_DETECTING();
 
         STATE = DarkJunction_STATE_STANDBY;
@@ -221,14 +235,12 @@ namespace DarkJunction // For, Serial Communication with applied Checksum
         uint32_t millisDetectingStarted = millis();
         while(S3R14L.available() == 0)
         {
-            delay(1);
-
             if (millis()-millisDetectingStarted > SERIAL_READ_TIMEOUT)
             {
                 if (isDEBUG) Serial.println("S3R14L_polling TIMEOUT !!");
                 return false;
             }
-        } //delay(10);
+        } // delay(10);
 
 
         // get Message
@@ -238,7 +250,6 @@ namespace DarkJunction // For, Serial Communication with applied Checksum
 
             while(!isContains(*strRead, '\a'))
             {
-                delay(3);
                 if (S3R14L.available())
                     (*strRead).concat(S3R14L.readStringUntil('\0'));
             }
@@ -315,7 +326,7 @@ namespace DarkJunction // For, Serial Communication with applied Checksum
         }
 
 
-        delay(20); // skip upload's checksum check
+        delay(10); // skip upload's checksum check
 
 
         // prevent duplicated checksum checker error
@@ -355,7 +366,7 @@ namespace DarkJunction // For, Serial Communication with applied Checksum
             return false;
 
 
-        bool hasChecksumError = detectHIGHForXXms(15, true);
+        bool hasChecksumError = detectHIGHForXXms(5, true);
 
 
         // if checksum does not match, reupload or abondon

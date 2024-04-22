@@ -8,7 +8,7 @@
 
 #define RESET_EEPROM_PIN 4
 
-volatile bool isDEBUG = true;
+bool isDEBUG = true;
 
 
 
@@ -257,6 +257,9 @@ void setup()
 
 
     // Serial begin, if Debugging
+    #if DarkJunction_IS_DEBUG_MODE == 0
+        isDEBUG = false;
+    #endif
     if (isDEBUG)
     {
         Serial.begin(115200);

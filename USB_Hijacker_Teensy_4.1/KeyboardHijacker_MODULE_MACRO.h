@@ -409,6 +409,7 @@ void KeyboardHijacker::MODULE_MACRO_END_PLAYER()
 
     // PREVENT entanglement of KEY states
     KBD_HIJACKER.releaseAllBeingHoldDownKey(); delay(10);
+    KBD_HIJACKER.reserveSyncToggleKeyStates();
     
     isMacroPlaying=false; isEventbyMacro=false; MAP_MINI_MACRO.clear();
     if(isDEBUG){ Serial.print("\n\nMODULE_MACRO_END_PLAYER    PLAYED LINES : "); Serial.println(numPlayed); Serial.println(); }

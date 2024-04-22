@@ -5,12 +5,6 @@
 // CheonJiIn is... https://namu.wiki/w/%EC%B2%9C%EC%A7%80%EC%9D%B8%20%EC%9E%90%ED%8C%90
 // NaRatGeul is... https://namu.wiki/w/KT%EB%82%98%EB%9E%8F%EA%B8%80%20%EC%9E%90%ED%8C%90
 
-#define DO_BACKSPACE    KBD_HIJACKER.pressandreleaseKey(KEY_BACKSPACE); delay(10);
-#define DO_SPACE        KBD_HIJACKER.pressandreleaseKey(KEY_SPACE);     delay(10);
-#define COMPLETE_THE_IN_PROGRESS_HANGEUL_IMMEDIATELY        DO_SPACE; DO_BACKSPACE;
-
-
-
 void KeyboardHijacker::MODULE_KOREAN_KEYPAD_EVOLUTION()
 {
 /* ------------------------------------------------------ KEYPAD_KOREAN_LAYOUT COMMON ------------------------------------------------------ */
@@ -76,6 +70,10 @@ void KeyboardHijacker::MODULE_KOREAN_KEYPAD_EVOLUTION()
     #define KORPAD_MODE_ALPHABET   1
     #define KORPAD_MODE_KANA       2
     static int8_t KORPAD_MODE = KORPAD_MODE_NONE;
+
+    #define DO_BACKSPACE    KBD_HIJACKER.pressandreleaseKey(KEY_BACKSPACE); delay(10);
+    #define DO_SPACE        KBD_HIJACKER.pressandreleaseKey(KEY_SPACE);     delay(10);
+    #define COMPLETE_THE_IN_PROGRESS_HANGEUL_IMMEDIATELY        DO_SPACE; DO_BACKSPACE;
 
     auto KORPAD_switchMODE = [&](uint8_t UPDATE_MODE) -> void
     {
@@ -754,7 +752,7 @@ void KeyboardHijacker::MODULE_KOREAN_KEYPAD_EVOLUTION()
         // Set to GJI IME
         SET_IME_TO_GJI;
 
-        // ReType Outputs
+        // Retype all of queued Outputs
         bool isTyped = false;
         for(String strKana : queueKana)
         {
@@ -791,40 +789,40 @@ void KeyboardHijacker::MODULE_KOREAN_KEYPAD_EVOLUTION()
 
                 switch(keyJustLatestPressed)
                 {
-                    case KEYPAD_ASTERIX:
+                    case KEYCODE_KEYPAD_ASTERIX:
                     {
                         KBD_HIJACKER.pressandreleaseKey(KEY_ESC);
                     }
                     break;
 
-                    case KEYPAD_8:
+                    case KEYCODE_KEYPAD_8:
                     {
                         KBD_HIJACKER.pressandreleaseKey(KEY_UP_ARROW);
                     }
                     break;
-                    case KEYPAD_2:
+                    case KEYCODE_KEYPAD_2:
                     {
                         KBD_HIJACKER.pressandreleaseKey(KEY_DOWN_ARROW);
                     }
                     break;
 
-                    case KEYPAD_9:
+                    case KEYCODE_KEYPAD_9:
                     {
                         KBD_HIJACKER.pressandreleaseKey(KEY_PAGE_UP);
                     }
                     break;
-                    case KEYPAD_3:
+                    case KEYCODE_KEYPAD_3:
                     {
                         KBD_HIJACKER.pressandreleaseKey(KEY_PAGE_DOWN);
                     }
                     break;
 
-                    case KEY_TAB:
+                    case KEYCODE_KEY_TAB:
                     {
                         KBD_HIJACKER.pressandreleaseKey(KEY_TAB);
                     }
                     break;
-                    case KEYPAD_PERIOD:
+                    case KEYCODE_KEYPAD_PERIOD:
                     {
                         KBD_HIJACKER.pressandreleaseMultiKey( {KEY_CTRL,KEY_DELETE} );
                     }

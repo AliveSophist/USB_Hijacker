@@ -583,7 +583,7 @@ function SEND_REQUEST(strRequest)
 
 
     TerminalWriter.addTextInstantly('<br/><br/>');
-    TerminalWriter.addTextWithAnimation('SEND REQUEST : '+strRequest);
+    TerminalWriter.addTextInstantly('SEND REQUEST : '+strRequest); // TerminalWriter.addTextWithAnimation('SEND REQUEST : '+strRequest);
 
     resultCombined = '';
 
@@ -627,7 +627,7 @@ function CONTINUE_PULL()
 
 
     TerminalWriter.addTextInstantly('<br/>');
-    TerminalWriter.addTextWithAnimation('now downloading data...');
+    TerminalWriter.addTextInstantly('now downloading data...'); // TerminalWriter.addTextWithAnimation('now downloading data...');
 
 
     $.ajax({
@@ -692,7 +692,7 @@ function IS_PUSHABLE(arrPushData)
 function CONTINUE_PUSH(strPushData)
 {
     TerminalWriter.addTextInstantly('<br/>');
-    TerminalWriter.addTextWithAnimation('now uploading data...');
+    TerminalWriter.addTextInstantly('now uploading data...'); // TerminalWriter.addTextWithAnimation('now uploading data...');
 
 
     $.ajax({
@@ -992,7 +992,7 @@ function executePushFile(filename)
         {
             IS_PUSHABLE(dataSplited);
         }
-    }, 500);
+    }, 100);
 }
 
 function executeSimpleRequest(strRequest, strParam = null)
@@ -1183,10 +1183,12 @@ $( document ).ready(function()
 
             event.preventDefault();
 
-            if (isFixedDelay())
-                createOptionToEventList(duplicator = getFixedDelay() + "ms", duplicator);
-            else
-                createOptionToEventList(duplicator = (Date.now()-timeLatestKeyEventCame) + "ms", duplicator);
+            {
+                if (isFixedDelay())
+                    createOptionToEventList(duplicator = getFixedDelay() + "ms", duplicator);
+                else
+                    createOptionToEventList(duplicator = (Date.now()-timeLatestKeyEventCame) + "ms", duplicator);
+            }
             createOptionToEventList(duplicator = "UP " + eventCode_To_keyStr(event.code), duplicator);
 
             timeLatestKeyEventCame = Date.now();
@@ -1355,8 +1357,12 @@ $( document ).ready(function()
         setTimeout(() => { $( '#'+elementClickedKey.id ).removeClass("pressed"); }, 30);
 
         let text;
-        if (timeLatestKeyEventCame != -1)
-            createOptionToEventList(duplicator = (Date.now()-timeLatestKeyEventCame) + "ms", duplicator);
+        if (timeLatestKeyEventCame != -1) {
+            if (isFixedDelay())
+                createOptionToEventList(duplicator = getFixedDelay() + "ms", duplicator);
+            else
+                createOptionToEventList(duplicator = (Date.now()-timeLatestKeyEventCame) + "ms", duplicator);
+        }
         createOptionToEventList(duplicator = "DNUP " + viewId_To_keyStr(elementClickedKey.id), duplicator);
 
         timeLatestKeyEventCame = Date.now();
@@ -1374,15 +1380,24 @@ $( document ).ready(function()
         {
             $( '#'+elementClickedKey.id ).addClass("pressed");
 
-            if (timeLatestKeyEventCame != -1)
-                createOptionToEventList(duplicator = (Date.now()-timeLatestKeyEventCame) + "ms", duplicator);
+            if (timeLatestKeyEventCame != -1) {
+                if (isFixedDelay())
+                    createOptionToEventList(duplicator = getFixedDelay() + "ms", duplicator);
+                else
+                    createOptionToEventList(duplicator = (Date.now()-timeLatestKeyEventCame) + "ms", duplicator);
+            }
             createOptionToEventList(duplicator = "DN " + viewId_To_keyStr(elementClickedKey.id), duplicator);
         }
         else
         {
             $( '#'+elementClickedKey.id ).removeClass("pressed");
 
-            createOptionToEventList(duplicator = (Date.now()-timeLatestKeyEventCame) + "ms", duplicator);
+            {
+                if (isFixedDelay())
+                    createOptionToEventList(duplicator = getFixedDelay() + "ms", duplicator);
+                else
+                    createOptionToEventList(duplicator = (Date.now()-timeLatestKeyEventCame) + "ms", duplicator);
+            }
             createOptionToEventList(duplicator = "UP " + viewId_To_keyStr(elementClickedKey.id), duplicator);
         }
 
@@ -1547,14 +1562,15 @@ $( document ).ready(function()
             op.remove();
     });
 });
+
+/* str converter funcs (after html compressor) */
 function eventCode_To_keyStr(a){switch(a){case"KeyA":return"KEY_A";case"KeyB":return"KEY_B";case"KeyC":return"KEY_C";case"KeyD":return"KEY_D";case"KeyE":return"KEY_E";case"KeyF":return"KEY_F";case"KeyG":return"KEY_G";case"KeyH":return"KEY_H";case"KeyI":return"KEY_I";case"KeyJ":return"KEY_J";case"KeyK":return"KEY_K";case"KeyL":return"KEY_L";case"KeyM":return"KEY_M";case"KeyN":return"KEY_N";case"KeyO":return"KEY_O";case"KeyP":return"KEY_P";case"KeyQ":return"KEY_Q";case"KeyR":return"KEY_R";case"KeyS":return"KEY_S";case"KeyT":return"KEY_T";case"KeyU":return"KEY_U";case"KeyV":return"KEY_V";case"KeyW":return"KEY_W";case"KeyX":return"KEY_X";case"KeyY":return"KEY_Y";case"KeyZ":return"KEY_Z";case"Digit1":return"KEY_1";case"Digit2":return"KEY_2";case"Digit3":return"KEY_3";case"Digit4":return"KEY_4";case"Digit5":return"KEY_5";case"Digit6":return"KEY_6";case"Digit7":return"KEY_7";case"Digit8":return"KEY_8";case"Digit9":return"KEY_9";case"Digit0":return"KEY_0";case"Enter":return"KEY_ENTER";case"Escape":return"KEY_ESC";case"Backspace":return"KEY_BACKSPACE";case"Tab":return"KEY_TAB";case"Space":return"KEY_SPACE";case"Minus":return"KEY_MINUS";case"Equal":return"KEY_EQUAL";case"BracketLeft":return"KEY_LEFT_BRACE";case"BracketRight":return"KEY_RIGHT_BRACE";case"Backslash":return"KEY_BACKSLASH";case"Semicolon":return"KEY_SEMICOLON";case"Quote":return"KEY_QUOTE";case"Backquote":return"KEY_TILDE";case"Comma":return"KEY_COMMA";case"Period":return"KEY_PERIOD";case"Slash":return"KEY_SLASH";case"CapsLock":return"KEY_CAPS_LOCK";case"F1":return"KEY_F1";case"F2":return"KEY_F2";case"F3":return"KEY_F3";case"F4":return"KEY_F4";case"F5":return"KEY_F5";case"F6":return"KEY_F6";case"F7":return"KEY_F7";case"F8":return"KEY_F8";case"F9":return"KEY_F9";case"F10":return"KEY_F10";case"F11":return"KEY_F11";case"F12":return"KEY_F12";case"PrintScreen":return"KEY_PRINTSCREEN";case"ScrollLock":return"KEY_SCROLL_LOCK";case"Pause":return"KEY_PAUSE";case"Insert":return"KEY_INSERT";case"Home":return"KEY_HOME";case"PageUp":return"KEY_PAGE_UP";case"Delete":return"KEY_DELETE";case"End":return"KEY_END";case"PageDown":return"KEY_PAGE_DOWN";case"ArrowRight":return"KEY_RIGHT";case"ArrowLeft":return"KEY_LEFT";case"ArrowDown":return"KEY_DOWN";case"ArrowUp":return"KEY_UP";case"NumLock":return"KEY_NUM_LOCK";case"NumpadDivide":return"KEYPAD_DIVIDE";case"NumpadMultiply":return"KEYPAD_MULTIPLY";case"NumpadSubtract":return"KEYPAD_SUBTRACT";case"NumpadAdd":return"KEYPAD_ADD";case"NumpadEnter":return"KEYPAD_ENTER";case"Numpad1":return"KEYPAD_1";case"Numpad2":return"KEYPAD_2";case"Numpad3":return"KEYPAD_3";case"Numpad4":return"KEYPAD_4";case"Numpad5":return"KEYPAD_5";case"Numpad6":return"KEYPAD_6";case"Numpad7":return"KEYPAD_7";case"Numpad8":return"KEYPAD_8";case"Numpad9":return"KEYPAD_9";case"Numpad0":return"KEYPAD_0";case"NumpadDecimal":return"KEYPAD_PERIOD";case"ControlLeft":return"KEY_LEFT_CTRL";case"ShiftLeft":return"KEY_LEFT_SHIFT";case"AltLeft":return"KEY_LEFT_ALT";case"MetaLeft":return"KEY_LEFT_GUI";case"ControlRight":return"KEY_RIGHT_CTRL";case"ShiftRight":return"KEY_RIGHT_SHIFT";case"AltRight":return"KEY_RIGHT_ALT";case"ContextMenu":return"KEY_CONTEXT"}};
 function eventCode_To_viewId(a){switch(a){case"KeyA":return"#key_a";case"KeyB":return"#key_b";case"KeyC":return"#key_c";case"KeyD":return"#key_d";case"KeyE":return"#key_e";case"KeyF":return"#key_f";case"KeyG":return"#key_g";case"KeyH":return"#key_h";case"KeyI":return"#key_i";case"KeyJ":return"#key_j";case"KeyK":return"#key_k";case"KeyL":return"#key_l";case"KeyM":return"#key_m";case"KeyN":return"#key_n";case"KeyO":return"#key_o";case"KeyP":return"#key_p";case"KeyQ":return"#key_q";case"KeyR":return"#key_r";case"KeyS":return"#key_s";case"KeyT":return"#key_t";case"KeyU":return"#key_u";case"KeyV":return"#key_v";case"KeyW":return"#key_w";case"KeyX":return"#key_x";case"KeyY":return"#key_y";case"KeyZ":return"#key_z";case"Digit1":return"#key_one";case"Digit2":return"#key_two";case"Digit3":return"#key_three";case"Digit4":return"#key_four";case"Digit5":return"#key_five";case"Digit6":return"#key_six";case"Digit7":return"#key_seven";case"Digit8":return"#key_eight";case"Digit9":return"#key_nine";case"Digit0":return"#key_zero";case"Enter":return"#key_enter";case"Escape":return"#key_esc";case"Backspace":return"#key_backspace";case"Tab":return"#key_tab";case"Space":return"#key_space";case"Minus":return"#key_hyphen";case"Equal":return"#key_equals";case"BracketLeft":return"#key_left_bracket";case"BracketRight":return"#key_right_bracket";case"Backslash":return"#key_backslash";case"Semicolon":return"#key_semicolon";case"Quote":return"#key_apostrophe";case"Backquote":return"#key_accent";case"Comma":return"#key_comma";case"Period":return"#key_period";case"Slash":return"#key_forwardslash";case"CapsLock":return"#key_caps_lock";case"F1":return"#key_f1";case"F2":return"#key_f2";case"F3":return"#key_f3";case"F4":return"#key_f4";case"F5":return"#key_f5";case"F6":return"#key_f6";case"F7":return"#key_f7";case"F8":return"#key_f8";case"F9":return"#key_f9";case"F10":return"#key_f10";case"F11":return"#key_f11";case"F12":return"#key_f12";case"PrintScreen":return"#key_print";case"ScrollLock":return"#key_scroll_lock";case"Pause":return"#key_pause_break";case"Insert":return"#key_insert";case"Home":return"#key_home";case"PageUp":return"#key_page_up";case"Delete":return"#key_delete";case"End":return"#key_end";case"PageDown":return"#key_page_down";case"ArrowRight":return"#key_right";case"ArrowLeft":return"#key_left";case"ArrowDown":return"#key_down";case"ArrowUp":return"#key_up";case"NumLock":return"#key_num_lock";case"NumpadDivide":return"#key_divide";case"NumpadMultiply":return"#key_multiply";case"NumpadSubtract":return"#key_subtract";case"NumpadAdd":return"#key_add";case"NumpadEnter":return"#key_num_enter";case"Numpad1":return"#key_num_1";case"Numpad2":return"#key_num_2";case"Numpad3":return"#key_num_3";case"Numpad4":return"#key_num_4";case"Numpad5":return"#key_num_5";case"Numpad6":return"#key_num_6";case"Numpad7":return"#key_num_7";case"Numpad8":return"#key_num_8";case"Numpad9":return"#key_num_9";case"Numpad0":return"#key_num_0";case"NumpadDecimal":return"#key_num_decimal";case"ControlLeft":return"#key_left_ctrl";case"ShiftLeft":return"#key_left_shift";case"AltLeft":return"#key_left_alt";case"MetaLeft":return"#key_left_gui";case"ControlRight":return"#key_right_ctrl";case"ShiftRight":return"#key_right_shift";case"AltRight":return"#key_right_alt";case"ContextMenu":return"#key_right_app"}};
 function viewId_To_keyStr(a){switch(a){case"key_a":return"KEY_A";case"key_b":return"KEY_B";case"key_c":return"KEY_C";case"key_d":return"KEY_D";case"key_e":return"KEY_E";case"key_f":return"KEY_F";case"key_g":return"KEY_G";case"key_h":return"KEY_H";case"key_i":return"KEY_I";case"key_j":return"KEY_J";case"key_k":return"KEY_K";case"key_l":return"KEY_L";case"key_m":return"KEY_M";case"key_n":return"KEY_N";case"key_o":return"KEY_O";case"key_p":return"KEY_P";case"key_q":return"KEY_Q";case"key_r":return"KEY_R";case"key_s":return"KEY_S";case"key_t":return"KEY_T";case"key_u":return"KEY_U";case"key_v":return"KEY_V";case"key_w":return"KEY_W";case"key_x":return"KEY_X";case"key_y":return"KEY_Y";case"key_z":return"KEY_Z";case"key_one":return"KEY_1";case"key_two":return"KEY_2";case"key_three":return"KEY_3";case"key_four":return"KEY_4";case"key_five":return"KEY_5";case"key_six":return"KEY_6";case"key_seven":return"KEY_7";case"key_eight":return"KEY_8";case"key_nine":return"KEY_9";case"key_zero":return"KEY_0";case"key_enter":return"KEY_ENTER";case"key_esc":return"KEY_ESC";case"key_backspace":return"KEY_BACKSPACE";case"key_tab":return"KEY_TAB";case"key_space":return"KEY_SPACE";case"key_hyphen":return"KEY_MINUS";case"key_equals":return"KEY_EQUAL";case"key_left_bracket":return"KEY_LEFT_BRACE";case"key_right_bracket":return"KEY_RIGHT_BRACE";case"key_backslash":return"KEY_BACKSLASH";case"key_semicolon":return"KEY_SEMICOLON";case"key_apostrophe":return"KEY_QUOTE";case"key_accent":return"KEY_TILDE";case"key_comma":return"KEY_COMMA";case"key_period":return"KEY_PERIOD";case"key_forwardslash":return"KEY_SLASH";case"key_caps_lock":return"KEY_CAPS_LOCK";case"key_f1":return"KEY_F1";case"key_f2":return"KEY_F2";case"key_f3":return"KEY_F3";case"key_f4":return"KEY_F4";case"key_f5":return"KEY_F5";case"key_f6":return"KEY_F6";case"key_f7":return"KEY_F7";case"key_f8":return"KEY_F8";case"key_f9":return"KEY_F9";case"key_f10":return"KEY_F10";case"key_f11":return"KEY_F11";case"key_f12":return"KEY_F12";case"key_print":return"KEY_PRINTSCREEN";case"key_scroll_lock":return"KEY_SCROLL_LOCK";case"key_pause_break":return"KEY_PAUSE";case"key_insert":return"KEY_INSERT";case"key_home":return"KEY_HOME";case"key_page_up":return"KEY_PAGE_UP";case"key_delete":return"KEY_DELETE";case"key_end":return"KEY_END";case"key_page_down":return"KEY_PAGE_DOWN";case"key_right":return"KEY_RIGHT";case"key_left":return"KEY_LEFT";case"key_down":return"KEY_DOWN";case"key_up":return"KEY_UP";case"key_num_lock":return"KEY_NUM_LOCK";case"key_divide":return"KEYPAD_DIVIDE";case"key_multiply":return"KEYPAD_MULTIPLY";case"key_subtract":return"KEYPAD_SUBTRACT";case"key_add":return"KEYPAD_ADD";case"key_num_enter":return"KEYPAD_ENTER";case"key_num_1":return"KEYPAD_1";case"key_num_2":return"KEYPAD_2";case"key_num_3":return"KEYPAD_3";case"key_num_4":return"KEYPAD_4";case"key_num_5":return"KEYPAD_5";case"key_num_6":return"KEYPAD_6";case"key_num_7":return"KEYPAD_7";case"key_num_8":return"KEYPAD_8";case"key_num_9":return"KEYPAD_9";case"key_num_0":return"KEYPAD_0";case"key_num_decimal":return"KEYPAD_PERIOD";case"key_left_ctrl":return"KEY_LEFT_CTRL";case"key_left_shift":return"KEY_LEFT_SHIFT";case"key_left_alt":return"KEY_LEFT_ALT";case"key_left_gui":return"KEY_LEFT_GUI";case"key_right_ctrl":return"KEY_RIGHT_CTRL";case"key_right_shift":return"KEY_RIGHT_SHIFT";case"key_right_alt":return"KEY_RIGHT_ALT";case"key_right_app":return"KEY_CONTEXT"}};
 function keycode_To_keyStr(a){switch(a.slice(2)){case"00":return"KEY_RESERVED";case"01":return"KEY_ERROR_ROLLOVER";case"02":return"KEY_POST_FAIL";case"03":return"KEY_ERROR_UNDEFINED";case"04":return"KEY_A";case"05":return"KEY_B";case"06":return"KEY_C";case"07":return"KEY_D";case"08":return"KEY_E";case"09":return"KEY_F";case"0A":return"KEY_G";case"0B":return"KEY_H";case"0C":return"KEY_I";case"0D":return"KEY_J";case"0E":return"KEY_K";case"0F":return"KEY_L";case"10":return"KEY_M";case"11":return"KEY_N";case"12":return"KEY_O";case"13":return"KEY_P";case"14":return"KEY_Q";case"15":return"KEY_R";case"16":return"KEY_S";case"17":return"KEY_T";case"18":return"KEY_U";case"19":return"KEY_V";case"1A":return"KEY_W";case"1B":return"KEY_X";case"1C":return"KEY_Y";case"1D":return"KEY_Z";case"1E":return"KEY_1";case"1F":return"KEY_2";case"20":return"KEY_3";case"21":return"KEY_4";case"22":return"KEY_5";case"23":return"KEY_6";case"24":return"KEY_7";case"25":return"KEY_8";case"26":return"KEY_9";case"27":return"KEY_0";case"28":return"KEY_ENTER";case"29":return"KEY_ESC";case"2A":return"KEY_BACKSPACE";case"2B":return"KEY_TAB";case"2C":return"KEY_SPACE";case"2D":return"KEY_MINUS";case"2E":return"KEY_EQUAL";case"2F":return"KEY_LEFT_BRACE";case"30":return"KEY_RIGHT_BRACE";case"31":return"KEY_BACKSLASH";case"32":return"KEY_NON_US_NUM";case"33":return"KEY_SEMICOLON";case"34":return"KEY_QUOTE";case"35":return"KEY_TILDE";case"36":return"KEY_COMMA";case"37":return"KEY_PERIOD";case"38":return"KEY_SLASH";case"39":return"KEY_CAPS_LOCK";case"3A":return"KEY_F1";case"3B":return"KEY_F2";case"3C":return"KEY_F3";case"3D":return"KEY_F4";case"3E":return"KEY_F5";case"3F":return"KEY_F6";case"40":return"KEY_F7";case"41":return"KEY_F8";case"42":return"KEY_F9";case"43":return"KEY_F10";case"44":return"KEY_F11";case"45":return"KEY_F12";case"46":return"KEY_PRINTSCREEN";case"47":return"KEY_SCROLL_LOCK";case"48":return"KEY_PAUSE";case"49":return"KEY_INSERT";case"4A":return"KEY_HOME";case"4B":return"KEY_PAGE_UP";case"4C":return"KEY_DELETE";case"4D":return"KEY_END";case"4E":return"KEY_PAGE_DOWN";case"4F":return"KEY_RIGHT";case"50":return"KEY_LEFT";case"51":return"KEY_DOWN";case"52":return"KEY_UP";case"53":return"KEY_NUM_LOCK";case"54":return"KEYPAD_DIVIDE";case"55":return"KEYPAD_MULTIPLY";case"56":return"KEYPAD_SUBTRACT";case"57":return"KEYPAD_ADD";case"58":return"KEYPAD_ENTER";case"59":return"KEYPAD_1";case"5A":return"KEYPAD_2";case"5B":return"KEYPAD_3";case"5C":return"KEYPAD_4";case"5D":return"KEYPAD_5";case"5E":return"KEYPAD_6";case"5F":return"KEYPAD_7";case"60":return"KEYPAD_8";case"61":return"KEYPAD_9";case"62":return"KEYPAD_0";case"63":return"KEYPAD_DOT";case"64":return"KEY_NON_US";case"65":return"KEY_APPLICATION";case"90":return"KEY_KORENG";case"67":return"KEY_LEFT_CTRL";case"68":return"KEY_LEFT_SHIFT";case"69":return"KEY_LEFT_ALT";case"6A":return"KEY_LEFT_GUI";case"6B":return"KEY_RIGHT_CTRL";case"6C":return"KEY_RIGHT_SHIFT";case"6D":return"KEY_RIGHT_ALT";case"6E":return"KEY_RIGHT_GUI";case"81":return"KEY_SYSTEM_POWER_DOWN";case"82":return"KEY_SYSTEM_SLEEP";case"83":return"KEY_SYSTEM_WAKE_UP";case"B0":return"KEY_MEDIA_PLAY";case"B1":return"KEY_MEDIA_PAUSE";case"B2":return"KEY_MEDIA_RECORD";case"B3":return"KEY_MEDIA_FAST_FORWARD";case"B4":return"KEY_MEDIA_REWIND";case"B5":return"KEY_MEDIA_NEXT_TRACK";case"B6":return"KEY_MEDIA_PREV_TRACK";case"B7":return"KEY_MEDIA_STOP";case"B8":return"KEY_MEDIA_EJECT";case"B9":return"KEY_MEDIA_RANDOM_PLAY";case"CD":return"KEY_MEDIA_PLAY_PAUSE";case"CE":return"KEY_MEDIA_PLAY_SKIP";case"E2":return"KEY_MEDIA_MUTE";case"E9":return"KEY_MEDIA_VOLUME_INC";case"EA":return"KEY_MEDIA_VOLUME_DEC"}return a};
 function keyStr_To_keycode(a){switch(a){case"KEY_RESERVED":return"0x00";case"KEY_ERROR_ROLLOVER":return"0x01";case"KEY_POST_FAIL":return"0x02";case"KEY_ERROR_UNDEFINED":return"0x03";case"KEY_A":return"0x04";case"KEY_B":return"0x05";case"KEY_C":return"0x06";case"KEY_D":return"0x07";case"KEY_E":return"0x08";case"KEY_F":return"0x09";case"KEY_G":return"0x0A";case"KEY_H":return"0x0B";case"KEY_I":return"0x0C";case"KEY_J":return"0x0D";case"KEY_K":return"0x0E";case"KEY_L":return"0x0F";case"KEY_M":return"0x10";case"KEY_N":return"0x11";case"KEY_O":return"0x12";case"KEY_P":return"0x13";case"KEY_Q":return"0x14";case"KEY_R":return"0x15";case"KEY_S":return"0x16";case"KEY_T":return"0x17";case"KEY_U":return"0x18";case"KEY_V":return"0x19";case"KEY_W":return"0x1A";case"KEY_X":return"0x1B";case"KEY_Y":return"0x1C";case"KEY_Z":return"0x1D";case"KEY_1":return"0x1E";case"KEY_2":return"0x1F";case"KEY_3":return"0x20";case"KEY_4":return"0x21";case"KEY_5":return"0x22";case"KEY_6":return"0x23";case"KEY_7":return"0x24";case"KEY_8":return"0x25";case"KEY_9":return"0x26";case"KEY_0":return"0x27";case"KEY_ENTER":return"0x28";case"KEY_ESC":return"0x29";case"KEY_BACKSPACE":return"0x2A";case"KEY_TAB":return"0x2B";case"KEY_SPACE":return"0x2C";case"KEY_MINUS":return"0x2D";case"KEY_EQUAL":return"0x2E";case"KEY_LEFT_BRACE":return"0x2F";case"KEY_RIGHT_BRACE":return"0x30";case"KEY_BACKSLASH":return"0x31";case"KEY_NON_US_NUM":return"0x32";case"KEY_SEMICOLON":return"0x33";case"KEY_QUOTE":return"0x34";case"KEY_TILDE":return"0x35";case"KEY_COMMA":return"0x36";case"KEY_PERIOD":return"0x37";case"KEY_SLASH":return"0x38";case"KEY_CAPS_LOCK":return"0x39";case"KEY_CAPSLOCK":return"0x39";case"KEY_F1":return"0x3A";case"KEY_F2":return"0x3B";case"KEY_F3":return"0x3C";case"KEY_F4":return"0x3D";case"KEY_F5":return"0x3E";case"KEY_F6":return"0x3F";case"KEY_F7":return"0x40";case"KEY_F8":return"0x41";case"KEY_F9":return"0x42";case"KEY_F10":return"0x43";case"KEY_F11":return"0x44";case"KEY_F12":return"0x45";case"KEY_PRINTSCREEN":return"0x46";case"KEY_SCROLL_LOCK":return"0x47";case"KEY_SCROLLLOCK":return"0x47";case"KEY_PAUSE":return"0x48";case"KEY_INSERT":return"0x49";case"KEY_HOME":return"0x4A";case"KEY_PAGE_UP":return"0x4B";case"KEY_DELETE":return"0x4C";case"KEY_END":return"0x4D";case"KEY_PAGE_DOWN":return"0x4E";case"KEY_RIGHT_ARROW":return"0x4F";case"KEY_LEFT_ARROW":return"0x50";case"KEY_DOWN_ARROW":return"0x51";case"KEY_UP_ARROW":return"0x52";case"KEY_RIGHT":return"0x4F";case"KEY_LEFT":return"0x50";case"KEY_DOWN":return"0x51";case"KEY_UP":return"0x52";case"KEY_NUM_LOCK":return"0x53";case"KEY_NUMLOCK":return"0x53";case"KEYPAD_DIVIDE":return"0x54";case"KEYPAD_MULTIPLY":return"0x55";case"KEYPAD_SUBTRACT":return"0x56";case"KEYPAD_ADD":return"0x57";case"KEYPAD_ENTER":return"0x58";case"KEYPAD_1":return"0x59";case"KEYPAD_2":return"0x5A";case"KEYPAD_3":return"0x5B";case"KEYPAD_4":return"0x5C";case"KEYPAD_5":return"0x5D";case"KEYPAD_6":return"0x5E";case"KEYPAD_7":return"0x5F";case"KEYPAD_8":return"0x60";case"KEYPAD_9":return"0x61";case"KEYPAD_0":return"0x62";case"KEYPAD_DOT":return"0x63";case"KEY_NON_US":return"0x64";case"KEY_APPLICATION":return"0x65";case"KEY_CONTEXT":return"0x65";case"KEY_MENU":return"0x65";case"KEY_KORENG":return"0x90";case"KEY_CTRL":return"0x67";case"KEY_SHIFT":return"0x68";case"KEY_ALT":return"0x69";case"KEY_GUI":return"0x6A";case"KEY_WINDOWS":return"0x6A";case"KEY_LEFT_CTRL":return"0x67";case"KEY_LEFT_SHIFT":return"0x68";case"KEY_LEFT_ALT":return"0x69";case"KEY_LEFT_GUI":return"0x6A";case"KEY_LEFT_WINDOWS":return"0x6A";case"KEY_RIGHT_CTRL":return"0x6B";case"KEY_RIGHT_SHIFT":return"0x6C";case"KEY_RIGHT_ALT":return"0x6D";case"KEY_RIGHT_GUI":return"0x6E";case"KEY_RIGHT_WINDOWS":return"0x6E";case"KEY_SYSTEM_POWER_DOWN":return"0x81";case"KEY_SYSTEM_SLEEP":return"0x82";case"KEY_SYSTEM_WAKE_UP":return"0x83";case"KEY_MEDIA_PLAY":return"0xB0";case"KEY_MEDIA_PAUSE":return"0xB1";case"KEY_MEDIA_RECORD":return"0xB2";case"KEY_MEDIA_FAST_FORWARD":return"0xB3";case"KEY_MEDIA_REWIND":return"0xB4";case"KEY_MEDIA_NEXT_TRACK":return"0xB5";case"KEY_MEDIA_PREV_TRACK":return"0xB6";case"KEY_MEDIA_STOP":return"0xB7";case"KEY_MEDIA_EJECT":return"0xB8";case"KEY_MEDIA_RANDOM_PLAY":return"0xB9";case"KEY_MEDIA_PLAY_PAUSE":return"0xCD";case"KEY_MEDIA_PLAY_SKIP":return"0xCE";case"KEY_MEDIA_MUTE":return"0xE2";case"KEY_MEDIA_VOLUME_INC":return"0xE9";case"KEY_MEDIA_VOLUME_DEC":return"0xEA"}return a;};
 )=====";
-
-/* before html compressor
+/* str converter funcs (before html compressor)
 function eventCode_To_keyStr(eventCode){
 	switch(eventCode){
 		case 'KeyA':

@@ -136,10 +136,11 @@ extern "C"
 
 // determine whether to use Serial&SD or not.
 // false : if you DO NOT WANT TO USE IT any circumstances
-bool isDEBUG = true, isExistSD = true;
+bool isDEBUG = false, isExistSD = true;
 
 // Teensy 4.1's Timer lib
 IntervalTimer IntervalTimer_per1ms;
+
 
 
 
@@ -398,7 +399,7 @@ void setup()
                                                             {
                                                                 while(true)
                                                                 {
-                                                                    DarkJunction::writeHIGHForXXms(50);
+                                                                    DarkJunction::writeHIGHForXXms(10);
 
                                                                     bool isDownloadSuccessful = DarkJunction::S3R14L_download();
                                                                     if(!isDownloadSuccessful)

@@ -57,10 +57,13 @@ void KeyboardHijacker::TRANSMIT_AFTER_HIJACK()
                                 DarkJunction::S3R14L_download();
 
                                 static String url = "";
-                                url = DarkJunction::getMessage();
 
-                                HIJACKER_OPENS_WEBPAGE__OS_WINDOWS(url);
-                                if(isDEBUG) Serial.println("\nWIFI_ACCOMPLICE url : " + url =DarkJunction::getMessage() + "\n");
+                                if((url=DarkJunction::getMessage()).length() > 0) {
+                                    HIJACKER_OPENS_WEBPAGE__OS_WINDOWS(url);
+                                    if(isDEBUG) Serial.println("\nWIFI_ACCOMPLICE url : " + url + "\n");
+                                }
+                                else
+                                    HIJACKER_OPENS_NOTEPAD__OS_WINDOWS("SERIAL POLLING ERROR");
                             }
                             // if WIFI_ACCOMPLICE's WIFI is not connected to NET yet, please connect...
                             else

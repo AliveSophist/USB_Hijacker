@@ -4,7 +4,7 @@
 
 
 bool isReservedReboot = false;
-void REBOOT() { SCB_AIRCR = 0x05FA0004; asm volatile ("dsb"); while(true){} }
+void REBOOT() { SCB_AIRCR = 0x05FA0004; while(1); }
 
 
 
