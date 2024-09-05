@@ -1,5 +1,7 @@
-
+#pragma once
 #include "KeyboardHijacker.h"
+
+
 
 bool isMacroRecording   = false;
 bool isMacroPlaying     = false;

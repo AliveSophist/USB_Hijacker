@@ -145,9 +145,6 @@ IntervalTimer IntervalTimer_per1ms;
 
 
 
-#ifndef KEYBOARDHIJACKER_INCLUDE_THINGS
-#define KEYBOARDHIJACKER_INCLUDE_THINGS
-
 #include <vector>
 #include <list>
 #include <map>
@@ -157,22 +154,20 @@ IntervalTimer IntervalTimer_per1ms;
 File textfile;
 
 /**⦓ FOR, CONTROL TEENSY ⦔**/
-#include "res_utility.h"
-#include "res_layouts.h"
+#include "./src/config/utility.h"
+#include "./src/config/layout.h"
 
 /**⦓ For, USER EXPERIENCE ⦔**/
-#include "Buzzzzer.h"
+#include "./src/Buzzzzer.h"
 
 /**⦓ For, EDIT FILES using WIFI ⦔**/
-#include "DarkJunction.h"
+#include "./src/DarkJunction.h"
 
 /**⦓ For, SNATCH THE KEY EVENT FROM SLAVE KEYBOARD ⦔**/
-#include "KeyboardParser.h"
-
-#endif // KEYBOARDHIJACKER_INCLUDE_THINGS
+#include "./src/KeyboardParser.h"
 
 /**⦓ For, TRANSMIT THE HIJACKED KEY EVENT TO HOST(OS) ⦔**/
-#include "KeyboardHijacker.h"
+#include "./src/KeyboardHijacker.h"
 
 
 

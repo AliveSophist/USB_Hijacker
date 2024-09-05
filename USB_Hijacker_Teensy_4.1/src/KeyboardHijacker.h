@@ -1,31 +1,5 @@
 #pragma once
 
-#ifndef KEYBOARDHIJACKER_INCLUDE_THINGS
-#define KEYBOARDHIJACKER_INCLUDE_THINGS
-
-#include <vector>
-#include <list>
-#include <map>
-#include <algorithm>
-
-#include <SD.h>
-File textfile;
-
-/**⦓ FOR, CONTROL TEENSY ⦔**/
-#include "res_utility.h"
-#include "res_layouts.h"
-
-/**⦓ For, USER EXPERIENCE ⦔**/
-#include "Buzzzzer.h"
-
-/**⦓ For, CONFIGURE FILES using WIFI ⦔**/
-#include "DarkJunction.h"
-
-/**⦓ For, SNATCH THE KEY EVENT FROM SLAVE KEYBOARD ⦔**/
-#include "KeyboardParser.h"
-
-#endif // KEYBOARDHIJACKER_INCLUDE_THINGS
-
 
 
 volatile int32_t key;

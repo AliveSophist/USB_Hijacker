@@ -1,5 +1,7 @@
-
+#pragma once
 #include "KeyboardHijacker.h"
+
+
 
 #define KEYPAD_KOREAN_LAYOUT    2      // 0:None   1:CheonJiIn   2:NaRatGeul
 // CheonJiIn is... https://namu.wiki/w/%EC%B2%9C%EC%A7%80%EC%9D%B8%20%EC%9E%90%ED%8C%90

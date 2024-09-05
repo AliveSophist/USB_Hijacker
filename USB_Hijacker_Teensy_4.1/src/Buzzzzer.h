@@ -1,6 +1,9 @@
 #pragma once
 
-#define PIN_BUZZER                      A17 // 41
+
+
+#define PIN_BUZZER A17 // 41
+#define BUZZZZER_SHEET_MAX 128
 
 /*  
     First,
@@ -12,12 +15,9 @@
     Then,
     Enjoy Buzzzzer! \>_</
 
-    example)
         Buzzzzer::reserveBuzz   ( { NOTE_DS7,0, NOTE_DS6,0, NOTE_B6,0,  NOTE_A6,0,  NOTE_DS6,0, NOTE_DS7,0, NOTE_B6 }
                                 , { 220,20,     130,20,     270,30,     230,20,     170,20,     270,20,     400     } );
  */
-
-#define BUZZZZER_SHEET_MAX 128
 
 namespace Buzzzzer
 {
@@ -69,6 +69,8 @@ namespace Buzzzzer
         m_proc=r_proc=0;
     }
 }
+
+
 
 #define NOTE_B0  31
 #define NOTE_C1  33

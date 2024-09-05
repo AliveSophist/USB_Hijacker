@@ -18,11 +18,11 @@ bool isDEBUG = true;
 #define EEPROM_ADDR_IS_SCHEDULED_RESET  0
 #define EEPROM_ADDR_SAVED_WIFI_NET_LIST 80
 
-#include "res_utility.h"
+#include "utility.h"
 
 
 
-#include <ESP8266TimerInterrupt.h>  // https://github.com/khoih-prog/ESP8266TimerInterrupt
+#include <ESP8266TimerInterrupt.h> // https://github.com/khoih-prog/ESP8266TimerInterrupt
 ESP8266Timer TimerInterrupt;
 
 #include <ESP8266WiFi.h>
@@ -167,11 +167,11 @@ auto getArgByNameFromClient = [](String argName) -> String
     return "";
 };
 
-#include <ArduinoJson.h>
+#include <ArduinoJson.h> // https://github.com/bblanchon/ArduinoJson
 
-#include "res_INDEX_html.h"
-#include "res_SELECT_WIFI_html.h"
-#include "res_DARK_PAGE_html.h"
+#include "./res/res_INDEX_html.h"
+#include "./res/res_SELECT_WIFI_html.h"
+#include "./res/res_DARK_PAGE_html.h"
 
 #include "DarkJunction.h"
 
