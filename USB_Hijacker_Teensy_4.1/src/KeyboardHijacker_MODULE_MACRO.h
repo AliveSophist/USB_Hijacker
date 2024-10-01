@@ -121,7 +121,7 @@ void KeyboardHijacker::MODULE_MACRO_BLOCK_SEVERAL_EVENTS_WHEN_READONLY_STARTED(v
 
     *flag = false;
 
-    if(numDN == 0)
+    if(numDN==0)
         isReadonlyStarted = false;
 }
 

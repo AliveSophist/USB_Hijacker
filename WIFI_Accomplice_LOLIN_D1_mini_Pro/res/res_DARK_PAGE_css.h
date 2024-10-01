@@ -1,4 +1,5 @@
-const char raw_css_DARK_PAGE[] PROGMEM = R"=====(
+const char raw_css_DARK_PAGE[] PROGMEM =
+R"=====(
 @import url('https://fonts.cdnfonts.com/css/lcd'); /* https://www.cdnfonts.com/lcd.font */
 @font-face {
     font-family: 'D2Coding';
@@ -133,6 +134,7 @@ html, body {
 .table tbody tr:last-child {
     border-bottom: hidden;
 }
+.rowMAPPER { color: orange; }
 .rainbow-text-when-hover:hover {
     cursor: pointer;
     color: transparent;
@@ -149,7 +151,8 @@ html, body {
     resize: none; /* hide resizer */
     border: none;
     outline: none;
-    overflow: auto;
+    overflow-y: scroll;
+    overflow-x: auto;
     white-space: nowrap; /* disable automatic line wrapping */
 
     background-image: url('https://i.imgur.com/DN9oKBA.jpg');
@@ -238,6 +241,8 @@ html, body {
 #btnCreateFile:hover { background-color: rgb(0,100,0); }
 #btnSaveFile { background-color: rgb(255,75,25); }
 #btnSaveFile:hover { background-color: rgb(125,0,0); }
+#btnHelp { background-color: rgb(0,120,200); }
+#btnHelp:hover { background-color: rgb(0,45,150); }
 
 
 

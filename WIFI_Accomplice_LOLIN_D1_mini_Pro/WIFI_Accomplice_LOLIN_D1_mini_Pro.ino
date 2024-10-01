@@ -6,21 +6,29 @@
     https://gist.github.com/Cyclenerd/7c9cba13360ec1ec9d2ea36e50c7ff77
 */
 
+
+
+
+
+/***[ ABOUT, CONTROL ESP ]***/
+
+bool isDEBUG = false;
+
 #define RESET_EEPROM_PIN 4
-
-bool isDEBUG = true;
-
-
 
 #include <list>
 
 #include <EEPROM.h>
-#define EEPROM_ADDR_IS_SCHEDULED_RESET  0
-#define EEPROM_ADDR_SAVED_WIFI_NET_LIST 80
+#define EEPROM_ADDR__IS_RESET_SCHEDULED  0
+#define EEPROM_ADDR__SAVED_WIFI_NET_LIST 80
 
-#include "utility.h"
+#include "./src/config/utility.h"
 
 
+
+
+
+/***[ ABOUT, WIFI & DNS SERVER ]***/
 
 #include <ESP8266TimerInterrupt.h> // https://github.com/khoih-prog/ESP8266TimerInterrupt
 ESP8266Timer TimerInterrupt;
@@ -118,7 +126,7 @@ namespace WIFI_CONNECTOR
 
         cli(); // DISABLE INTERRUPT while using EEPROM
         {
-            int addr = EEPROM_ADDR_SAVED_WIFI_NET_LIST;
+            int addr = EEPROM_ADDR__SAVED_WIFI_NET_LIST;
 
             for(WIFI_NET wifi : SAVED_WIFI_NET_LIST) {
                 EEPROM.put(addr, wifi);
@@ -139,7 +147,7 @@ namespace WIFI_CONNECTOR
         cli();
         // DISABLE INTERRUPT while using EEPROM
         {
-            int addr = EEPROM_ADDR_SAVED_WIFI_NET_LIST;
+            int addr = EEPROM_ADDR__SAVED_WIFI_NET_LIST;
             WIFI_NET wifi;
 
             for(int i = 0; i < SAVED_WIFI_NET_MAX_COUNT; i++) {
@@ -155,6 +163,10 @@ namespace WIFI_CONNECTOR
 
 
 
+
+
+/***[ ABOUT, WEB SERVER ]***/
+
 #include <ESP8266WebServer.h>
 ESP8266WebServer webServer(80);
 
@@ -167,13 +179,12 @@ auto getArgByNameFromClient = [](String argName) -> String
     return "";
 };
 
-#include <ArduinoJson.h> // https://github.com/bblanchon/ArduinoJson
 
-#include "./res/res_INDEX_html.h"
-#include "./res/res_SELECT_WIFI_html.h"
-#include "./res/res_DARK_PAGE_html.h"
 
-#include "DarkJunction.h"
+
+
+/***[ ABOUT, CALLBACK FUNCTION that call after being scheduled by web server reqeust ]***/
+// Requests in ESP8266WebServer.h behave asynchronously, so callbacks need to be designed for complex tasks like using delay()
 
 volatile bool isScheduled = false;
 std::function<void(void)> scheduledCallback = nullptr;
@@ -187,7 +198,6 @@ void SCHEDULE_FUNCTION(std::function<void(void)> callback)
     scheduledCallback = callback;
     isScheduled = true;
 }
-
 void RUN_SCHEDULED_FUNCTION_FOR_REQUEST()
 {
     if (!isScheduled || scheduledCallback==nullptr)
@@ -199,14 +209,31 @@ void RUN_SCHEDULED_FUNCTION_FOR_REQUEST()
     isScheduled = false;
 }
 
+
+
+
+
+/***[ ABOUT, WEB SERVER CONTROLLER that handles requests ]***/
+
+#include <ArduinoJson.h> // https://github.com/bblanchon/ArduinoJson
+
+#include "./res/res_INDEX_html.h"
+#include "./res/res_SELECT_WIFI_html.h"
+#include "./res/res_DARK_PAGE_html.h"
+#include "./res/res_KEYCODES_html.h"
+
+#include "./src/DarkJunction.h"
+
+volatile int isAcceptedPush = 0;
 #define isAcceptedPush_NOW_PROCESSING   0
 #define isAcceptedPush_ACCEPTED         1
 #define isAcceptedPush_DENIED           -74
 
-volatile int isAcceptedPush = 0;
-void enablePush     (void) { isAcceptedPush = isAcceptedPush_ACCEPTED; }
-void disablePush    (void) { isAcceptedPush = isAcceptedPush_NOW_PROCESSING; }
-void shutdownPush   (void) { isAcceptedPush = isAcceptedPush_DENIED; }
+#define  enablePush()   isAcceptedPush=isAcceptedPush_ACCEPTED
+#define  disablePush()  isAcceptedPush=isAcceptedPush_NOW_PROCESSING
+#define  shutdownPush() isAcceptedPush=isAcceptedPush_DENIED
+
+
 
 
 
@@ -222,11 +249,11 @@ void setup()
     {
         EEPROM.begin(4096);
 
-        // EEPROM.put(EEPROM_ADDR_IS_SCHEDULED_RESET, false);
+        // EEPROM.put(EEPROM_ADDR__IS_RESET_SCHEDULED, false);
         // EEPROM.commit();
 
         bool isScheduledResetEEPROM = false;
-        EEPROM.get(EEPROM_ADDR_IS_SCHEDULED_RESET, isScheduledResetEEPROM);
+        EEPROM.get(EEPROM_ADDR__IS_RESET_SCHEDULED, isScheduledResetEEPROM);
 
         pinMode(RESET_EEPROM_PIN, INPUT_PULLUP);
         for(uint8_t i=0; (digitalRead(RESET_EEPROM_PIN)==LOW && isScheduledResetEEPROM==false); i++) {
@@ -239,8 +266,8 @@ void setup()
         }
 
         if (isScheduledResetEEPROM) {
-            for(int i=0;i<4096;i++)
-                EEPROM.write(i,0);
+            for(int i=0; i<4096; i++)
+                EEPROM.write(i, 0);
 
             EEPROM.commit();
         }
@@ -542,6 +569,21 @@ void setup()
                                 []
                                 {
                                     webServer.send(HTTP_CODE_OK, "text/javascript", raw_js_DARK_PAGE_RUNNER);
+                                }
+                            );
+
+
+        webServer.on        (   "/DarkJunction/getKeycodes",
+                                HTTP_GET,
+                                []
+                                {
+                                    webServer.send(HTTP_CODE_OK, "text/html", raw_html_KEYCODES);
+                                    // JsonDocument doc;
+                                    // doc["result"] = String(raw_html_KEYCODES);
+
+                                    // String jsonResult = "";
+                                    // serializeJson(doc, jsonResult);
+                                    // webServer.send(HTTP_CODE_OK, "application/json", jsonResult);
                                 }
                             );
 

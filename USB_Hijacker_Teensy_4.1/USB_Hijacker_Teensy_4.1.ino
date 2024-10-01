@@ -42,11 +42,11 @@ extern "C"
      *  3,
      *  { PRODUCT_NAME }
      */
-        #if defined(USB_KEYBOARDONLY)   // [USB Type: "Keyboard"]
+        #if defined(USB_KEYBOARDONLY)   // if [USB Type: "Keyboard"] selected
         2 + 19 * 2,
         3,
         {'I','\'','m',' ','n','o','t',' ','H','i','j','a','c','k','e','r',' ','X','D'}
-        #elif defined(USB_SERIAL_HID)   // [USB Type: "Serial + Keyboard + Mouse + Joystick"]
+        #elif defined(USB_SERIAL_HID)   // if [USB Type: "Serial + Keyboard + Mouse + Joystick"] selected
         2 + 28 * 2,
         3,
         {'I','\'','m',' ','n','o','t',' ','H','i','j','a','c','k','e','r',' ','S','E','R','I','A','L',' ','M','O','D','E'}
@@ -134,13 +134,6 @@ extern "C"
 //      PIN_                            34
 //      PIN_                            33
 
-// determine whether to use Serial&SD or not.
-// false : if you DO NOT WANT TO USE IT any circumstances
-bool isDEBUG = false, isExistSD = true;
-
-// Teensy 4.1's Timer lib
-IntervalTimer IntervalTimer_per1ms;
-
 
 
 
@@ -150,21 +143,37 @@ IntervalTimer IntervalTimer_per1ms;
 #include <map>
 #include <algorithm>
 
-#include <SD.h>
-File textfile;
 
 /**⦓ FOR, CONTROL TEENSY ⦔**/
 #include "./src/config/utility.h"
 #include "./src/config/layout.h"
 
+bool isDEBUG;
+
+bool isExistSD;
+#include <SD.h>
+File textfile;
+
+#include <EEPROM.h>
+#define EEPROM_ADDR__NUM_MAPPER 0
+#define SET_NUM_MAPPER_FROM_EEPROM(NUM) EEPROM.put(EEPROM_ADDR__NUM_MAPPER, NUM)
+#define GET_NUM_MAPPER_FROM_EEPROM(VAR) EEPROM.get(EEPROM_ADDR__NUM_MAPPER, VAR)
+#define CLEAR_NUM_MAPPER_FROM_EEPOROM() { for(uint8_t idxEEPROM=EEPROM_ADDR__NUM_MAPPER; idxEEPROM<4; idxEEPROM++) EEPROM.write(idxEEPROM, 0); }
+
+IntervalTimer IntervalTimer_per1ms;
+
+
 /**⦓ For, USER EXPERIENCE ⦔**/
 #include "./src/Buzzzzer.h"
+
 
 /**⦓ For, EDIT FILES using WIFI ⦔**/
 #include "./src/DarkJunction.h"
 
+
 /**⦓ For, SNATCH THE KEY EVENT FROM SLAVE KEYBOARD ⦔**/
 #include "./src/KeyboardParser.h"
+
 
 /**⦓ For, TRANSMIT THE HIJACKED KEY EVENT TO HOST(OS) ⦔**/
 #include "./src/KeyboardHijacker.h"
@@ -181,8 +190,11 @@ void setup()
         randomSeed(analogRead(PIN_RANDOMSEED));
 
 
-        // SERIAL CHECK
-        if(isDEBUG)
+        // SERIAL CHECK, if USB_KEYBOARDONLY is not defined
+        #if defined(USB_KEYBOARDONLY)   // if [USB Type: "Keyboard"] selected
+        isDEBUG = false;
+        #elif defined(USB_SERIAL_HID)   // if [USB Type: "Serial + Keyboard + Mouse + Joystick"] selected
+        if((isDEBUG = true))
         {
             Serial.begin(115200);
             delay(5252);
@@ -190,6 +202,7 @@ void setup()
             if(!Serial) { isDEBUG = false; Serial.end(); }
         }
         if(isDEBUG) Serial.println(F("SERIAL IS ONLINE\n"));
+        #endif
 
 
         // USB HOST on Teensy® 4.1
@@ -198,13 +211,10 @@ void setup()
 
 
         // SD CARD
-        if(isExistSD)
-        {
-            if (SD.begin(BUILTIN_SDCARD))
-            { isExistSD = true; if(isDEBUG) Serial.println(F("SD CARD IS AVAILABLE :)\n")); }
-            else
-            { isExistSD = false; if(isDEBUG) Serial.println(F("SD CARD IS NOT AVAILABLE :(\n")); }
-        }
+        if (SD.begin(BUILTIN_SDCARD))
+        {   isExistSD = true; if(isDEBUG) Serial.println(F("SD CARD IS AVAILABLE :)\n"));   }
+        else
+        {   isExistSD = false; if(isDEBUG) Serial.println(F("SD CARD IS NOT AVAILABLE :(\n"));   }
 
 
         // ESP8266 a.k.a. WIFI_ACCOMPLICE
@@ -527,12 +537,17 @@ void setup()
                                 KBD_PARSER.KeyLogger.push(keycode);
 
 
-                                // REBOOT COMMAND [ KEYPAD_SLASH + KEYPAD_0 + KEYPAD_8 ] or [ KEYPAD_0 + KEYPAD_SLASH + KEYPAD_8 ]
-                                if(keycode==KEYCODE_KEYPAD_8 && numDN==3)
+                                // REBOOT COMMAND [ LONG NUMLOCK SIGNAL + KEYPAD_X ]
+                                if( numDN==2
+                                    && KBD_PARSER.KeyLogger.peek_keycode(1) == KEYCODE_KEY_NUM_LOCK && millis()-KBD_PARSER.KeyLogger.peek_millis(1) > 999
+                                    && !(keycode < KEYCODE_KEYPAD_1 || KEYCODE_KEYPAD_0 < keycode) )
                                 {
-                                    if( (KBD_PARSER.KeyLogger.peek_keycode(1)==KEYCODE_KEYPAD_SLASH && KBD_PARSER.KeyLogger.peek_keycode(2)==KEYCODE_KEYPAD_0) ||
-                                        (KBD_PARSER.KeyLogger.peek_keycode(1)==KEYCODE_KEYPAD_0     && KBD_PARSER.KeyLogger.peek_keycode(2)==KEYCODE_KEYPAD_SLASH) )
-                                    {   isReservedReboot=true; isExistWaitingEvent_Press=false; return;   }
+                                    if(keycode != KEYCODE_KEYPAD_0)
+                                        SET_NUM_MAPPER_FROM_EEPROM(keycode+1 - KEYCODE_KEYPAD_1);
+
+                                    isExistWaitingEvent_Press=false;
+                                    isReservedReboot=true;
+                                    return;
                                 }
 
 

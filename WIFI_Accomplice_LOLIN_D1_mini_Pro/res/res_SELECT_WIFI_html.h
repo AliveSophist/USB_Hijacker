@@ -1,4 +1,5 @@
-const char raw_html_SELECT_WIFI[] PROGMEM = R"=====(
+const char raw_html_SELECT_WIFI[] PROGMEM =
+R"=====(
 <!DOCTYPE HTML>
 <html>
 <head>

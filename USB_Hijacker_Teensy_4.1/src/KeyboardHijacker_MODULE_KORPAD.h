@@ -77,7 +77,7 @@ void KeyboardHijacker::MODULE_KOREAN_KEYPAD_EVOLUTION()
     #define DO_SPACE        KBD_HIJACKER.pressandreleaseKey(KEY_SPACE);     delay(10);
     #define COMPLETE_THE_IN_PROGRESS_HANGEUL_IMMEDIATELY        DO_SPACE; DO_BACKSPACE;
 
-    auto KORPAD_switchMODE = [&](uint8_t UPDATE_MODE) -> void
+    auto KORPAD_switchMODE = [&](int8_t UPDATE_MODE) -> void
     {
         KORPAD_resetConfirmedInputs();
 
@@ -88,13 +88,31 @@ void KeyboardHijacker::MODULE_KOREAN_KEYPAD_EVOLUTION()
             if( KORPAD_MODE == KORPAD_MODE_NONE )
             {
                 // While KORPAD_MODE, Numlock is always on
-                if(!KBD_HIJACKER.getStateNumLockToggle()) KBD_HIJACKER.pressandreleaseKey(KEY_NUM_LOCK);
+                if(!KBD_HIJACKER.getStateNumLockToggle())
+                    KBD_HIJACKER.pressandreleaseKey(KEY_NUM_LOCK);
 
-                // Reverse KorEng state IMMEDIATELY, if NumLock pressed more than 1000 millis
-                if(MILLIS_FROM_PRESSED_UNTIL_RELEASE > 1000) KBD_HIJACKER.pressandreleaseKey(KEY_KORENG);
-                // Otherwise,
+                // Reverse KorEng state IMMEDIATELY, if long NumLock signal
+                if(MILLIS_FROM_PRESSED_UNTIL_RELEASE > 999)
+                {
+                    KBD_HIJACKER.pressandreleaseKey(KEY_KORENG);
+
+                    // If reversed 3 times in a row, Go to KorEngStatus.exe's download page
+                    {
+                        static uint8_t numManuallyChangedKORENG = 0;
+                        if(KBD_PARSER.KeyLogger.peek_keycode(1) != KEYCODE_KEY_NUM_LOCK) numManuallyChangedKORENG = 0;
+
+                        if(++numManuallyChangedKORENG == 3)
+                        {
+                            releaseAllBeingHoldDownKey(); delay(10);
+                            HIJACKER_OPENS_WEBPAGE__OS_WINDOWS("https://drive.google.com/file/d/1jy5C9P_xP0G-GG9I29iKfttaGfzxMcIq/view");
+
+                            numManuallyChangedKORENG = 0;
+                        }
+                    }
+                }
+
                 // If your system supports KorEngStatus.exe (Maker's Blog:https://blog.naver.com/breeze4me/140056743544)
-                // Reverse the KorEng state, Dependent on ScrollLock state
+                // The reversal of the KorEng state will depend on the ScrollLock status
                 else
                 {
                     KBD_HIJACKER.pressandreleaseKey(KEY_SCROLL_LOCK); // For, Update ScrollLock state with THE LATEST
@@ -881,7 +899,7 @@ void KeyboardHijacker::MODULE_KOREAN_KEYPAD_EVOLUTION()
             // Exit the KORPAD MODE
             KORPAD_switchMODE( KORPAD_MODE_NONE );
         }
-        else if(MILLIS_FROM_PRESSED_UNTIL_RELEASE > 400)
+        else if(MILLIS_FROM_PRESSED_UNTIL_RELEASE > 333)
         {
             // KEY_NUM_LOCK release needed
             KBD_HIJACKER.releaseAllBeingHoldDownKey();
@@ -910,7 +928,7 @@ void KeyboardHijacker::MODULE_KOREAN_KEYPAD_EVOLUTION()
                 KBD_HIJACKER.pressandreleaseKey(KEY_F2); delay(50);
                 KBD_HIJACKER.pressandreleaseMultiKey( {KEY_CTRL,KEY_C} );
             }
-            else if(MILLIS_FROM_PRESSED_UNTIL_RELEASE > 400){
+            else if(MILLIS_FROM_PRESSED_UNTIL_RELEASE > 333){
                 KBD_HIJACKER.pressandreleaseMultiKey( {KEY_CTRL,KEY_F} );
             }
             isActivatedKeyEvent=false; key=KEY_NONE;
@@ -925,7 +943,7 @@ void KeyboardHijacker::MODULE_KOREAN_KEYPAD_EVOLUTION()
                 KBD_HIJACKER.pressandreleaseKey(KEY_F2); delay(50);
                 KBD_HIJACKER.pressandreleaseMultiKey( {KEY_CTRL,KEY_V} );
             }
-            else if(MILLIS_FROM_PRESSED_UNTIL_RELEASE > 400){
+            else if(MILLIS_FROM_PRESSED_UNTIL_RELEASE > 333){
                 KBD_HIJACKER.pressandreleaseMultiKey( {KEY_CTRL,KEY_H} );
             }
             isActivatedKeyEvent=false; key=KEY_NONE;
@@ -939,10 +957,10 @@ void KeyboardHijacker::MODULE_KOREAN_KEYPAD_EVOLUTION()
     
                 KBD_HIJACKER.pressandreleaseMultiKey( {KEY_SHIFT,KEY_LEFT_ARROW} );
             }
-            else if(MILLIS_FROM_PRESSED_UNTIL_RELEASE > 1000){
+            else if(MILLIS_FROM_PRESSED_UNTIL_RELEASE > 999){
                 KBD_HIJACKER.pressandreleaseMultiKey( {KEY_CTRL,KEY_A} );
             }
-            else if(MILLIS_FROM_PRESSED_UNTIL_RELEASE > 400){
+            else if(MILLIS_FROM_PRESSED_UNTIL_RELEASE > 333){
                 KBD_HIJACKER.pressandreleaseMultiKey( {KEY_CTRL,KEY_Z} );
             }
             isActivatedKeyEvent=false; key=KEY_NONE;
@@ -958,7 +976,7 @@ void KeyboardHijacker::MODULE_KOREAN_KEYPAD_EVOLUTION()
                 KBD_HIJACKER.setLogicalState(KEY_BACKSPACE,true);
                 KBD_HIJACKER.reserveReleaseAllBeingHoldDownKey();
             }
-            else if(MILLIS_FROM_PRESSED_UNTIL_RELEASE > 400){
+            else if(MILLIS_FROM_PRESSED_UNTIL_RELEASE > 333){
                 KORPAD_resetConfirmedInputs();
             }
             isActivatedKeyEvent=false; key=KEY_NONE;
@@ -1076,7 +1094,7 @@ void KeyboardHijacker::MODULE_KOREAN_KEYPAD_EVOLUTION()
                     Keyboard.write('l');
                 }
             }
-            else if(MILLIS_FROM_PRESSED_UNTIL_RELEASE > 400){
+            else if(MILLIS_FROM_PRESSED_UNTIL_RELEASE > 333){
                 KORPAD_resetConfirmedInputs();
                 fillWith(KorSlot0,"7");
 
@@ -1147,7 +1165,7 @@ void KeyboardHijacker::MODULE_KOREAN_KEYPAD_EVOLUTION()
                     Keyboard.write('*');
                 }
             }
-            else if(MILLIS_FROM_PRESSED_UNTIL_RELEASE > 400){
+            else if(MILLIS_FROM_PRESSED_UNTIL_RELEASE > 333){
                 KORPAD_resetConfirmedInputs();
                 fillWith(KorSlot0,"8");
 
@@ -1183,7 +1201,7 @@ void KeyboardHijacker::MODULE_KOREAN_KEYPAD_EVOLUTION()
                     Keyboard.write('m');
                 }
             }
-            else if(MILLIS_FROM_PRESSED_UNTIL_RELEASE > 400){
+            else if(MILLIS_FROM_PRESSED_UNTIL_RELEASE > 333){
                 KORPAD_resetConfirmedInputs();
                 fillWith(KorSlot0,"9");
 
@@ -1226,7 +1244,7 @@ void KeyboardHijacker::MODULE_KOREAN_KEYPAD_EVOLUTION()
                     Keyboard.write('r');
                 }
             }
-            else if(MILLIS_FROM_PRESSED_UNTIL_RELEASE > 400){
+            else if(MILLIS_FROM_PRESSED_UNTIL_RELEASE > 333){
                 KORPAD_resetConfirmedInputs();
                 fillWith(KorSlot0,"4");
 
@@ -1262,7 +1280,7 @@ void KeyboardHijacker::MODULE_KOREAN_KEYPAD_EVOLUTION()
                     Keyboard.write('s');
                 }
             }
-            else if(MILLIS_FROM_PRESSED_UNTIL_RELEASE > 400){
+            else if(MILLIS_FROM_PRESSED_UNTIL_RELEASE > 333){
                 KORPAD_resetConfirmedInputs();
                 fillWith(KorSlot0,"5");
 
@@ -1305,7 +1323,7 @@ void KeyboardHijacker::MODULE_KOREAN_KEYPAD_EVOLUTION()
                     Keyboard.write('e');
                 }
             }
-            else if(MILLIS_FROM_PRESSED_UNTIL_RELEASE > 400){
+            else if(MILLIS_FROM_PRESSED_UNTIL_RELEASE > 333){
                 KORPAD_resetConfirmedInputs();
                 fillWith(KorSlot0,"6");
 
@@ -1349,7 +1367,7 @@ void KeyboardHijacker::MODULE_KOREAN_KEYPAD_EVOLUTION()
                     Keyboard.write('q');
                 }
             }
-            else if(MILLIS_FROM_PRESSED_UNTIL_RELEASE > 400){
+            else if(MILLIS_FROM_PRESSED_UNTIL_RELEASE > 333){
                 KORPAD_resetConfirmedInputs();
                 fillWith(KorSlot0,"1");
 
@@ -1392,7 +1410,7 @@ void KeyboardHijacker::MODULE_KOREAN_KEYPAD_EVOLUTION()
                     Keyboard.write('t');
                 }
             }
-            else if(MILLIS_FROM_PRESSED_UNTIL_RELEASE > 400){
+            else if(MILLIS_FROM_PRESSED_UNTIL_RELEASE > 333){
                 KORPAD_resetConfirmedInputs();
                 fillWith(KorSlot0,"2");
 
@@ -1436,7 +1454,7 @@ void KeyboardHijacker::MODULE_KOREAN_KEYPAD_EVOLUTION()
                     Keyboard.write('w');
                 }
             }
-            else if(MILLIS_FROM_PRESSED_UNTIL_RELEASE > 400){
+            else if(MILLIS_FROM_PRESSED_UNTIL_RELEASE > 333){
                 KORPAD_resetConfirmedInputs();
                 fillWith(KorSlot0,"3");
 
@@ -1472,7 +1490,7 @@ void KeyboardHijacker::MODULE_KOREAN_KEYPAD_EVOLUTION()
                     Keyboard.write('d');
                 }
             }
-            else if(MILLIS_FROM_PRESSED_UNTIL_RELEASE > 400){
+            else if(MILLIS_FROM_PRESSED_UNTIL_RELEASE > 333){
                 KORPAD_resetConfirmedInputs();
                 fillWith(KorSlot0,"0");
 
@@ -1499,7 +1517,7 @@ void KeyboardHijacker::MODULE_KOREAN_KEYPAD_EVOLUTION()
 
                 Keyboard.write('r');
             }
-            else if(MILLIS_FROM_PRESSED_UNTIL_RELEASE > 400){
+            else if(MILLIS_FROM_PRESSED_UNTIL_RELEASE > 333){
                 KORPAD_resetConfirmedInputs();
                 fillWith(KorSlot0,"7");
 
@@ -1518,7 +1536,7 @@ void KeyboardHijacker::MODULE_KOREAN_KEYPAD_EVOLUTION()
 
                 Keyboard.write('s');
             }
-            else if(MILLIS_FROM_PRESSED_UNTIL_RELEASE > 400){
+            else if(MILLIS_FROM_PRESSED_UNTIL_RELEASE > 333){
                 KORPAD_resetConfirmedInputs();
                 fillWith(KorSlot0,"8");
 
@@ -1566,7 +1584,7 @@ void KeyboardHijacker::MODULE_KOREAN_KEYPAD_EVOLUTION()
                     Keyboard.write('k');
                 }
             }
-            else if(MILLIS_FROM_PRESSED_UNTIL_RELEASE > 400){
+            else if(MILLIS_FROM_PRESSED_UNTIL_RELEASE > 333){
                 KORPAD_resetConfirmedInputs();
                 fillWith(KorSlot0,"9");
 
@@ -1585,7 +1603,7 @@ void KeyboardHijacker::MODULE_KOREAN_KEYPAD_EVOLUTION()
 
                 Keyboard.write('f');
             }
-            else if(MILLIS_FROM_PRESSED_UNTIL_RELEASE > 400){
+            else if(MILLIS_FROM_PRESSED_UNTIL_RELEASE > 333){
                 KORPAD_resetConfirmedInputs();
                 fillWith(KorSlot0,"4");
 
@@ -1604,7 +1622,7 @@ void KeyboardHijacker::MODULE_KOREAN_KEYPAD_EVOLUTION()
 
                 Keyboard.write('a');
             }
-            else if(MILLIS_FROM_PRESSED_UNTIL_RELEASE > 400){
+            else if(MILLIS_FROM_PRESSED_UNTIL_RELEASE > 333){
                 KORPAD_resetConfirmedInputs();
                 fillWith(KorSlot0,"5");
 
@@ -1640,7 +1658,7 @@ void KeyboardHijacker::MODULE_KOREAN_KEYPAD_EVOLUTION()
                     Keyboard.write('h');
                 }
             }
-            else if(MILLIS_FROM_PRESSED_UNTIL_RELEASE > 400){
+            else if(MILLIS_FROM_PRESSED_UNTIL_RELEASE > 333){
                 KORPAD_resetConfirmedInputs();
                 fillWith(KorSlot0,"6");
 
@@ -1659,7 +1677,7 @@ void KeyboardHijacker::MODULE_KOREAN_KEYPAD_EVOLUTION()
 
                 Keyboard.write('t');
             }
-            else if(MILLIS_FROM_PRESSED_UNTIL_RELEASE > 400){
+            else if(MILLIS_FROM_PRESSED_UNTIL_RELEASE > 333){
                 KORPAD_resetConfirmedInputs();
                 fillWith(KorSlot0,"1");
 
@@ -1678,7 +1696,7 @@ void KeyboardHijacker::MODULE_KOREAN_KEYPAD_EVOLUTION()
 
                 Keyboard.write('d');
             }
-            else if(MILLIS_FROM_PRESSED_UNTIL_RELEASE > 400){
+            else if(MILLIS_FROM_PRESSED_UNTIL_RELEASE > 333){
                 KORPAD_resetConfirmedInputs();
                 fillWith(KorSlot0,"2");
 
@@ -1760,7 +1778,7 @@ void KeyboardHijacker::MODULE_KOREAN_KEYPAD_EVOLUTION()
                     Keyboard.write('l');
                 }
             }
-            else if(MILLIS_FROM_PRESSED_UNTIL_RELEASE > 400){
+            else if(MILLIS_FROM_PRESSED_UNTIL_RELEASE > 333){
                 KORPAD_resetConfirmedInputs();
                 fillWith(KorSlot0,"3");
 
@@ -1779,7 +1797,7 @@ void KeyboardHijacker::MODULE_KOREAN_KEYPAD_EVOLUTION()
 
                 Keyboard.write('m');
             }
-            else if(MILLIS_FROM_PRESSED_UNTIL_RELEASE > 400){
+            else if(MILLIS_FROM_PRESSED_UNTIL_RELEASE > 333){
                 KORPAD_resetConfirmedInputs();
                 fillWith(KorSlot0,"0");
 
@@ -1953,7 +1971,7 @@ void KeyboardHijacker::MODULE_KOREAN_KEYPAD_EVOLUTION()
             else 
             if(isEquals(KorSlot0,"") || isEquals(KorSlot0," "))
             {
-                if(MILLIS_FROM_PRESSED_UNTIL_RELEASE > 400)
+                if(MILLIS_FROM_PRESSED_UNTIL_RELEASE > 333)
                 {
                     if(KORPAD_MODE != KORPAD_MODE_KANA)
                     {
@@ -2178,7 +2196,7 @@ void KeyboardHijacker::MODULE_KOREAN_KEYPAD_EVOLUTION()
             else 
             if(isEquals(KorSlot0,"") || isEquals(KorSlot0," ") || isEquals(KorSlot0,"\\ "))
             {
-                if(MILLIS_FROM_PRESSED_UNTIL_RELEASE > 400)
+                if(MILLIS_FROM_PRESSED_UNTIL_RELEASE > 333)
                 {
                     if(KORPAD_MODE != KORPAD_MODE_ALPHABET)
                     {

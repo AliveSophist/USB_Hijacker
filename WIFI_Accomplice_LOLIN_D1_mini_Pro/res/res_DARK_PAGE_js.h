@@ -1,4 +1,5 @@
-const char raw_js_DARK_PAGE_INITIALIZER[] PROGMEM = R"=====(
+const char raw_js_DARK_PAGE_INITIALIZER[] PROGMEM =
+R"=====(
 /**********⦓ SCRIPT, ABOUT LIBRARIES ⦔**********/
 
 // pagePiling.js
@@ -237,8 +238,11 @@ function initializeDataTable()
                 type: 'string',
                 render: function(data, type, row, meta)
                 {
-                    if (type === 'display')
-                        return `<span class="btnPullFile rainbow-text-when-hover">${data}</span>`;
+                    if (type === 'display') {
+                        const dotIndex = data.lastIndexOf('.');
+                        const nameonly = dotIndex>0 ? data.substring(0, dotIndex) : data;
+                        return `<span class="btnPullFile rainbow-text-when-hover">${nameonly}</span>`;
+                    }
                     else
                         return data;
                 }
@@ -256,19 +260,18 @@ function initializeDataTable()
         ],
         ordering: true
     });
+
     dtDirectory.on('order.dt', function()
     {
-        const rowMAPPER = $("#tbDirectory tbody").find("tr:contains('MAPPER.TXT')");
-        const rowKEYCODE = $("#tbDirectory tbody").find("tr:contains('KEYCODE.TXT')");
+        for(i=9; i>=0; i--)
+            if (rowMAPPER = findRow('MAPPER_'+i+'.TXT')) $('#tbDirectory').prepend( $(rowMAPPER) );
 
-        if (rowKEYCODE) $("#tbDirectory tbody").prepend( rowKEYCODE );   // always 2nd row
-        if (rowMAPPER) $("#tbDirectory tbody").prepend( rowMAPPER );     // always 1st row
+        if (rowMAPPER = findRow('MAPPER.TXT')) $('#tbDirectory').prepend( $(rowMAPPER) );
     });
-    dtDirectory.order([0, 'asc']).draw();
 }
 function findRow(filename)
 {
-    return [...document.querySelectorAll("#tbDirectory tr")].find(row => row.textContent.includes(filename));
+    return [...document.querySelectorAll("#tbDirectory tr")].find(row => row.dataset.filename===filename);
 }
 function getRowData(filename)
 {
@@ -276,15 +279,18 @@ function getRowData(filename)
 }
 function createRow(filename, filesize)
 {
-    dtDirectory.row.add([ filename, filesize ]).draw();
+    const rowIndex = dtDirectory.row.add([ filename, filesize ]).draw().index();
 
-    const rowNew = findRow(filename);
+    const rowNew = dtDirectory.row(rowIndex).node();
     rowNew.dataset.filename = filename;
     rowNew.dataset.filesize = filesize;
     rowNew.querySelector(".btnPullFile").addEventListener("click", function()
     {   executePullFile( filename );   });
     rowNew.addEventListener("contextmenu", function()
     {   filenameLatestRightClicked = filename;   });
+
+    if (filename.includes("MAPPER.") || filename.includes("MAPPER_"))
+        rowNew.querySelector(".btnPullFile").classList.add('rowMAPPER');
 }
 function deleteRow(filename)
 {
@@ -407,6 +413,7 @@ const taFileContent = document.querySelector("#taFileContent");
 const divFileList = document.querySelector("#divFileList");
 const btnCreateFile = document.querySelector("#btnCreateFile");
 const btnSaveFile = document.querySelector("#btnSaveFile");
+const btnHelp = document.querySelector("#btnHelp");
 const btnGoToListener = document.querySelector("#btnGoToListener");
 
 let isEnabledTextarea = false;
@@ -423,8 +430,8 @@ function enableTextarea(value = taFileContent.value)
 
     btnCreateFile.style.display = 'none';
     btnSaveFile.style.display = 'block';
-
-    btnGoToListener.style.display = (getCurrentFilename().includes("MAPPER.") || getCurrentFilename().includes("KEYCODE.")) ? 'none' : 'block';
+    btnHelp.style.display = getCurrentFilename().includes("MAPPER") ? 'block' : 'none';
+    btnGoToListener.style.display = getCurrentFilename().includes("MAPPER") ? 'none' : 'block';
 
     isEnabledTextarea = true;
 }
@@ -438,11 +445,11 @@ function disableTextarea()
     taFileContent.style.overflowX = "hidden";
     taFileContent.style.overflowY = "hidden";
     taFileContent.style.color = "rgba(0,0,0,0)";
-    taFileContent.style.backgroundColor = "#4f4f4f";
+    taFileContent.style.backgroundColor = "#383838";
 
     btnCreateFile.style.display = 'block';
     btnSaveFile.style.display = 'none';
-
+    btnHelp.style.display = 'none';
     btnGoToListener.style.display = 'none';
 
     isEnabledTextarea = false;
@@ -759,6 +766,7 @@ function executePullRootData()
 
                     createRow(filename, filesize);
                 }
+                dtDirectory.order([0, 'asc']).draw();
             }
 
 
@@ -1337,6 +1345,29 @@ $( document ).ready(function()
     btnSaveFile.addEventListener("click", function(event)
     {
         executePushFile(getCurrentFilename());
+    });
+    btnHelp.addEventListener("click", function(event)
+    {
+        const popup = window.open("http://hijacker.local/DarkJunction/getKeycodes", "popupWindow", "width=450,height=900");
+
+        // if (btnHelp.dataset.keycodes === undefined || !btnHelp.dataset.keycodes)
+        // {
+        //     $.ajax({
+        //         url:  '/DarkJunction/getKeycodes',
+        //         type: 'POST',
+        //         contentType: 'application/json; charset=utf-8',
+        //         processData: false, cache: false,
+        //         success: function(data)
+        //         {
+        //             console.log(data);
+        //             btnHelp.dataset.keycodes = data.result;
+        //         },
+        //         error: function()
+        //         {
+        //             alert('ajax Failed');
+        //         }
+        //     });
+        // }
     });
 
 

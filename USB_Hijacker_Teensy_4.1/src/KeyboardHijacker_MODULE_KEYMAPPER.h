@@ -35,16 +35,29 @@ std::vector<RapidfireEvent> queueActivatedRapidfire;
 bool isUpdatedActivatedRapidfire = false;
 bool isRapidfiring = false;
 
-const char MAPPER[] PROGMEM = "MAPPER.TXT";
-
 
 
 void KeyboardHijacker::MODULE_KEYMAPPER_INITIALIZE()
 {
-    if(!SD.exists(MAPPER)) // MAPPER.TXT not exists, Create blank textfile, then skip mapping
-    {   textfile = SD.open(MAPPER, FILE_WRITE); textfile.close(); return;   }
-    else
-        textfile = SD.open(MAPPER);
+    // Open MAPPER
+    {
+        uint8_t numMAPPER = 0;
+        GET_NUM_MAPPER_FROM_EEPROM(numMAPPER);
+        CLEAR_NUM_MAPPER_FROM_EEPOROM();
+
+        String strFilename = "MAPPER";
+        strFilename =   (numMAPPER != 0)
+                        ? (strFilename + "_" + numMAPPER + ".TXT")
+                        : (strFilename + ".TXT");
+
+        if(SD.exists(strFilename.c_str()))
+            textfile = SD.open(strFilename.c_str());
+        else
+        if(SD.exists("MAPPER.TXT"))
+            textfile = SD.open("MAPPER.TXT");
+        else
+        {   textfile = SD.open("MAPPER.TXT", FILE_WRITE); textfile.close(); return;   }
+    }
 
 
     if(isDEBUG){ Serial.println("MODULE_KEYMAPPER_INITIALIZE START\n"); }
